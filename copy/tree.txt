@@ -1,0 +1,124 @@
+.
+├── README.md
+├── copy
+│   ├── Header.test.tsx
+│   ├── Header.tsx
+│   ├── LiveCard.tsx
+│   ├── LiveListClient.tsx
+│   ├── README.md
+│   ├── SetlistPreview.tsx
+│   ├── SongCard.tsx
+│   ├── SongsClient.tsx
+│   ├── api.ts
+│   ├── copytree.command
+│   ├── data-converter.ts
+│   ├── error.tsx
+│   ├── eslint.config.mjs
+│   ├── favicon.ico
+│   ├── file.svg
+│   ├── globals.css
+│   ├── globe.svg
+│   ├── jest.config.ts
+│   ├── jest.setup.ts
+│   ├── layout.tsx
+│   ├── live.test.ts
+│   ├── live.ts
+│   ├── live_history.txt
+│   ├── loading.tsx
+│   ├── next-env.d.ts
+│   ├── next.config.ts
+│   ├── next.svg
+│   ├── not-found.tsx
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── page.tsx
+│   ├── postcss.config.js
+│   ├── postcss.config.mjs
+│   ├── route.ts
+│   ├── setlist.ts
+│   ├── setlist_history.txt
+│   ├── settings.json
+│   ├── song.ts
+│   ├── tailwind.config.js
+│   ├── tailwind.config.ts
+│   ├── tsconfig.json
+│   ├── vercel.svg
+│   └── window.svg
+├── copytree.command
+├── data
+│   ├── live_history.txt
+│   └── setlist_history.txt
+├── eslint.config.mjs
+├── jest.config.ts
+├── jest.setup.ts
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── postcss.config.mjs
+├── public
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── src
+│   ├── app
+│   │   ├── api
+│   │   │   ├── lives
+│   │   │   │   └── route.ts
+│   │   │   ├── setlists
+│   │   │   │   └── route.ts
+│   │   │   └── songs
+│   │   │       └── route.ts
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── lives
+│   │   │   ├── [liveId]
+│   │   │   │   ├── loading.tsx
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── not-found.tsx
+│   │   ├── page.tsx
+│   │   └── songs
+│   │       ├── SongsClient.tsx
+│   │       ├── [songId]
+│   │       │   ├── error.tsx
+│   │       │   ├── loading.tsx
+│   │       │   └── page.tsx
+│   │       ├── error.tsx
+│   │       ├── loading.tsx
+│   │       └── page.tsx
+│   ├── components
+│   │   ├── Header
+│   │   │   ├── Header.tsx
+│   │   │   └── __tests__
+│   │   │       └── Header.test.tsx
+│   │   ├── LiveCard
+│   │   │   └── LiveCard.tsx
+│   │   ├── LiveList
+│   │   │   ├── LiveListClient.tsx
+│   │   │   └── __tests__
+│   │   ├── SetlistPreview
+│   │   │   └── SetlistPreview.tsx
+│   │   ├── SetlistView
+│   │   │   └── __tests__
+│   │   └── SongCard
+│   │       └── SongCard.tsx
+│   ├── types
+│   │   ├── __tests__
+│   │   │   └── live.test.ts
+│   │   ├── live.ts
+│   │   ├── setlist.ts
+│   │   └── song.ts
+│   └── utils
+│       ├── api.ts
+│       └── data-converter.ts
+├── tailwind.config.js
+├── tailwind.config.ts
+├── tree.txt
+└── tsconfig.json
+
+27 directories, 95 files
