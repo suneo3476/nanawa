@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/Header/Header';
 
-export default function SongsError({
+export default function StatsError({
   error,
   reset,
 }: {
@@ -13,12 +13,11 @@ export default function SongsError({
 }) {
   useEffect(() => {
     // エラーをログに出力
-    console.error('Songs page error:', error);
+    console.error('Stats page error:', error);
   }, [error]);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm p-8 max-w-2xl mx-auto">
           <div className="flex flex-col items-center text-center">
@@ -26,10 +25,10 @@ export default function SongsError({
               <AlertTriangle className="w-8 h-8 text-red-600" aria-hidden="true" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              楽曲情報の取得に失敗しました
+              統計データの取得に失敗しました
             </h1>
             <p className="text-gray-600 mb-6">
-              申し訳ありません。楽曲情報の取得中にエラーが発生しました。
+              申し訳ありません。統計データの取得中にエラーが発生しました。
               時間をおいて再度お試しください。
             </p>
             <div className="space-x-4">

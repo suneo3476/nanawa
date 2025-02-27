@@ -1,4 +1,7 @@
 import './globals.css';
+import { Header } from '@/components/Header/Header';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { SettingsProvider } from '@/components/Settings';
 
 export const metadata = {
   title: '七輪',
@@ -13,7 +16,13 @@ export default function RootLayout({
   return (
     <html lang="ja" className="h-full mdl-js">
       <body className="h-full bg-gray-50 vsc-initialized">
-        {children}
+        <SettingsProvider>
+          <Header />
+          <main className="container mx-auto px-4 py-8">
+            <Breadcrumbs />
+            {children}
+          </main>
+        </SettingsProvider>
       </body>
     </html>
   );

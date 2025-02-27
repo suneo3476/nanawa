@@ -3,9 +3,8 @@
 import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/Header/Header';
-import Link from 'next/link';
 
-export default function SongDetailError({
+export default function SearchError({
   error,
   reset,
 }: {
@@ -14,7 +13,7 @@ export default function SongDetailError({
 }) {
   useEffect(() => {
     // エラーをログに出力
-    console.error('Song detail page error:', error);
+    console.error('Search page error:', error);
   }, [error]);
 
   return (
@@ -26,10 +25,10 @@ export default function SongDetailError({
               <AlertTriangle className="w-8 h-8 text-red-600" aria-hidden="true" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              楽曲詳細の取得に失敗しました
+              検索ページの読み込み中にエラーが発生しました
             </h1>
             <p className="text-gray-600 mb-6">
-              申し訳ありません。楽曲詳細の取得中にエラーが発生しました。
+              申し訳ありません。データの取得中に問題が発生しました。
               時間をおいて再度お試しください。
             </p>
             <div className="space-x-4">
@@ -40,28 +39,8 @@ export default function SongDetailError({
               >
                 再試行
               </button>
-              <Link
-                href="/songs"
-                className="inline-block text-purple-600 hover:text-purple-700 px-6 py-2 
-                         transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-              >
-                楽曲一覧に戻る
-              </Link>
             </div>
           </div>
-
-          {/* エラー詳細（開発環境のみ表示） */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <details className="text-sm text-gray-600">
-                <summary className="cursor-pointer hover:text-gray-900">エラー詳細</summary>
-                <pre className="mt-2 p-4 bg-gray-50 rounded overflow-auto">
-                  {error.message}
-                  {error.stack}
-                </pre>
-              </details>
-            </div>
-          )}
         </div>
       </main>
     </div>

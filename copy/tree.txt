@@ -1,23 +1,24 @@
 .
 ├── README.md
 ├── copy
+│   ├── AdvancedSearch.tsx
 │   ├── Header.test.tsx
 │   ├── Header.tsx
 │   ├── LiveCard.tsx
 │   ├── LiveListClient.tsx
+│   ├── PerformanceHeatmap.tsx
 │   ├── README.md
 │   ├── SetlistPreview.tsx
 │   ├── SongCard.tsx
 │   ├── SongsClient.tsx
+│   ├── StatsDashboard.tsx
 │   ├── api.ts
 │   ├── copytree.command
 │   ├── data-converter.ts
 │   ├── error.tsx
 │   ├── eslint.config.mjs
-│   ├── favicon.ico
-│   ├── file.svg
 │   ├── globals.css
-│   ├── globe.svg
+│   ├── index.ts
 │   ├── jest.config.ts
 │   ├── jest.setup.ts
 │   ├── layout.tsx
@@ -27,9 +28,7 @@
 │   ├── loading.tsx
 │   ├── next-env.d.ts
 │   ├── next.config.ts
-│   ├── next.svg
 │   ├── not-found.tsx
-│   ├── package-lock.json
 │   ├── package.json
 │   ├── page.tsx
 │   ├── postcss.config.js
@@ -41,9 +40,8 @@
 │   ├── song.ts
 │   ├── tailwind.config.js
 │   ├── tailwind.config.ts
-│   ├── tsconfig.json
-│   ├── vercel.svg
-│   └── window.svg
+│   ├── tree.txt
+│   └── tsconfig.json
 ├── copytree.command
 ├── data
 │   ├── live_history.txt
@@ -74,6 +72,10 @@
 │   │   │       └── route.ts
 │   │   ├── favicon.ico
 │   │   ├── globals.css
+│   │   ├── heatmap
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
 │   │   ├── layout.tsx
 │   │   ├── lives
 │   │   │   ├── [liveId]
@@ -82,16 +84,29 @@
 │   │   │   └── page.tsx
 │   │   ├── not-found.tsx
 │   │   ├── page.tsx
-│   │   └── songs
-│   │       ├── SongsClient.tsx
-│   │       ├── [songId]
-│   │       │   ├── error.tsx
-│   │       │   ├── loading.tsx
-│   │       │   └── page.tsx
-│   │       ├── error.tsx
-│   │       ├── loading.tsx
+│   │   ├── search
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── songs
+│   │   │   ├── SongsClient.tsx
+│   │   │   ├── [songId]
+│   │   │   │   ├── error.tsx
+│   │   │   │   ├── loading.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── stats
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   └── timeline
 │   │       └── page.tsx
 │   ├── components
+│   │   ├── AdvancedSearch
+│   │   │   ├── AdvancedSearch.tsx
+│   │   │   └── index.ts
 │   │   ├── Header
 │   │   │   ├── Header.tsx
 │   │   │   └── __tests__
@@ -101,12 +116,21 @@
 │   │   ├── LiveList
 │   │   │   ├── LiveListClient.tsx
 │   │   │   └── __tests__
+│   │   ├── LiveTimeline
+│   │   │   ├── LiveTimeline.tsx
+│   │   │   └── index.ts
+│   │   ├── PerformanceHeatmap
+│   │   │   ├── PerformanceHeatmap.tsx
+│   │   │   └── index.ts
 │   │   ├── SetlistPreview
 │   │   │   └── SetlistPreview.tsx
 │   │   ├── SetlistView
 │   │   │   └── __tests__
-│   │   └── SongCard
-│   │       └── SongCard.tsx
+│   │   ├── SongCard
+│   │   │   └── SongCard.tsx
+│   │   └── StatsDashboard
+│   │       ├── StatsDashboard.tsx
+│   │       └── index.ts
 │   ├── types
 │   │   ├── __tests__
 │   │   │   └── live.test.ts
@@ -121,4 +145,4 @@
 ├── tree.txt
 └── tsconfig.json
 
-27 directories, 95 files
+35 directories, 111 files

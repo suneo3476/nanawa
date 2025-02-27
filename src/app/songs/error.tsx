@@ -18,7 +18,6 @@ export default function SongsError({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm p-8 max-w-2xl mx-auto">
           <div className="flex flex-col items-center text-center">
