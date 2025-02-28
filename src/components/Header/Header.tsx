@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarRange, Settings } from 'lucide-react';
+import { CalendarRange, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useSettings } from '@/components/Settings';
 
 export const Header = () => {
@@ -22,6 +22,10 @@ export const Header = () => {
 
   const toggleSettingsPanel = () => {
     setShowSettingsPanel(!showSettingsPanel);
+  };
+
+  const toggleBreadcrumbs = () => {
+    setIsBreadcrumbsEnabled(!isBreadcrumbsEnabled);
   };
 
   return (
@@ -133,28 +137,20 @@ export const Header = () => {
           <div className="space-y-3">
             {/* パンくずリスト有効/無効 */}
             <div className="flex items-center justify-between">
-              <label htmlFor="breadcrumbs-toggle" className="text-sm">
-                パンくずリスト
+              <label htmlFor="breadcrumbs-toggle" className="text-sm cursor-pointer">
+                パンくずリスト表示
               </label>
-              <div className="relative inline-block w-10 h-5 rounded-full cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="breadcrumbs-toggle"
-                  className="sr-only"
-                  checked={isBreadcrumbsEnabled}
-                  onChange={() => setIsBreadcrumbsEnabled(!isBreadcrumbsEnabled)}
-                />
-                <span 
-                  className={`absolute inset-0 rounded-full transition-colors ${
-                    isBreadcrumbsEnabled ? 'bg-purple-500' : 'bg-gray-300'
-                  }`}
-                />
-                <span 
-                  className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform ${
-                    isBreadcrumbsEnabled ? 'translate-x-5' : ''
-                  }`}
-                />
-              </div>
+              <button
+                onClick={toggleBreadcrumbs}
+                aria-pressed={isBreadcrumbsEnabled}
+                className="text-purple-600 hover:text-purple-800 focus:outline-none"
+                title={isBreadcrumbsEnabled ? "パンくずリストを非表示" : "パンくずリストを表示"}
+              >
+                {isBreadcrumbsEnabled ? 
+                  <ToggleRight size={24} /> : 
+                  <ToggleLeft size={24} />
+                }
+              </button>
             </div>
             
             {/* パンくずリストモード選択 */}
@@ -182,6 +178,12 @@ export const Header = () => {
                   >
                     階層型
                   </button>
+                </div>
+                
+                <div className="mt-4 text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                  <p className="mb-1 font-medium">設定ガイド:</p>
+                  <p><strong>履歴型:</strong> 閲覧したページ順に表示</p>
+                  <p><strong>階層型:</strong> サイト構造に基づいて表示</p>
                 </div>
               </div>
             )}
