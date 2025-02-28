@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 import { useSettings } from '@/components/Settings';
 
@@ -31,6 +31,7 @@ const songCache = new Map<string, { title: string }>();
 
 export const Breadcrumbs = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [history, setHistory] = useState<BreadcrumbItem[]>([]);
   const { breadcrumbsMode, isBreadcrumbsEnabled } = useSettings();
   const [isLoading, setIsLoading] = useState(false);
@@ -139,9 +140,16 @@ export const Breadcrumbs = () => {
     let currentPath = '';
     for (const segment of segments) {
       currentPath += `/${segment}`;
+      
+      // クエリパラメータがある場合は維持
+      let pathWithParams = currentPath;
+      if (path === currentPath && searchParams.toString()) {
+        pathWithParams += `?${searchParams.toString()}`;
+      }
+      
       const { label, type } = await getPathLabelAndType(currentPath);
       breadcrumbs.push({
-        path: currentPath,
+        path: pathWithParams,
         label,
         timestamp: Date.now(),
         type
@@ -149,7 +157,7 @@ export const Breadcrumbs = () => {
     }
     
     return breadcrumbs;
-  }, [getPathLabelAndType]);
+  }, [getPathLabelAndType, searchParams]);
 
   // 現在のパスに対する具体的なラベルと種類を取得
   const updateCurrentPageLabel = useCallback(async (item: BreadcrumbItem): Promise<BreadcrumbItem> => {
@@ -202,11 +210,17 @@ export const Breadcrumbs = () => {
         }
         
         // historyモードの場合の処理
+        // URLパラメータを含むフルパスを構築
+        let fullPath = pathname;
+        if (searchParams.toString()) {
+          fullPath += `?${searchParams.toString()}`;
+        }
+        
         const { label, type } = await getPathLabelAndType(pathname);
         
         // 現在のページ情報を生成
         const currentPage: BreadcrumbItem = {
-          path: pathname,
+          path: fullPath,
           label,
           timestamp: Date.now(),
           type
@@ -214,7 +228,8 @@ export const Breadcrumbs = () => {
 
         setHistory(prevHistory => {
           // 現在のページが既に履歴にある場合は、そこまでの履歴を残す
-          const existingIndex = prevHistory.findIndex((item) => item.path === pathname);
+          const existingIndex = prevHistory.findIndex((item) => 
+            item.path.split('?')[0] === fullPath.split('?')[0]); // クエリパラメータは無視して比較
           
           let newHistory;
           if (existingIndex >= 0) {
@@ -244,6 +259,7 @@ export const Breadcrumbs = () => {
     updateBreadcrumbs();
   }, [
     pathname, 
+    searchParams.toString(), // 検索パラメータが変更された場合にも更新
     breadcrumbsMode, 
     isBreadcrumbsEnabled, 
     getPathLabelAndType, 
