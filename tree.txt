@@ -6,6 +6,7 @@
 │   ├── Header.tsx
 │   ├── LiveCard.tsx
 │   ├── LiveListClient.tsx
+│   ├── LiveTimeline.tsx
 │   ├── PerformanceHeatmap.tsx
 │   ├── README.md
 │   ├── SetlistPreview.tsx
@@ -49,6 +50,7 @@
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── jest.setup.ts
+├── nanawa-archive.zip
 ├── next-env.d.ts
 ├── next.config.ts
 ├── package-lock.json
@@ -65,10 +67,14 @@
 │   ├── app
 │   │   ├── api
 │   │   │   ├── lives
+│   │   │   │   ├── [liveId]
+│   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
 │   │   │   ├── setlists
 │   │   │   │   └── route.ts
 │   │   │   └── songs
+│   │   │       ├── [songId]
+│   │   │       │   └── route.ts
 │   │   │       └── route.ts
 │   │   ├── favicon.ico
 │   │   ├── globals.css
@@ -107,6 +113,9 @@
 │   │   ├── AdvancedSearch
 │   │   │   ├── AdvancedSearch.tsx
 │   │   │   └── index.ts
+│   │   ├── Breadcrumbs
+│   │   │   ├── Breadcrumbs.tsx
+│   │   │   └── index.ts
 │   │   ├── Header
 │   │   │   ├── Header.tsx
 │   │   │   └── __tests__
@@ -126,6 +135,9 @@
 │   │   │   └── SetlistPreview.tsx
 │   │   ├── SetlistView
 │   │   │   └── __tests__
+│   │   ├── Settings
+│   │   │   ├── SettingsContext.tsx
+│   │   │   └── index.ts
 │   │   ├── SongCard
 │   │   │   └── SongCard.tsx
 │   │   └── StatsDashboard
@@ -145,4 +157,4 @@
 ├── tree.txt
 └── tsconfig.json
 
-35 directories, 111 files
+39 directories, 119 files

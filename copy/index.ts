@@ -1,4 +1,4 @@
-import { LiveTimeline } from './LiveTimeline';
+import { Breadcrumbs } from './Breadcrumbs';
 
-export { LiveTimeline };
-export default LiveTimeline;
+export { Breadcrumbs };
+export default Breadcrumbs;
