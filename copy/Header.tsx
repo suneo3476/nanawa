@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { CalendarRange, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { CalendarRange, Settings, ToggleLeft, ToggleRight, List } from 'lucide-react';
 import { useSettings } from '@/components/Settings';
 
 export const Header = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { 
     breadcrumbsMode, 
     setBreadcrumbsMode,
@@ -15,6 +16,36 @@ export const Header = () => {
     setIsBreadcrumbsEnabled
   } = useSettings();
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [currentViewMode, setCurrentViewMode] = useState<'list' | 'timeline'>('list');
+  const [showViewDropdown, setShowViewDropdown] = useState(false);
+  
+  // ページロード時と検索パラメータ変更時に現在のビューモードを取得
+  useEffect(() => {
+    if (pathname === '/lives') {
+      const viewParam = searchParams.get('view');
+      if (viewParam === 'timeline' || viewParam === 'list') {
+        setCurrentViewMode(viewParam as 'list' | 'timeline');
+      } else {
+        try {
+          const savedMode = localStorage.getItem('liveViewMode');
+          if (savedMode === 'timeline' || savedMode === 'list') {
+            setCurrentViewMode(savedMode as 'list' | 'timeline');
+          }
+        } catch (error) {
+          console.error('LocalStorage error:', error);
+        }
+      }
+    }
+  }, [pathname, searchParams]); // URLやクエリパラメータが変わったときに再評価
+  
+  // タッチデバイスでのドロップダウン表示切替用
+  const toggleViewDropdown = (e: React.MouseEvent) => {
+    // PCではホバーでメニューが表示されるので、タッチデバイス用に
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      e.preventDefault();
+      setShowViewDropdown(!showViewDropdown);
+    }
+  };
   
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`);
@@ -22,6 +53,10 @@ export const Header = () => {
 
   const toggleSettingsPanel = () => {
     setShowSettingsPanel(!showSettingsPanel);
+    // 設定パネルを開くときは、ビューメニューを閉じる
+    if (!showSettingsPanel) {
+      setShowViewDropdown(false);
+    }
   };
 
   const toggleBreadcrumbs = () => {
@@ -37,30 +72,39 @@ export const Header = () => {
         <div className="flex items-center gap-2">
           <nav aria-label="メインナビゲーション">
             <ul className="flex flex-wrap space-x-2 items-center">
-              <li>
+              <li className="relative group">
                 <Link 
-                  href="/lives" 
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
+                  href={`/lives${currentViewMode === 'timeline' ? '?view=timeline' : ''}`}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-flex items-center gap-1 ${
                     isActive('/lives') 
                       ? 'bg-white/30 text-white' 
                       : 'hover:bg-white/20 text-white'
                   }`}
                 >
-                  ライブ一覧
+                  <span>ライブ</span>
                 </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/timeline" 
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-flex items-center gap-1 ${
-                    isActive('/timeline') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <CalendarRange size={14} />
-                  <span>タイムライン</span>
-                </Link>
+                
+                {/* ビュー切替サブメニュー */}
+                <div className="absolute left-0 mt-1 py-1 bg-white rounded-lg shadow-lg whitespace-nowrap z-10 hidden group-hover:block">
+                  <Link
+                    href="/lives?view=list"
+                    className={`block px-4 py-2 text-sm ${
+                      currentViewMode === 'list' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <List size={14} className="inline mr-2" />
+                    リスト表示
+                  </Link>
+                  <Link
+                    href="/lives?view=timeline"
+                    className={`block px-4 py-2 text-sm ${
+                      currentViewMode === 'timeline' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <CalendarRange size={14} className="inline mr-2" />
+                    タイムライン表示
+                  </Link>
+                </div>
               </li>
               <li>
                 <Link 

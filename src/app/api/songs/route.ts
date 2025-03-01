@@ -1,7 +1,8 @@
+// src/app/api/songs/route.ts
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
-import { parseLiveHistory, parseSetlistHistory, enrichSongData } from '@/utils/data-converter';
+import { parseLiveHistory, parseSetlistHistory } from '@/utils/data-converter';
 
 export async function GET() {
   try {
@@ -16,18 +17,28 @@ export async function GET() {
     
     // データの変換
     const lives = parseLiveHistory(liveHistoryText);
-    const { songs: songsMap } = parseSetlistHistory(setlistHistoryText, lives);
     
-    // 楽曲情報を配列に変換
-    let songs = Array.from(songsMap.values());
+    // 非同期処理を await で正しく処理
+    const { songs } = await parseSetlistHistory(setlistHistoryText, lives);
     
-    // 楽曲情報を補完
-    songs = enrichSongData(songs);
+    // JSON シリアライズ可能なデータだけにフィルタリング
+    const serializableSongs = songs.map(song => ({
+      songId: song.songId,
+      title: song.title,
+      album: song.album || '',
+      releaseDate: song.releaseDate || '',
+      trackNumber: song.trackNumber,
+      isSingle: song.isSingle,
+      albumCategory: song.albumCategory,
+      // appearsOn を含める
+      appearsOn: song.appearsOn || [],
+      // その他の情報...
+      firstReleaseAlbum: song.firstRelease?.album || '',
+      firstReleaseDate: song.firstRelease?.releaseDate || '',
+      originalAlbum: song.originalAlbum || ''
+    }));
     
-    // 楽曲をソート
-    songs.sort((a, b) => a.title.localeCompare(b.title));
-    
-    return NextResponse.json(songs);
+    return NextResponse.json(serializableSongs);
   } catch (error) {
     console.error('Failed to load songs data:', error);
     return NextResponse.json(

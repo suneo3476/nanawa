@@ -1,4 +1,2 @@
-import { Breadcrumbs } from './Breadcrumbs';
-
-export { Breadcrumbs };
-export default Breadcrumbs;
+// src/components/Header/index.ts
+export { Header } from './Header';

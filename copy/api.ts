@@ -18,3 +18,9 @@ export async function fetchSetlists() {
   if (!res.ok) throw new Error('Failed to fetch setlists');
   return res.json();
 }
+
+export async function fetchSongData(songId: string) {
+  const res = await fetch(`${BASE_URL}/api/songs/${songId}`, { next: { revalidate: 3600 } });
+  if (!res.ok) throw new Error('Failed to fetch song data');
+  return res.json();
+}

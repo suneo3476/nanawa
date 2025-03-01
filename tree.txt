@@ -1,52 +1,11 @@
 .
 ├── README.md
-├── copy
-│   ├── AdvancedSearch.tsx
-│   ├── Header.test.tsx
-│   ├── Header.tsx
-│   ├── LiveCard.tsx
-│   ├── LiveListClient.tsx
-│   ├── LiveTimeline.tsx
-│   ├── PerformanceHeatmap.tsx
-│   ├── README.md
-│   ├── SetlistPreview.tsx
-│   ├── SongCard.tsx
-│   ├── SongsClient.tsx
-│   ├── StatsDashboard.tsx
-│   ├── api.ts
-│   ├── copytree.command
-│   ├── data-converter.ts
-│   ├── error.tsx
-│   ├── eslint.config.mjs
-│   ├── globals.css
-│   ├── index.ts
-│   ├── jest.config.ts
-│   ├── jest.setup.ts
-│   ├── layout.tsx
-│   ├── live.test.ts
-│   ├── live.ts
-│   ├── live_history.txt
-│   ├── loading.tsx
-│   ├── next-env.d.ts
-│   ├── next.config.ts
-│   ├── not-found.tsx
-│   ├── package.json
-│   ├── page.tsx
-│   ├── postcss.config.js
-│   ├── postcss.config.mjs
-│   ├── route.ts
-│   ├── setlist.ts
-│   ├── setlist_history.txt
-│   ├── settings.json
-│   ├── song.ts
-│   ├── tailwind.config.js
-│   ├── tailwind.config.ts
-│   ├── tree.txt
-│   └── tsconfig.json
 ├── copytree.command
 ├── data
+│   ├── discography.txt
 │   ├── live_history.txt
-│   └── setlist_history.txt
+│   ├── setlist_history.txt
+│   └── tracks.txt
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── jest.setup.ts
@@ -118,8 +77,9 @@
 │   │   │   └── index.ts
 │   │   ├── Header
 │   │   │   ├── Header.tsx
-│   │   │   └── __tests__
-│   │   │       └── Header.test.tsx
+│   │   │   ├── __tests__
+│   │   │   │   └── Header.test.tsx
+│   │   │   └── index.ts
 │   │   ├── LiveCard
 │   │   │   └── LiveCard.tsx
 │   │   ├── LiveList
@@ -128,12 +88,16 @@
 │   │   ├── LiveTimeline
 │   │   │   ├── LiveTimeline.tsx
 │   │   │   └── index.ts
+│   │   ├── LiveViewIntegrated
+│   │   │   ├── LiveViewIntegrated.tsx
+│   │   │   └── index.ts
 │   │   ├── PerformanceHeatmap
 │   │   │   ├── PerformanceHeatmap.tsx
 │   │   │   └── index.ts
 │   │   ├── SetlistPreview
 │   │   │   └── SetlistPreview.tsx
 │   │   ├── SetlistView
+│   │   │   ├── SetlistView.tsx
 │   │   │   └── __tests__
 │   │   ├── Settings
 │   │   │   ├── SettingsContext.tsx
@@ -151,10 +115,11 @@
 │   │   └── song.ts
 │   └── utils
 │       ├── api.ts
-│       └── data-converter.ts
+│       ├── data-converter.ts
+│       └── song-enricher.ts
 ├── tailwind.config.js
 ├── tailwind.config.ts
 ├── tree.txt
 └── tsconfig.json
 
-39 directories, 119 files
+39 directories, 84 files

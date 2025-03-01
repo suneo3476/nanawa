@@ -1,3 +1,4 @@
+// src/app/api/setlists/route.ts
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
@@ -16,9 +17,19 @@ export async function GET() {
     
     // データの変換
     const lives = parseLiveHistory(liveHistoryText);
-    const { setlists } = parseSetlistHistory(setlistHistoryText, lives);
     
-    return NextResponse.json(setlists);
+    // 非同期処理を await で処理
+    const { setlists } = await parseSetlistHistory(setlistHistoryText, lives);
+    
+    // JSON シリアライズ可能なオブジェクトに変換
+    const serializableSetlists = setlists.map(item => ({
+      liveId: item.liveId,
+      songId: item.songId,
+      order: item.order,
+      memo: item.memo || ''
+    }));
+    
+    return NextResponse.json(serializableSetlists);
   } catch (error) {
     console.error('Failed to load setlists data:', error);
     return NextResponse.json(
