@@ -27,8 +27,8 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   
   // 状態管理
   const [timeUnit, setTimeUnit] = useState<TimeUnit>('year');
-  const [sortBy, setSortBy] = useState<SortOption>('frequency');
-  const [songLimit, setSongLimit] = useState(20);
+  const [sortBy, setSortBy] = useState<SortOption>('lastPlayed');
+  const [songLimit, setSongLimit] = useState(200);
   const [yearRange, setYearRange] = useState<{ start: number; end: number }>({
     start: 2003,
     end: new Date().getFullYear(),
@@ -233,9 +233,9 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
 
   // 強度から背景色を計算する関数
   const getBackgroundColor = (intensity: number, isBeforeRelease: boolean): string => {
-    // リリース前の場合は薄いグレー表示
+    // リリース前の場合はより濃いグレー表示（コントラスト強化）
     if (isBeforeRelease) {
-      return '#f1f5f9'; // Tailwind slate-100
+      return '#cbd5e1'; // Tailwind slate-300
     }
     
     if (intensity === 0) return '#f8fafc'; // Tailwind slate-50
@@ -260,7 +260,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   // 強度からテキスト色を計算する関数（暗い背景には明るい文字）
   const getTextColor = (intensity: number, isBeforeRelease: boolean): string => {
     if (isBeforeRelease) {
-      return '#94a3b8'; // Tailwind slate-400 (グレーアウト表示)
+      return '#334155'; // Tailwind slate-700 (より濃いテキスト色)
     }
     return intensity > 50 ? 'white' : '#1e293b'; // > 50% は白, それ以外は slate-800
   };
@@ -273,7 +273,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     const displayCount = Math.min(count, 10);
     
     // ドットの色
-    const dotColor = isBeforeRelease ? 'text-slate-300' : 'text-white';
+    const dotColor = isBeforeRelease ? 'text-slate-600' : 'text-white';
     
     // 1個または2個の場合は1段に表示
     if (displayCount <= 2) {
@@ -431,8 +431,8 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       
       {/* ヒートマップの凡例 */}
       <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="px-2 py-1 bg-slate-100 border border-slate-200 text-slate-400 rounded">リリース前</span>
+        <div className="flex items-center gap-2 text-xs text-gray-600">
+          <span className="px-2 py-1 bg-slate-300 border border-slate-400 text-slate-700 rounded font-medium">リリース前</span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -490,20 +490,32 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                   </span>
                 </td>
                 <td 
-                  className="sticky left-[90px] z-10 py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 min-w-[180px]"
+                  className="sticky left-[90px] z-10 py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 min-w-[200px]"
                   style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
                   onClick={() => router.push(`/songs/${row.song.songId}`)}
                 >
                   <div className="max-w-xs">
-                    <div className="truncate flex items-center gap-1">
+                    {/* 曲名 */}
+                    <div className="font-medium truncate text-purple-800">
                       {row.song.title}
-                      {row.releaseYear && (
-                        <span className="text-xs text-gray-500">({row.releaseYear})</span>
-                      )}
                     </div>
+                    
+                    {/* 初リリース年 */}
+                    {row.releaseYear && (
+                      <div className="text-xs text-gray-600">
+                        {row.releaseYear}
+                      </div>
+                    )}
+                    
+                    {/* 初リリース時のディスコグラフィ名とカテゴリ */}
                     {row.song.album && (
                       <div className="text-xs text-gray-500 truncate">
                         {row.song.album}
+                        {row.song.firstRelease?.category && (
+                          <span className="text-gray-400">
+                            （{row.song.firstRelease.category}）
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

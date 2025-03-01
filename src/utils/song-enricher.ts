@@ -116,17 +116,13 @@ function parseTracks(data: string): Array<{
  */
 export async function analyzeSongReleaseHistory(songs: Song[]): Promise<Song[]> {
   try {
-    // 収録曲データを読み込む
-    const tracksPath = path.join(process.cwd(), 'data', 'tracks.txt');
-    const tracksText = await fs.readFile(tracksPath, 'utf8');
-    const tracks = parseTracks(tracksText);
+    // 収録曲データとディスコグラフィデータを読み込む
+    const tracksText = await fs.readFile(path.join(process.cwd(), 'data', 'tracks.txt'), 'utf8');
+    const discographyText = await fs.readFile(path.join(process.cwd(), 'data', 'discography.txt'), 'utf8');
     
-    // ディスコグラフィを読み込む
-    const discographyPath = path.join(process.cwd(), 'data', 'discography.txt');
-    const discographyText = await fs.readFile(discographyPath, 'utf8');
+    const tracks = parseTracks(tracksText);
     const albums = parseDiscography(discographyText);
     
-    // 曲ごとの初リリース情報とすべての収録作品を計算
     return songs.map(song => {
       // この曲名が含まれる全トラック
       const songTracks = tracks.filter(track => track.title === song.title);
@@ -134,52 +130,69 @@ export async function analyzeSongReleaseHistory(songs: Song[]): Promise<Song[]> 
       if (songTracks.length === 0) {
         return song;
       }
-      
+
       // 各トラックのアルバム情報とリリース日を取得
       const trackDetails = songTracks.map(track => {
         const albumInfo = albums.find(album => album.title === track.album);
         return {
           album: track.album,
           releaseDate: albumInfo?.releaseDate || '',
+          releaseYear: albumInfo?.releaseDate ? 
+            new Date(albumInfo.releaseDate).getFullYear() : 9999,
           category: albumInfo?.category || '',
           subCategory: albumInfo?.subCategory || ''
         };
       });
-      
-      // リリース日でソート（古い順）
-      trackDetails.sort((a, b) => {
-        if (!a.releaseDate) return 1;
-        if (!b.releaseDate) return -1;
-        return new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime();
-      });
-      
-      // 初回リリースの情報
-      const firstRelease = trackDetails[0];
-      
+
+      // まず同じ年のリリースがあるか確認
+      const uniqueYears = [...new Set(trackDetails
+        .filter(t => t.releaseYear !== 9999)
+        .map(t => t.releaseYear))];
+
+      let firstRelease;
+
+      if (uniqueYears.length > 0) {
+        // 最も古い年を取得
+        const earliestYear = Math.min(...uniqueYears);
+        
+        // その年のリリースをフィルタリング
+        const releasesInEarliestYear = trackDetails.filter(t => 
+          t.releaseYear === earliestYear
+        );
+        
+        // 同じ年にシングルとアルバムがある場合は、シングルを優先
+        const singlesInEarliestYear = releasesInEarliestYear.filter(t => 
+          t.category === 'シングル'
+        );
+        
+        if (singlesInEarliestYear.length > 0) {
+          // シングルの中で最初のものを選択
+          firstRelease = singlesInEarliestYear[0];
+        } else {
+          // シングルがなければそのまま最初のリリースを使用
+          firstRelease = releasesInEarliestYear[0];
+        }
+      } else {
+        // 年の情報がない場合は単純に最初のリリースを使用
+        firstRelease = trackDetails[0];
+      }
+
       // すべての収録作品のリスト（重複除去）
       const appearsOn = Array.from(new Set(trackDetails.map(t => t.album)));
-      
-      // シングル曲かどうかの判定（カテゴリが「シングル」のリリースに含まれているか）
+
+      // シングル曲かどうかの判定
       const isSingle = trackDetails.some(t => t.category === 'シングル');
-      
-      // オリジナルアルバム（最初のアルバム、ベスト盤やシングルコレクション以外）
-      const originalAlbumTrack = trackDetails.find(t => 
-        t.category === 'アルバム' && t.subCategory === 'メジャー'
-      );
-      
+
       return {
         ...song,
-        // すでに設定されている場合は上書きしない
-        album: song.album || firstRelease.album,
-        releaseDate: song.releaseDate || firstRelease.releaseDate,
+        // 初リリース情報を優先して設定
+        album: firstRelease.album,
+        releaseDate: firstRelease.releaseDate,
         
         // 追加情報
         firstRelease: firstRelease,
         isSingle: isSingle,
-        appearsOn: appearsOn,
-        
-        // オリジナルアルバム（最初のアルバム、ベスト盤やシングルコレクション以外）
-        originalAlbum: originalAlbumTrack?.album || firstRelease.album
+        appearsOn: appearsOn
       };
     });
   } catch (error) {

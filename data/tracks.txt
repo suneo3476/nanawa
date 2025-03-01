@@ -31,8 +31,8 @@ GIRLIE	犬になる	4
 桜の木の下	傷跡	8
 桜の木の下	桃色	6
 桜の木の下	二人の形	5
-桜の木の下	恋愛ジャンキー（えせボーナストラックちっく）	11
-夏服	be master of  life	2
+桜の木の下	恋愛ジャンキー	11
+夏服	be master of life	2
 夏服	September	7
 夏服	アスパラ	9
 夏服	ボーイフレンド	10
@@ -53,7 +53,7 @@ GIRLIE	犬になる	4
 秋 そばにいるよ	今度までには	7
 秋 そばにいるよ	心に乙女	13
 秋 そばにいるよ	赤いランプ	2
-秋 そばにいるよ	相合傘（汗かきMix）	10
+秋 そばにいるよ	相合傘（汗かきmix）	10
 秋 そばにいるよ	鳩になりたい	5
 秋 そばにいるよ	木星	12
 秋 そばにいるよ	陽と陰	4
@@ -148,7 +148,7 @@ BABY	戻れない明日	11
 泡のような愛だった	卒業式	13
 泡のような愛だった	大切な人	11
 泡のような愛だった	透明ドロップ	9
-泡のような愛だった	明日の詩	1
+泡のような愛だった	明日の歌	1
 泡のような愛だった	遊園地	8
 May Dream	あたしの向こう	2
 May Dream	かけらの心	9
@@ -215,7 +215,7 @@ May Dream	冷凍便	3
 残心残暑	アンコール	11
 残心残暑	よるのうみ	12
 残心残暑	赤い手で	13
-まとめⅠ	be master of  life	10
+まとめⅠ	be master of life	10
 まとめⅠ	milk	1
 まとめⅠ	えりあし	16
 まとめⅠ	カブトムシ	4
@@ -247,62 +247,62 @@ May Dream	冷凍便	3
 まとめⅡ	天の川	10
 まとめⅡ	二人	3
 まとめⅡ	帽子と水着と水平線	12
-Aikoの詩。Disc-2	4月の雨	9
-Aikoの詩。Disc-4	Do you think about me?	4
-Aikoの詩。Disc-4	I'm feeling blue	11
-Aikoの詩。Disc-1	KissHug	2
-Aikoの詩。Disc-3	Loveletter	13
-Aikoの詩。Disc-2	milk	8
-Aikoの詩。Disc-1	あした	10
-Aikoの詩。Disc-3	あたしの向こう	1
-Aikoの詩。Disc-3	あなたと握手	6
-Aikoの詩。Disc-3	アンドロメダ	7
-Aikoの詩。Disc-2	えりあし	1
-Aikoの詩。Disc-3	おやすみなさい	10
-Aikoの詩。Disc-1	かばん	3
-Aikoの詩。Disc-3	カブトムシ	14
-Aikoの詩。Disc-4	キスでおこして	5
-Aikoの詩。Disc-2	キラキラ	11
-Aikoの詩。Disc-4	ココア	12
-Aikoの詩。Disc-4	こんぺいとう	3
-Aikoの詩。Disc-1	シアワセ	7
-Aikoの詩。Disc-3	スター	5
-Aikoの詩。Disc-1	ずっと	9
-Aikoの詩。Disc-1	ストロー	14
-Aikoの詩。Disc-4	そんな話	6
-Aikoの詩。Disc-4	テレビゲーム	9
-Aikoの詩。Disc-4	どろぼう	8
-Aikoの詩。Disc-3	ナキ・ムシ	2
-Aikoの詩。Disc-4	ぬけがら	10
-Aikoの詩。Disc-1	プラマイ	12
-Aikoの詩。Disc-2	ボーイフレンド	14
-Aikoの詩。Disc-2	ホーム	12
-Aikoの詩。Disc-2	もっと	3
-Aikoの詩。Disc-2	ロージー	10
-Aikoの詩。Disc-1	雲は白リンゴは赤	11
-Aikoの詩。Disc-3	横顔	8
-Aikoの詩。Disc-1	花火	1
-Aikoの詩。Disc-1	花風	8
-Aikoの詩。Disc-4	甘い絨毯	14
-Aikoの詩。Disc-3	君の隣	11
-Aikoの詩。Disc-2	向かいあわせ	7
-Aikoの詩。Disc-2	今度までには	4
-Aikoの詩。Disc-2	桜の時	6
-Aikoの詩。Disc-3	三国駅	12
-Aikoの詩。Disc-1	初恋	6
-Aikoの詩。Disc-1	星のない世界	4
-Aikoの詩。Disc-4	舌打ち	13
-Aikoの詩。Disc-4	前ならえ。	7
-Aikoの詩。Disc-2	嘆きのキス	13
-Aikoの詩。Disc-3	蝶々結び	4
-Aikoの詩。Disc-2	二人	2
-Aikoの詩。Disc-4	未来を拾いに	1
-Aikoの詩。Disc-1	夢見る隙間	5
-Aikoの詩。Disc-1	戻れない明日	13
-Aikoの詩。Disc-3	予告	3
-Aikoの詩。Disc-4	陽と陰	2
-Aikoの詩。Disc-3	恋のスーパーボール	9
-Aikoの詩。Disc-2	恋をしたのは	5
+aikoの詩。Disc-2	4月の雨	9
+aikoの詩。Disc-4	Do you think about me?	4
+aikoの詩。Disc-4	I'm feeling blue	11
+aikoの詩。Disc-1	KissHug	2
+aikoの詩。Disc-3	Loveletter	13
+aikoの詩。Disc-2	milk	8
+aikoの詩。Disc-1	あした	10
+aikoの詩。Disc-3	あたしの向こう	1
+aikoの詩。Disc-3	あなたと握手	6
+aikoの詩。Disc-3	アンドロメダ	7
+aikoの詩。Disc-2	えりあし	1
+aikoの詩。Disc-3	おやすみなさい	10
+aikoの詩。Disc-1	かばん	3
+aikoの詩。Disc-3	カブトムシ	14
+aikoの詩。Disc-4	キスでおこして	5
+aikoの詩。Disc-2	キラキラ	11
+aikoの詩。Disc-4	ココア	12
+aikoの詩。Disc-4	こんぺいとう	3
+aikoの詩。Disc-1	シアワセ	7
+aikoの詩。Disc-3	スター	5
+aikoの詩。Disc-1	ずっと	9
+aikoの詩。Disc-1	ストロー	14
+aikoの詩。Disc-4	そんな話	6
+aikoの詩。Disc-4	テレビゲーム	9
+aikoの詩。Disc-4	どろぼう	8
+aikoの詩。Disc-3	ナキ・ムシ	2
+aikoの詩。Disc-4	ぬけがら	10
+aikoの詩。Disc-1	プラマイ	12
+aikoの詩。Disc-2	ボーイフレンド	14
+aikoの詩。Disc-2	ホーム	12
+aikoの詩。Disc-2	もっと	3
+aikoの詩。Disc-2	ロージー	10
+aikoの詩。Disc-1	雲は白リンゴは赤	11
+aikoの詩。Disc-3	横顔	8
+aikoの詩。Disc-1	花火	1
+aikoの詩。Disc-1	花風	8
+aikoの詩。Disc-4	甘い絨毯	14
+aikoの詩。Disc-3	君の隣	11
+aikoの詩。Disc-2	向かいあわせ	7
+aikoの詩。Disc-2	今度までには	4
+aikoの詩。Disc-2	桜の時	6
+aikoの詩。Disc-3	三国駅	12
+aikoの詩。Disc-1	初恋	6
+aikoの詩。Disc-1	星のない世界	4
+aikoの詩。Disc-4	舌打ち	13
+aikoの詩。Disc-4	前ならえ。	7
+aikoの詩。Disc-2	嘆きのキス	13
+aikoの詩。Disc-3	蝶々結び	4
+aikoの詩。Disc-2	二人	2
+aikoの詩。Disc-4	未来を拾いに	1
+aikoの詩。Disc-1	夢見る隙間	5
+aikoの詩。Disc-1	戻れない明日	13
+aikoの詩。Disc-3	予告	3
+aikoの詩。Disc-4	陽と陰	2
+aikoの詩。Disc-3	恋のスーパーボール	9
+aikoの詩。Disc-2	恋をしたのは	5
 あした	I'm feeling blue	2
 あした	あした	1
 ナキ・ムシ	ナキ・ムシ	1
@@ -432,6 +432,9 @@ Loveletter／4月の雨	何処へでも行く	4
 果てしない二人	夏恋のライフ	2
 果てしない二人	果てしない二人	1
 果てしない二人	号泣中	3
+相思相愛	相思相愛	1
+相思相愛	まさか夢	2
+相思相愛	あなたは優しい	3
 ４月の雨	４月の雨	1
 愛した日	愛した日	1
 ねがう夜	ねがう夜	1
