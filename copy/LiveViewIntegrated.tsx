@@ -1,6 +1,7 @@
+// src/components/LiveViewIntegrated/LiveViewIntegrated.tsx
+
 'use client';
 
-// src/components/LiveViewIntegrated/LiveViewIntegrated.tsx
 import React, { useState, useEffect } from 'react';
 import { Calendar, List, SlidersHorizontal, Search } from 'lucide-react';
 import { LiveTimeline } from '@/components/LiveTimeline';

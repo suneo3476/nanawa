@@ -30,7 +30,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>('lastPlayed');
   const [songLimit, setSongLimit] = useState(200);
   const [yearRange, setYearRange] = useState<{ start: number; end: number }>({
-    start: 2003,
+    start: 2003, 
     end: new Date().getFullYear(),
   });
   const [selectedPeriod, setSelectedPeriod] = useState<{
@@ -457,21 +457,22 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
         </div>
       </div>
       
-      {/* ヒートマップ本体 */}
-      <div className="overflow-x-auto px-2">
-        <table className="min-w-full border-collapse">
+      {/* モバイル最適化したヒートマップテーブル */}
+      <div className="overflow-auto px-2">
+        <table className="min-w-full border-collapse heatmap-table">
           <thead>
-            <tr>
-              <th className="bg-gray-50 sticky left-0 z-20 text-center py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 whitespace-nowrap min-w-[90px]">
-                演奏回数
+            <tr className="sticky-header">
+              <th className="bg-gray-50 sticky top-0 left-0 z-30 text-center py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 whitespace-nowrap min-w-[180px] song-info-column">
+                <span className="md:hidden">曲情報</span>
+                <span className="hidden md:inline">演奏回数</span>
               </th>
-              <th className="bg-gray-50 sticky left-[90px] z-20 text-left py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 min-w-[180px]">
+              <th className="bg-gray-50 sticky top-0 left-[90px] z-30 text-left py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 min-w-[180px] hidden md:table-cell">
                 曲名
               </th>
               {heatmapData.length > 0 && heatmapData[0].periods.map((period, index) => (
                 <th 
                   key={index}
-                  className="bg-gray-50 py-3 px-3 border-b border-gray-200 font-medium text-gray-700 text-center whitespace-nowrap"
+                  className="bg-gray-50 sticky top-0 z-20 py-3 px-3 border-b border-gray-200 font-medium text-gray-700 text-center whitespace-nowrap year-column"
                 >
                   {period.period}
                 </th>
@@ -482,15 +483,41 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
             {heatmapData.map((row, rowIndex) => (
               <tr key={row.song.songId} className={rowIndex % 2 === 0 ? '' : 'bg-gray-50'}>
                 <td 
-                  className="sticky left-0 z-10 py-4 px-3 border-b border-r border-gray-200 text-center font-medium min-w-[90px]"
+                  className="sticky left-0 z-10 py-3 px-3 border-b border-r border-gray-200 song-info-column"
                   style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
                 >
-                  <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-1.5 rounded-full">
-                    {row.totalCount}回
-                  </span>
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/songs/${row.song.songId}`)}
+                  >
+                    {/* モバイル表示時は情報を縦に並べてコンパクトに */}
+                    <div className="md:hidden space-y-1">
+                      <div className="flex justify-center">
+                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                          {row.totalCount}回
+                        </span>
+                      </div>
+                      <div className="font-medium text-purple-800 text-center truncate">{row.song.title}</div>
+                      {row.releaseYear && (
+                        <div className="text-xs text-gray-600 text-center">{row.releaseYear}</div>
+                      )}
+                      {row.song.album && (
+                        <div className="text-xs text-gray-500 text-center truncate">
+                          {row.song.album}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* デスクトップ表示時は演奏回数のみ */}
+                    <div className="hidden md:flex md:justify-center">
+                      <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-1.5 rounded-full">
+                        {row.totalCount}回
+                      </span>
+                    </div>
+                  </div>
                 </td>
                 <td 
-                  className="sticky left-[90px] z-10 py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 min-w-[200px]"
+                  className="sticky left-[90px] z-10 py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 min-w-[200px] hidden md:table-cell"
                   style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
                   onClick={() => router.push(`/songs/${row.song.songId}`)}
                 >
@@ -523,7 +550,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                 {row.periods.map((period, index) => (
                   <td 
                     key={index}
-                    className={`py-4 px-3 border-b border-gray-200 text-center ${period.count > 0 ? 'hover:transform hover:scale-110 cursor-pointer transition-all' : ''}`}
+                    className={`py-4 px-3 border-b border-gray-200 text-center ${period.count > 0 ? 'hover:transform hover:scale-110 cursor-pointer transition-all' : ''} year-column`}
                     style={{ 
                       backgroundColor: getBackgroundColor(period.intensity, period.isBeforeRelease),
                       color: getTextColor(period.intensity, period.isBeforeRelease)
@@ -606,6 +633,42 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
           </div>
         </div>
       )}
+      
+      {/* スタイルを追加 */}
+      <style jsx>{`
+        .sticky-header th {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .heatmap-table th.sticky, .heatmap-table td.sticky {
+          position: sticky;
+          left: 0;
+          z-index: 10;
+        }
+        
+        /* テーブルコンテナに高さ制限を設定し、スクロール可能に */
+        .overflow-auto {
+          max-height: 70vh;
+          scrollbar-width: thin;
+        }
+        
+        /* モバイル向けスタイル調整 */
+        @media (max-width: 768px) {
+          .song-info-column {
+            width: 110px;
+            max-width: 110px;
+            min-width: 110px;
+          }
+          
+          .year-column {
+            width: 60px;
+            min-width: 60px;
+          }
+        }
+      `}</style>
     </div>
   );
 };

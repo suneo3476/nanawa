@@ -1,3 +1,5 @@
+// src/components/LiveTimeline/LiveTimeline.tsx
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';

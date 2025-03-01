@@ -1,3 +1,5 @@
+// src/components/Header/Header.tsx
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -81,7 +83,7 @@ export const Header = () => {
                       : 'hover:bg-white/20 text-white'
                   }`}
                 >
-                  <span>ライブ</span>
+                  <span>出演ライブ</span>
                 </Link>
                 
                 {/* ビュー切替サブメニュー */}
@@ -115,7 +117,7 @@ export const Header = () => {
                       : 'hover:bg-white/20 text-white'
                   }`}
                 >
-                  楽曲一覧
+                  演奏曲
                 </Link>
               </li>
               <li>
@@ -139,7 +141,7 @@ export const Header = () => {
                       : 'hover:bg-white/20 text-white'
                   }`}
                 >
-                  演奏統計
+                  アクティビティ
                 </Link>
               </li>
               <li>

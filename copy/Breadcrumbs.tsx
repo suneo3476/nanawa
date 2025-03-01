@@ -1,3 +1,5 @@
+// src/components/Breadcrumbs/Breadcrumbs.tsx
+
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';

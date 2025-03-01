@@ -1,5 +1,6 @@
 .
 ├── README.md
+├── add-filename-comments.sh
 ├── copytree.command
 ├── data
 │   ├── discography.txt
@@ -9,7 +10,6 @@
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── jest.setup.ts
-├── nanawa-archive.zip
 ├── next-env.d.ts
 ├── next.config.ts
 ├── package-lock.json
@@ -22,6 +22,8 @@
 │   ├── next.svg
 │   ├── vercel.svg
 │   └── window.svg
+├── scripts
+│   └── migrate-data.ts
 ├── src
 │   ├── app
 │   │   ├── api
@@ -77,14 +79,11 @@
 │   │   │   └── index.ts
 │   │   ├── Header
 │   │   │   ├── Header.tsx
-│   │   │   ├── __tests__
-│   │   │   │   └── Header.test.tsx
 │   │   │   └── index.ts
 │   │   ├── LiveCard
 │   │   │   └── LiveCard.tsx
 │   │   ├── LiveList
-│   │   │   ├── LiveListClient.tsx
-│   │   │   └── __tests__
+│   │   │   └── LiveListClient.tsx
 │   │   ├── LiveTimeline
 │   │   │   ├── LiveTimeline.tsx
 │   │   │   └── index.ts
@@ -97,8 +96,7 @@
 │   │   ├── SetlistPreview
 │   │   │   └── SetlistPreview.tsx
 │   │   ├── SetlistView
-│   │   │   ├── SetlistView.tsx
-│   │   │   └── __tests__
+│   │   │   └── SetlistView.tsx
 │   │   ├── Settings
 │   │   │   ├── SettingsContext.tsx
 │   │   │   └── index.ts
@@ -108,8 +106,6 @@
 │   │       ├── StatsDashboard.tsx
 │   │       └── index.ts
 │   ├── types
-│   │   ├── __tests__
-│   │   │   └── live.test.ts
 │   │   ├── live.ts
 │   │   ├── setlist.ts
 │   │   └── song.ts
@@ -122,4 +118,4 @@
 ├── tree.txt
 └── tsconfig.json
 
-39 directories, 84 files
+36 directories, 83 files

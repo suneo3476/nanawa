@@ -1,4 +1,4 @@
-import { Header } from '@/components/Header/Header';
+// src/app/stats/loading.tsx
 
 export default function StatsLoading() {
   return (
