@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/songs/page.tsx
+
 import { SongsClient } from './SongsClient';
 import type { Song } from '@/types/song';
 
@@ -80,7 +81,7 @@ export default async function SongsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">楽曲一覧</h1>
+        <h1 className="text-3xl font-bold mb-8">演奏曲</h1>
         <SongsClient songs={songsWithStats} />
       </main>
     </div>

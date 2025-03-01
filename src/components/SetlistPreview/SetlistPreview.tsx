@@ -1,3 +1,5 @@
+// src/components/SetlistPreview/SetlistPreview.tsx
+
 'use client';
 
 import React from 'react';

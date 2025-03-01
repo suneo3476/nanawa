@@ -1,3 +1,5 @@
+// src/app/songs/SongsClient.tsx
+
 'use client';
 
 import { useRouter } from 'next/navigation';

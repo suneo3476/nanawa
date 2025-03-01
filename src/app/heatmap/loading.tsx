@@ -1,4 +1,4 @@
-import { Header } from '@/components/Header/Header';
+// src/app/heatmap/loading.tsx
 
 export default function HeatmapLoading() {
   return (

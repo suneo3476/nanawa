@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/stats/page.tsx
+
 import { StatsDashboard } from '@/components/StatsDashboard';
 import { fetchLives, fetchSongs, fetchSetlists } from '@/utils/api';
 

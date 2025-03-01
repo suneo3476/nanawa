@@ -1,4 +1,4 @@
-import { Header } from '@/components/Header/Header';
+// src/app/search/loading.tsx
 
 export default function SearchLoading() {
   return (

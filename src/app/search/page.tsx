@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/search/page.tsx
+
 import AdvancedSearch from '@/components/AdvancedSearch/AdvancedSearch';
 import { fetchLives, fetchSongs, fetchSetlists } from '@/utils/api';
 

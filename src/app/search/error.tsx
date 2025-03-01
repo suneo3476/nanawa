@@ -1,8 +1,9 @@
+// src/app/search/error.tsx
+
 'use client';
 
 import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Header } from '@/components/Header/Header';
 
 export default function SearchError({
   error,

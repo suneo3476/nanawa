@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/page.tsx
+
 import { LiveListClient } from '@/components/LiveList/LiveListClient';
 import type { Live } from '@/types/live';
 

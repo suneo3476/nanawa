@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/not-found.tsx
+
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 

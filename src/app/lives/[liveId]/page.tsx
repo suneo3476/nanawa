@@ -1,5 +1,5 @@
 // src/app/lives/[liveId]/page.tsx
-import { Header } from '@/components/Header/Header';
+
 import { notFound } from 'next/navigation';
 import { CalendarDays, MapPin, MessageCircle, Music } from 'lucide-react';
 import Link from 'next/link';

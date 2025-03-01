@@ -1,4 +1,5 @@
-// src/app/songs/[songId]/page.tsx (必要に応じて修正)
+// src/app/songs/[songId]/page.tsx
+
 import React from 'react';
 import { fetchSongData } from '@/utils/api'; // APIから曲データを取得する関数
 

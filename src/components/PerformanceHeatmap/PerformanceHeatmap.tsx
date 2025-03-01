@@ -1,7 +1,10 @@
+// src/components/PerformanceHeatmap/PerformanceHeatmap.tsx
+
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, Calendar, Music, Filter } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { ChevronRight, Calendar, Music, Filter, X, MapPin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { Live } from '@/types/live';
 import type { Song } from '@/types/song';
 import type { SetlistItem } from '@/types/setlist';
@@ -13,13 +16,15 @@ interface PerformanceHeatmapProps {
 }
 
 type TimeUnit = 'year' | 'quarter';
-type SortOption = 'frequency' | 'name' | 'album';
+type SortOption = 'frequency' | 'name' | 'album' | 'lastPlayed' | 'release';
 
 export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   lives,
   songs,
   setlists,
 }) => {
+  const router = useRouter();
+  
   // 状態管理
   const [timeUnit, setTimeUnit] = useState<TimeUnit>('year');
   const [sortBy, setSortBy] = useState<SortOption>('frequency');
@@ -28,8 +33,13 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     start: 2003,
     end: new Date().getFullYear(),
   });
+  const [selectedPeriod, setSelectedPeriod] = useState<{
+    song: Song;
+    period: string;
+    lives: Live[];
+  } | null>(null);
 
-  // 全期間の計算
+  // 全期間の計算（降順ソート - 新しい順）
   const allPeriods = useMemo(() => {
     const periods = new Set<string>();
     
@@ -45,8 +55,23 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       }
     });
     
-    return Array.from(periods).sort();
+    // 降順ソート（新しい順）
+    return Array.from(periods).sort((a, b) => b.localeCompare(a));
   }, [lives, timeUnit]);
+
+  // 最終演奏日を計算する関数
+  const getLastPlayedDate = useCallback((songId: string): Date | null => {
+    const songSetlists = setlists.filter(item => item.songId === songId);
+    if (songSetlists.length === 0) return null;
+    
+    const liveDates = songSetlists.map(item => {
+      const live = lives.find(l => l.liveId === item.liveId);
+      return live ? new Date(live.date) : null;
+    }).filter(Boolean) as Date[];
+    
+    if (liveDates.length === 0) return null;
+    return new Date(Math.max(...liveDates.map(d => d.getTime())));
+  }, [setlists, lives]);
 
   // 曲ごとの期間別演奏回数データの計算
   const heatmapData = useMemo(() => {
@@ -120,13 +145,41 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
         if (!b.album) return -1;
         return a.album.localeCompare(b.album);
       });
+    } else if (sortBy === 'lastPlayed') {
+      sortedSongs.sort((a, b) => {
+        const dateA = getLastPlayedDate(a.songId);
+        const dateB = getLastPlayedDate(b.songId);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.getTime() - dateA.getTime();
+      });
+    } else if (sortBy === 'release') {
+      // リリース年でソート（古い順）
+      sortedSongs.sort((a, b) => {
+        if (!a.releaseDate) return 1;
+        if (!b.releaseDate) return -1;
+        return new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime();
+      });
     }
     
-    // 表示する曲数を制限
-    sortedSongs = sortedSongs.slice(0, songLimit);
+    // 表示する曲数を制限（songLimitが200以上の場合は全曲表示）
+    if (songLimit < 200) {
+      sortedSongs = sortedSongs.slice(0, songLimit);
+    }
     
     // ヒートマップデータを構築
     return sortedSongs.map(song => {
+      // 曲のリリース年を取得（YYYY-MM-DD または YYYY形式の場合に対応）
+      let releaseYear: number | null = null;
+      if (song.releaseDate) {
+        try {
+          releaseYear = new Date(song.releaseDate).getFullYear();
+        } catch (e) {
+          console.warn(`Invalid release date for ${song.title}: ${song.releaseDate}`);
+        }
+      }
+
       const periodData = allPeriods
         .filter(period => {
           // 年範囲でフィルタリング
@@ -140,20 +193,32 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
         })
         .map(period => {
           const count = songPeriodCounts[song.songId]?.[period] || 0;
+          
+          // 期間が曲のリリース前かどうかを判定
+          let isBeforeRelease = false;
+          if (releaseYear !== null) {
+            const periodYear = timeUnit === 'year' 
+                              ? parseInt(period) 
+                              : parseInt(period.split('-')[0]);
+            isBeforeRelease = periodYear < releaseYear;
+          }
+          
           return {
             period,
             count,
-            intensity: maxCount > 0 ? Math.round((count / maxCount) * 100) : 0
+            intensity: maxCount > 0 ? Math.round((count / maxCount) * 100) : 0,
+            isBeforeRelease
           };
         });
       
       return {
         song,
         periods: periodData,
-        totalCount: songTotalCounts[song.songId] || 0
+        totalCount: songTotalCounts[song.songId] || 0,
+        releaseYear
       };
     });
-  }, [lives, songs, setlists, timeUnit, sortBy, songLimit, yearRange, allPeriods]);
+  }, [lives, songs, setlists, timeUnit, sortBy, songLimit, yearRange, allPeriods, getLastPlayedDate]);
 
   // マウント時に初期設定
   useEffect(() => {
@@ -167,7 +232,12 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   }, [lives]);
 
   // 強度から背景色を計算する関数
-  const getBackgroundColor = (intensity: number): string => {
+  const getBackgroundColor = (intensity: number, isBeforeRelease: boolean): string => {
+    // リリース前の場合は薄いグレー表示
+    if (isBeforeRelease) {
+      return '#f1f5f9'; // Tailwind slate-100
+    }
+    
     if (intensity === 0) return '#f8fafc'; // Tailwind slate-50
     
     // 紫→青のグラデーション (Tailwind colors)
@@ -188,8 +258,91 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   };
 
   // 強度からテキスト色を計算する関数（暗い背景には明るい文字）
-  const getTextColor = (intensity: number): string => {
+  const getTextColor = (intensity: number, isBeforeRelease: boolean): string => {
+    if (isBeforeRelease) {
+      return '#94a3b8'; // Tailwind slate-400 (グレーアウト表示)
+    }
     return intensity > 50 ? 'white' : '#1e293b'; // > 50% は白, それ以外は slate-800
+  };
+
+  // 回数に応じたドットの表示を生成する関数
+  const getDotsForCount = (count: number, isBeforeRelease: boolean): React.ReactNode => {
+    if (count === 0) return '';
+    
+    // 最大10個まで対応
+    const displayCount = Math.min(count, 10);
+    
+    // ドットの色
+    const dotColor = isBeforeRelease ? 'text-slate-300' : 'text-white';
+    
+    // 1個または2個の場合は1段に表示
+    if (displayCount <= 2) {
+      return (
+        <div className="flex justify-center gap-1">
+          {Array(displayCount).fill(0).map((_, i) => (
+            <span key={i} className={dotColor}>●</span>
+          ))}
+        </div>
+      );
+    }
+    
+    // 3個以上は2段に分けて表示
+    const topRow = Math.ceil(displayCount / 2); // 上段のドット数
+    const bottomRow = displayCount - topRow;    // 下段のドット数
+    
+    return (
+      <div>
+        <div className="flex justify-center gap-1">
+          {Array(topRow).fill(0).map((_, i) => (
+            <span key={`top-${i}`} className={dotColor}>●</span>
+          ))}
+        </div>
+        <div className="flex justify-center gap-1 mt-1">
+          {Array(bottomRow).fill(0).map((_, i) => (
+            <span key={`bottom-${i}`} className={dotColor}>●</span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // 日付をフォーマットする関数
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  };
+
+  // クリックしたセルの期間×曲のライブを検索するハンドラ
+  const handlePeriodClick = (song: Song, periodData: { period: string; count: number; isBeforeRelease?: boolean }) => {
+    if (periodData.count === 0) return;
+    
+    // この曲のこの期間に行われたライブを検索
+    const periodLives = lives.filter(live => {
+      const date = new Date(live.date);
+      const year = date.getFullYear().toString();
+      
+      // 期間判定（年単位または四半期単位）
+      let matchesPeriod;
+      if (timeUnit === 'year') {
+        matchesPeriod = year === periodData.period;
+      } else {
+        const quarter = Math.floor(date.getMonth() / 3) + 1;
+        matchesPeriod = `${year}-Q${quarter}` === periodData.period;
+      }
+      
+      if (!matchesPeriod) return false;
+      
+      // この曲が演奏されたライブか確認
+      return setlists.some(item => 
+        item.liveId === live.liveId && item.songId === song.songId
+      );
+    });
+    
+    setSelectedPeriod({
+      song,
+      period: periodData.period,
+      lives: periodLives
+    });
   };
 
   return (
@@ -226,8 +379,9 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
           >
             <option value={10}>10曲</option>
             <option value={20}>20曲</option>
-            <option value={30}>30曲</option>
             <option value={50}>50曲</option>
+            <option value={100}>100曲</option>
+            <option value={200}>全曲表示</option>
           </select>
         </div>
         
@@ -245,6 +399,8 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
             <option value="frequency">演奏回数</option>
             <option value="name">曲名</option>
             <option value="album">アルバム</option>
+            <option value="lastPlayed">最終演奏日</option>
+            <option value="release">リリース年順</option>
           </select>
         </div>
         
@@ -274,37 +430,43 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       </div>
       
       {/* ヒートマップの凡例 */}
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <span className="text-xs text-gray-500">演奏回数:</span>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-slate-50 border border-slate-200"></div>
-          <span className="text-xs ml-1">0</span>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span className="px-2 py-1 bg-slate-100 border border-slate-200 text-slate-400 rounded">リリース前</span>
         </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-violet-200 border border-slate-200"></div>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-violet-400 border border-slate-200"></div>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-violet-600 border border-slate-200"></div>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-violet-800 border border-slate-200"></div>
-          <span className="text-xs ml-1">多</span>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">演奏回数:</span>
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-slate-50 border border-slate-200"></div>
+            <span className="text-xs ml-1">0</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-violet-200 border border-slate-200"></div>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-violet-400 border border-slate-200"></div>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-violet-600 border border-slate-200"></div>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-violet-800 border border-slate-200"></div>
+            <span className="text-xs ml-1">多</span>
+          </div>
         </div>
       </div>
       
       {/* ヒートマップ本体 */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto px-2">
         <table className="min-w-full border-collapse">
           <thead>
             <tr>
-              <th className="bg-gray-50 sticky left-0 z-10 text-left py-3 px-4 border-b border-gray-200 font-medium text-gray-700">
-                曲名
-              </th>
-              <th className="bg-gray-50 text-left py-3 px-4 border-b border-gray-200 font-medium text-gray-700 text-center whitespace-nowrap">
+              <th className="bg-gray-50 sticky left-0 z-20 text-center py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 whitespace-nowrap min-w-[90px]">
                 演奏回数
+              </th>
+              <th className="bg-gray-50 sticky left-[90px] z-20 text-left py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 min-w-[180px]">
+                曲名
               </th>
               {heatmapData.length > 0 && heatmapData[0].periods.map((period, index) => (
                 <th 
@@ -319,9 +481,26 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
           <tbody>
             {heatmapData.map((row, rowIndex) => (
               <tr key={row.song.songId} className={rowIndex % 2 === 0 ? '' : 'bg-gray-50'}>
-                <td className="sticky left-0 z-10 py-4 px-4 border-b border-gray-200 font-medium text-gray-900 bg-inherit">
+                <td 
+                  className="sticky left-0 z-10 py-4 px-3 border-b border-r border-gray-200 text-center font-medium min-w-[90px]"
+                  style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                >
+                  <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-1.5 rounded-full">
+                    {row.totalCount}回
+                  </span>
+                </td>
+                <td 
+                  className="sticky left-[90px] z-10 py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 min-w-[180px]"
+                  style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                  onClick={() => router.push(`/songs/${row.song.songId}`)}
+                >
                   <div className="max-w-xs">
-                    <div className="truncate">{row.song.title}</div>
+                    <div className="truncate flex items-center gap-1">
+                      {row.song.title}
+                      {row.releaseYear && (
+                        <span className="text-xs text-gray-500">({row.releaseYear})</span>
+                      )}
+                    </div>
                     {row.song.album && (
                       <div className="text-xs text-gray-500 truncate">
                         {row.song.album}
@@ -329,22 +508,23 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                     )}
                   </div>
                 </td>
-                <td className="py-4 px-3 border-b border-gray-200 text-center font-medium">
-                  <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full">
-                    {row.totalCount}回
-                  </span>
-                </td>
                 {row.periods.map((period, index) => (
                   <td 
                     key={index}
-                    className="py-4 px-3 border-b border-gray-200 text-center transition-all hover:transform hover:scale-110"
+                    className={`py-4 px-3 border-b border-gray-200 text-center ${period.count > 0 ? 'hover:transform hover:scale-110 cursor-pointer transition-all' : ''}`}
                     style={{ 
-                      backgroundColor: getBackgroundColor(period.intensity),
-                      color: getTextColor(period.intensity)
+                      backgroundColor: getBackgroundColor(period.intensity, period.isBeforeRelease),
+                      color: getTextColor(period.intensity, period.isBeforeRelease)
                     }}
-                    title={`${row.song.title} - ${period.period}: ${period.count}回演奏`}
+                    title={`${row.song.title} - ${period.period}: ${period.count}回演奏 ${period.isBeforeRelease ? '(リリース前)' : ''}`}
+                    onClick={() => period.count > 0 && handlePeriodClick(row.song, period)}
                   >
-                    {period.count > 0 ? period.count : ''}
+                    {period.count > 0 ? (
+                      <div className="flex flex-col items-center">
+                        {getDotsForCount(period.count, period.isBeforeRelease)}
+                        <div className="text-xs opacity-80 mt-1">({period.count})</div>
+                      </div>
+                    ) : ''}
                   </td>
                 ))}
               </tr>
@@ -353,10 +533,65 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
         </table>
       </div>
       
-      {/* データがないの場合 */}
+      {/* データがない場合 */}
       {heatmapData.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           表示するデータがありません
+        </div>
+      )}
+      
+      {/* ライブ一覧ポップアップ */}
+      {selectedPeriod && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            // オーバーレイ部分のクリックでのみ閉じる
+            if (e.target === e.currentTarget) {
+              setSelectedPeriod(null);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {selectedPeriod.song.title} - {selectedPeriod.period}
+                </h3>
+              </div>
+              
+              <p className="mb-4 text-gray-600">
+                この期間に演奏されたライブ {selectedPeriod.lives.length}件
+              </p>
+              
+              <div className="space-y-3">
+                {selectedPeriod.lives.map(live => (
+                  <div
+                    key={live.liveId}
+                    className="p-3 bg-gray-50 hover:bg-purple-100 active:bg-purple-200 rounded-lg cursor-pointer transition-all shadow-sm hover:shadow border border-gray-200 hover:border-purple-300 flex justify-between items-center"
+                    onClick={() => {
+                      router.push(`/lives/${live.liveId}`);
+                      setSelectedPeriod(null);
+                    }}
+                  >
+                    <div>
+                      <div className="font-medium">{live.name}</div>
+                      <div className="text-sm text-gray-600 flex items-center gap-4 mt-1">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          {formatDate(live.date)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={14} />
+                          {live.venue}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="text-purple-400" size={20} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,3 +1,5 @@
+// src/components/LiveList/LiveListClient.tsx
+
 'use client';
 
 import { LiveCard } from '../LiveCard/LiveCard';

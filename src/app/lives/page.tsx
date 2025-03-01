@@ -33,7 +33,7 @@ export default async function LivesPage() {
   
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">ライブ記録</h1>
+      <h1 className="text-3xl font-bold mb-6">出演ライブ</h1>
       
       <Suspense fallback={<div className="p-8 text-center">ライブデータを読み込み中...</div>}>
         <LiveViewIntegrated lives={livesWithSetlist} />

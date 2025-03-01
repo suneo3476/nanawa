@@ -1,3 +1,5 @@
+// src/app/api/lives/route.ts
+
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
@@ -12,10 +14,16 @@ export async function GET() {
     // データの変換
     const lives = parseLiveHistory(liveHistoryText);
     
-    // 日付でソート (最新順)
-    lives.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // JSON シリアライズ可能なオブジェクトに変換
+    const serializableLives = lives.map(live => ({
+      liveId: live.liveId,
+      name: live.name,
+      date: live.date,
+      venue: live.venue,
+      memo: live.memo || ''
+    }));
     
-    return NextResponse.json(lives);
+    return NextResponse.json(serializableLives);
   } catch (error) {
     console.error('Failed to load lives data:', error);
     return NextResponse.json(

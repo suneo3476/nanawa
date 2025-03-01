@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/heatmap/page.tsx
+
 import { PerformanceHeatmap } from '@/components/PerformanceHeatmap';
 import { fetchLives, fetchSongs, fetchSetlists } from '@/utils/api';
 

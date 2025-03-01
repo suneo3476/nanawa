@@ -1,5 +1,4 @@
 // src/app/lives/[liveId]/loading.tsx
-import { Header } from '@/components/Header/Header';
 
 export default function LiveDetailLoading() {
   return (

@@ -1,8 +1,9 @@
+// src/app/songs/[songId]/error.tsx
+
 'use client';
 
 import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Header } from '@/components/Header/Header';
 import Link from 'next/link';
 
 export default function SongDetailError({

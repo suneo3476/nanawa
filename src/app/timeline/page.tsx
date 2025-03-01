@@ -1,4 +1,5 @@
-// src/app/timeline/page.tsx
+// // src/app/timeline/page.tsx
+
 import { redirect } from 'next/navigation';
 
 // タイムライン単独ページへのアクセスをリダイレクト

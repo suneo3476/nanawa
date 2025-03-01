@@ -1,4 +1,4 @@
-import { Header } from '@/components/Header/Header';
+// src/app/songs/loading.tsx
 
 export default function SongsLoading() {
   return (
