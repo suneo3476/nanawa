@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronRight, Calendar, Music, Filter, X, MapPin } from 'lucide-react';
+import { ChevronRight, Calendar, Music, Filter, X, MapPin, ChevronDown, ChevronUp, Maximize, Minimize } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Live } from '@/types/live';
 import type { Song } from '@/types/song';
@@ -30,7 +30,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>('lastPlayed');
   const [songLimit, setSongLimit] = useState(200);
   const [yearRange, setYearRange] = useState<{ start: number; end: number }>({
-    start: 2003,
+    start: 2003, 
     end: new Date().getFullYear(),
   });
   const [selectedPeriod, setSelectedPeriod] = useState<{
@@ -38,6 +38,12 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     period: string;
     lives: Live[];
   } | null>(null);
+  
+  // 表示オプションの折りたたみ状態
+  const [isOptionsCollapsed, setIsOptionsCollapsed] = useState(true);
+  
+  // 曲情報のコンパクト表示モード
+  const [isCompactMode, setIsCompactMode] = useState(false);
 
   // 全期間の計算（降順ソート - 新しい順）
   const allPeriods = useMemo(() => {
@@ -345,133 +351,245 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     });
   };
 
+  // コンテナ高さの動的計算
+  const getHeatmapContainerStyle = () => {
+    // オプションパネルが開いているかどうかで高さを調整
+    const baseHeight = isOptionsCollapsed ? 'calc(100vh - 200px)' : 'calc(100vh - 380px)';
+    
+    return {
+      height: baseHeight,
+      minHeight: isOptionsCollapsed ? '500px' : '300px',
+    };
+  };
+
+  // 表示モード切替のショートカットキー設定とモバイル検出
+  useEffect(() => {
+    // キーボードショートカット設定
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrlキー + Shift + Cでコンパクトモード切替
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        setIsCompactMode(prev => !prev);
+      }
+    };
+    
+    // モバイル端末検出と初期設定
+    const checkIfMobile = () => {
+      const isMobile = window.innerWidth < 768;
+      setIsCompactMode(isMobile); // モバイルならコンパクトモードをデフォルトに
+    };
+    
+    // 初期チェック
+    checkIfMobile();
+    
+    // リサイズイベント設定
+    window.addEventListener('resize', checkIfMobile);
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // クリーンアップ
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">演奏頻度ヒートマップ</h2>
-      
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 時間単位コントロール */}
-        <div className="flex flex-col">
-          <label className="mb-2 text-sm font-medium text-gray-700 flex items-center gap-2">
-            <Calendar size={16} />
-            時間単位
-          </label>
-          <select
-            value={timeUnit}
-            onChange={(e) => setTimeUnit(e.target.value as TimeUnit)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value="year">年別</option>
-            <option value="quarter">四半期別</option>
-          </select>
+    <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col h-full overflow-hidden">
+      {/* 表示オプションのヘッダー（クリックで開閉） */}
+      <div 
+        className="flex items-center justify-between cursor-pointer mb-3 pb-2 border-b"
+        onClick={() => setIsOptionsCollapsed(!isOptionsCollapsed)}
+      >
+        <div className="font-medium flex items-center gap-2">
+          <Filter size={16} className="text-purple-500" />
+          <span>表示オプション</span>
         </div>
-        
-        {/* 表示曲数コントロール */}
-        <div className="flex flex-col">
-          <label className="mb-2 text-sm font-medium text-gray-700 flex items-center gap-2">
-            <Music size={16} />
-            表示曲数
-          </label>
-          <select
-            value={songLimit}
-            onChange={(e) => setSongLimit(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value={10}>10曲</option>
-            <option value={20}>20曲</option>
-            <option value={50}>50曲</option>
-            <option value={100}>100曲</option>
-            <option value={200}>全曲表示</option>
-          </select>
-        </div>
-        
-        {/* ソート順コントロール */}
-        <div className="flex flex-col">
-          <label className="mb-2 text-sm font-medium text-gray-700 flex items-center gap-2">
-            <Filter size={16} />
-            並び替え
-          </label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value="frequency">演奏回数</option>
-            <option value="name">曲名</option>
-            <option value="album">アルバム</option>
-            <option value="lastPlayed">最終演奏日</option>
-            <option value="release">リリース年順</option>
-          </select>
-        </div>
-        
-        {/* 年範囲コントロール */}
-        <div className="flex flex-col">
-          <label className="mb-2 text-sm font-medium text-gray-700">期間</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min={2003}
-              max={yearRange.end}
-              value={yearRange.start}
-              onChange={(e) => setYearRange({ ...yearRange, start: Number(e.target.value) })}
-              className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <span className="text-gray-500">～</span>
-            <input
-              type="number"
-              min={yearRange.start}
-              max={new Date().getFullYear()}
-              value={yearRange.end}
-              onChange={(e) => setYearRange({ ...yearRange, end: Number(e.target.value) })}
-              className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
+        <div>
+          {isOptionsCollapsed ? (
+            <ChevronDown size={16} className="text-gray-400" />
+          ) : (
+            <ChevronUp size={16} className="text-gray-400" />
+          )}
         </div>
       </div>
+      
+      {/* 表示オプションのコントロールパネル */}
+      {!isOptionsCollapsed && (
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+          {/* 時間単位コントロール */}
+          <div className="flex flex-col">
+            <label className="mb-1 text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Calendar size={16} className="text-purple-500" />
+              時間単位
+            </label>
+            <select
+              value={timeUnit}
+              onChange={(e) => setTimeUnit(e.target.value as TimeUnit)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="year">年別</option>
+              <option value="quarter">四半期別</option>
+            </select>
+          </div>
+          
+          {/* 表示曲数コントロール */}
+          <div className="flex flex-col">
+            <label className="mb-1 text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Music size={16} className="text-purple-500" />
+              表示曲数
+            </label>
+            <select
+              value={songLimit}
+              onChange={(e) => setSongLimit(Number(e.target.value))}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value={10}>10曲</option>
+              <option value={20}>20曲</option>
+              <option value={50}>50曲</option>
+              <option value={100}>100曲</option>
+              <option value={200}>全曲表示</option>
+            </select>
+          </div>
+          
+          {/* ソート順コントロール */}
+          <div className="flex flex-col">
+            <label className="mb-1 text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Filter size={16} className="text-purple-500" />
+              並び替え
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="frequency">演奏回数</option>
+              <option value="name">曲名</option>
+              <option value="album">アルバム</option>
+              <option value="lastPlayed">最終演奏日</option>
+              <option value="release">リリース年順</option>
+            </select>
+          </div>
+          
+          {/* 年範囲コントロール */}
+          <div className="flex flex-col">
+            <label className="mb-1 text-sm font-medium text-gray-700">期間</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={2003}
+                max={yearRange.end}
+                value={yearRange.start}
+                onChange={(e) => setYearRange({ ...yearRange, start: Number(e.target.value) })}
+                className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <span className="text-gray-500">～</span>
+              <input
+                type="number"
+                min={yearRange.start}
+                max={new Date().getFullYear()}
+                value={yearRange.end}
+                onChange={(e) => setYearRange({ ...yearRange, end: Number(e.target.value) })}
+                className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* ヒートマップの凡例 */}
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <span className="px-2 py-1 bg-slate-300 border border-slate-400 text-slate-700 rounded font-medium">リリース前</span>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-xs">
+        <div className="flex items-center gap-1 text-xs text-gray-600">
+          <span className="text-gray-500">リリース前：</span>
+          <div className="w-3 h-3 bg-slate-300 border border-slate-400"></div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">演奏回数:</span>
+        <div className="flex items-center gap-1">
+          <span className="text-gray-500 text-xs">演奏回数:</span>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-slate-50 border border-slate-200"></div>
-            <span className="text-xs ml-1">0</span>
+            <div className="w-3 h-3 bg-slate-50 border border-slate-200"></div>
+            <span className="text-xs ml-0.5">0</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-violet-200 border border-slate-200"></div>
+            <div className="w-3 h-3 bg-violet-200 border border-slate-200"></div>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-violet-400 border border-slate-200"></div>
+            <div className="w-3 h-3 bg-violet-400 border border-slate-200"></div>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-violet-600 border border-slate-200"></div>
+            <div className="w-3 h-3 bg-violet-600 border border-slate-200"></div>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-violet-800 border border-slate-200"></div>
-            <span className="text-xs ml-1">多</span>
+            <div className="w-3 h-3 bg-violet-800 border border-slate-200"></div>
+            <span className="text-xs ml-0.5">多</span>
           </div>
         </div>
       </div>
       
-      {/* ヒートマップ本体 */}
-      <div className="overflow-x-auto px-2">
-        <table className="min-w-full border-collapse">
+      {/* モバイル最適化したヒートマップテーブル */}
+      <div 
+        className="overflow-auto heatmap-container flex-grow px-1"
+        style={getHeatmapContainerStyle()}
+      >
+        <table className="min-w-full border-collapse heatmap-table">
           <thead>
             <tr>
-              <th className="bg-gray-50 sticky left-0 z-20 text-center py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 whitespace-nowrap min-w-[90px]">
-                演奏回数
+              <th 
+                style={{ 
+                  position: 'sticky', 
+                  top: 0, 
+                  left: 0, 
+                  zIndex: 30,
+                  backgroundColor: '#f9fafb',
+                  minWidth: isCompactMode ? '50px' : '110px',
+                  width: isCompactMode ? '50px' : '110px',
+                }}
+                className="py-2 px-2 border-b border-r border-gray-200 font-medium text-gray-700 whitespace-nowrap"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  {!isCompactMode && (
+                    <span className="md:hidden">曲情報</span>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCompactMode(!isCompactMode);
+                    }}
+                    className="text-gray-400 hover:text-purple-600 rounded-full p-1 hover:bg-purple-50"
+                    title={isCompactMode ? "詳細表示に切り替え" : "コンパクト表示に切り替え"}
+                  >
+                    {isCompactMode ? (
+                      <Maximize size={16} />
+                    ) : (
+                      <Minimize size={16} />
+                    )}
+                  </button>
+                  <span className="hidden md:inline">演奏回数</span>
+                </div>
               </th>
-              <th className="bg-gray-50 sticky left-[90px] z-20 text-left py-3 px-4 border-b border-r border-gray-200 font-medium text-gray-700 min-w-[180px]">
+              <th 
+                style={{ 
+                  position: 'sticky', 
+                  top: 0, 
+                  left: '110px', 
+                  zIndex: 30,
+                  backgroundColor: '#f9fafb',
+                  minWidth: '180px',
+                }}
+                className="text-left py-2 px-4 border-b border-r border-gray-200 font-medium text-gray-700 hidden md:table-cell"
+              >
                 曲名
               </th>
               {heatmapData.length > 0 && heatmapData[0].periods.map((period, index) => (
                 <th 
                   key={index}
-                  className="bg-gray-50 py-3 px-3 border-b border-gray-200 font-medium text-gray-700 text-center whitespace-nowrap"
+                  style={{ 
+                    position: 'sticky', 
+                    top: 0, 
+                    zIndex: 20,
+                    backgroundColor: '#f9fafb',
+                    width: '60px',
+                    minWidth: '60px',
+                  }}
+                  className="py-2 px-1 border-b border-gray-200 font-medium text-gray-700 text-center whitespace-nowrap"
                 >
                   {period.period}
                 </th>
@@ -482,16 +600,66 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
             {heatmapData.map((row, rowIndex) => (
               <tr key={row.song.songId} className={rowIndex % 2 === 0 ? '' : 'bg-gray-50'}>
                 <td 
-                  className="sticky left-0 z-10 py-4 px-3 border-b border-r border-gray-200 text-center font-medium min-w-[90px]"
-                  style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                  style={{ 
+                    position: 'sticky', 
+                    left: 0, 
+                    zIndex: 10,
+                    backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb',
+                    width: isCompactMode ? '50px' : '110px',
+                    minWidth: isCompactMode ? '50px' : '110px',
+                    textAlign: isCompactMode ? 'center' : 'left',
+                  }}
+                  className="py-2 px-1 border-b border-r border-gray-200"
                 >
-                  <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-1.5 rounded-full">
-                    {row.totalCount}回
-                  </span>
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/songs/${row.song.songId}`)}
+                  >
+                    {isCompactMode ? (
+                      // コンパクトモード - 曲名のみを縦書きで表示
+                      <div className="vertical-text text-xs text-purple-800 font-medium h-24 w-full flex items-center justify-center text-center">
+                        {row.song.title}
+                      </div>
+                    ) : (
+                      // 通常モード
+                      <>
+                        {/* モバイル表示時は情報を縦に並べてコンパクトに */}
+                        <div className="md:hidden space-y-1">
+                          <div className="flex justify-center">
+                            <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                              {row.totalCount}回
+                            </span>
+                          </div>
+                          <div className="font-medium text-purple-800 text-center truncate text-sm">{row.song.title}</div>
+                          {row.releaseYear && (
+                            <div className="text-xs text-gray-600 text-center">{row.releaseYear}</div>
+                          )}
+                          {row.song.album && (
+                            <div className="text-xs text-gray-500 text-center truncate">
+                              {row.song.album}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* デスクトップ表示時は演奏回数のみ */}
+                        <div className="hidden md:flex md:justify-center">
+                          <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full">
+                            {row.totalCount}回
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </td>
                 <td 
-                  className="sticky left-[90px] z-10 py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 min-w-[200px]"
-                  style={{ backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                  style={{ 
+                    position: 'sticky', 
+                    left: '110px', 
+                    zIndex: 10,
+                    backgroundColor: rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb',
+                    minWidth: '180px',
+                  }}
+                  className="py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 hidden md:table-cell"
                   onClick={() => router.push(`/songs/${row.song.songId}`)}
                 >
                   <div className="max-w-xs">
@@ -523,10 +691,12 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                 {row.periods.map((period, index) => (
                   <td 
                     key={index}
-                    className={`py-4 px-3 border-b border-gray-200 text-center ${period.count > 0 ? 'hover:transform hover:scale-110 cursor-pointer transition-all' : ''}`}
+                    className={`py-2 px-1 border-b border-gray-200 text-center ${period.count > 0 ? 'hover:transform hover:scale-110 cursor-pointer transition-all' : ''}`}
                     style={{ 
                       backgroundColor: getBackgroundColor(period.intensity, period.isBeforeRelease),
-                      color: getTextColor(period.intensity, period.isBeforeRelease)
+                      color: getTextColor(period.intensity, period.isBeforeRelease),
+                      width: '60px',
+                      minWidth: '60px',
                     }}
                     title={`${row.song.title} - ${period.period}: ${period.count}回演奏 ${period.isBeforeRelease ? '(リリース前)' : ''}`}
                     onClick={() => period.count > 0 && handlePeriodClick(row.song, period)}
@@ -534,7 +704,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                     {period.count > 0 ? (
                       <div className="flex flex-col items-center">
                         {getDotsForCount(period.count, period.isBeforeRelease)}
-                        <div className="text-xs opacity-80 mt-1">({period.count})</div>
+                        <div className="text-xs opacity-80 mt-0.5">({period.count})</div>
                       </div>
                     ) : ''}
                   </td>
@@ -606,6 +776,58 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
           </div>
         </div>
       )}
+      
+      {/* アニメーション用のグローバルスタイル */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        /* ヒートマップコンテナの高さは動的に調整 */
+        .heatmap-container {
+          scrollbar-width: thin;
+        }
+        
+        /* スクロールバーのカスタマイズ */
+        .heatmap-container::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        
+        .heatmap-container::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        
+        .heatmap-container::-webkit-scrollbar-thumb {
+          background: #d1d5db;
+          border-radius: 4px;
+        }
+        
+        .heatmap-container::-webkit-scrollbar-thumb:hover {
+          background: #9333ea;
+        }
+        
+        /* 縦書きテキスト用のスタイル */
+        .vertical-text {
+          writing-mode: vertical-rl;
+          text-orientation: mixed;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-height: 130px;
+          margin: 0 auto;
+          line-height: 1.2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `}</style>
     </div>
   );
 };
