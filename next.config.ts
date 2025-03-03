@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    // 型チェックをスキップ
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;

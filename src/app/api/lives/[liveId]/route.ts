@@ -1,12 +1,12 @@
 // src/app/api/lives/[liveId]/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
 import { parseLiveHistory, parseSetlistHistory } from '@/utils/data-converter';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { liveId: string } }
 ) {
   try {
