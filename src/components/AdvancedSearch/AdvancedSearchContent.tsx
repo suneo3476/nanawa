@@ -4,8 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Search, Calendar, Building2, Disc, Hash, Filter } from 'lucide-react';
-import LiveCard from '@/components/LiveCard';
-import SongCard from '@/components/SongCard';
+import LiveCard from '@/components/LiveCard/LiveCard';
+import SongCard from '@/components/SongCard/SongCard';
 import type { Live } from '@/types/live';
 import type { Song } from '@/types/song';
 import type { SetlistItem } from '@/types/setlist';
