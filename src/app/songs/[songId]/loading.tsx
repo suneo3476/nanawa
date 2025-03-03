@@ -1,9 +1,8 @@
-import { Header } from '@/components/Header/Header';
+// src/app/songs/[songId]/loading.tsx
 
 export default function SongDetailLoading() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         {/* タイトルのスケルトン */}
         <div className="h-9 w-64 bg-gray-200 rounded animate-pulse mb-8" />

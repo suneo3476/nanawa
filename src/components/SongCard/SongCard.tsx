@@ -1,3 +1,5 @@
+// src/components/SongCard/SongCard.tsx
+
 'use client';
 
 import React from 'react';
@@ -21,6 +23,11 @@ interface SongCardProps {
 }
 
 export const SongCard: React.FC<SongCardProps> = ({ song, stats, onSelect }) => {
+  // すべての収録作品を一行にフォーマット
+  const formattedAlbums = song.appearsOn && song.appearsOn.length > 0
+    ? song.appearsOn.join(', ')
+    : song.album;
+
   return (
     <div 
       className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 cursor-pointer"
@@ -31,7 +38,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, stats, onSelect }) => 
           <h3 className="text-xl font-bold text-gray-800">{song.title}</h3>
           <div className="flex items-center gap-2 text-gray-500 mt-1">
             <Disc size={16} />
-            <span className="text-sm">{song.album}</span>
+            <span className="text-sm">{formattedAlbums}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-1 rounded-full">

@@ -1,4 +1,5 @@
-import { Header } from '@/components/Header/Header';
+// src/app/page.tsx
+
 import { LiveListClient } from '@/components/LiveList/LiveListClient';
 import type { Live } from '@/types/live';
 
@@ -62,7 +63,6 @@ export default async function Home() {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">七輪ライブ一覧</h1>
         <LiveListClient lives={livesWithSetlists} />

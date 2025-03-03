@@ -1,11 +1,11 @@
-import { Header } from '@/components/Header/Header';
+// src/app/not-found.tsx
+
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AppNotFound() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm p-8 max-w-2xl mx-auto text-center">
           <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">

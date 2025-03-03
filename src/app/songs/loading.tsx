@@ -1,9 +1,8 @@
-import { Header } from '@/components/Header/Header';
+// src/app/songs/loading.tsx
 
 export default function SongsLoading() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="h-9 w-48 bg-gray-200 rounded animate-pulse mb-8" />
         

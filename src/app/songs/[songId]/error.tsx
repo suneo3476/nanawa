@@ -1,8 +1,9 @@
+// src/app/songs/[songId]/error.tsx
+
 'use client';
 
 import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Header } from '@/components/Header/Header';
 import Link from 'next/link';
 
 export default function SongDetailError({
@@ -19,7 +20,6 @@ export default function SongDetailError({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm p-8 max-w-2xl mx-auto">
           <div className="flex flex-col items-center text-center">

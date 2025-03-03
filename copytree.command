@@ -16,8 +16,11 @@ tree -I 'node_modules|.next|.git' > tree.txt
 echo -e "\n${GREEN}Creating ./copy directory and copying files...${NC}"
 mkdir -p ./copy
 
-# Copy files excluding specified folders
-find . -type f \( ! -path '*/node_modules/*' ! -path '*/.next/*' ! -path '*/.git/*' \) -exec cp -p {} ./copy/ \;
+# Copy files excluding specified folders and file types
+find . -type f \
+  \( ! -path '*/node_modules/*' ! -path '*/.next/*' ! -path '*/.git/*' \) \
+  \( ! -name '*.ico' ! -name '*.svg' ! -name 'package-lock.json' \) \
+  -exec cp -p {} ./copy/ \;
 
 # Count copied files
 COPIED_FILES=$(find ./copy -type f | wc -l)

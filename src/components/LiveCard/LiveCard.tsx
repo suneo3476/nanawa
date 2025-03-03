@@ -1,3 +1,5 @@
+// src/components/LiveCard/LiveCard.tsx
+
 'use client';
 
 import React, { useMemo } from 'react';

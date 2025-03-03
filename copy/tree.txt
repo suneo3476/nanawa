@@ -1,53 +1,12 @@
 .
 ├── README.md
-├── copy
-│   ├── Header.test.tsx
-│   ├── Header.tsx
-│   ├── LiveCard.tsx
-│   ├── LiveListClient.tsx
-│   ├── README.md
-│   ├── SetlistPreview.tsx
-│   ├── SongCard.tsx
-│   ├── SongsClient.tsx
-│   ├── api.ts
-│   ├── copytree.command
-│   ├── data-converter.ts
-│   ├── error.tsx
-│   ├── eslint.config.mjs
-│   ├── favicon.ico
-│   ├── file.svg
-│   ├── globals.css
-│   ├── globe.svg
-│   ├── jest.config.ts
-│   ├── jest.setup.ts
-│   ├── layout.tsx
-│   ├── live.test.ts
-│   ├── live.ts
-│   ├── live_history.txt
-│   ├── loading.tsx
-│   ├── next-env.d.ts
-│   ├── next.config.ts
-│   ├── next.svg
-│   ├── not-found.tsx
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── page.tsx
-│   ├── postcss.config.js
-│   ├── postcss.config.mjs
-│   ├── route.ts
-│   ├── setlist.ts
-│   ├── setlist_history.txt
-│   ├── settings.json
-│   ├── song.ts
-│   ├── tailwind.config.js
-│   ├── tailwind.config.ts
-│   ├── tsconfig.json
-│   ├── vercel.svg
-│   └── window.svg
+├── add-filename-comments.sh
 ├── copytree.command
 ├── data
+│   ├── discography.txt
 │   ├── live_history.txt
-│   └── setlist_history.txt
+│   ├── setlist_history.txt
+│   └── tracks.txt
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── jest.setup.ts
@@ -63,17 +22,27 @@
 │   ├── next.svg
 │   ├── vercel.svg
 │   └── window.svg
+├── scripts
+│   └── migrate-data.ts
 ├── src
 │   ├── app
 │   │   ├── api
 │   │   │   ├── lives
+│   │   │   │   ├── [liveId]
+│   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
 │   │   │   ├── setlists
 │   │   │   │   └── route.ts
 │   │   │   └── songs
+│   │   │       ├── [songId]
+│   │   │       │   └── route.ts
 │   │   │       └── route.ts
 │   │   ├── favicon.ico
 │   │   ├── globals.css
+│   │   ├── heatmap
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
 │   │   ├── layout.tsx
 │   │   ├── lives
 │   │   │   ├── [liveId]
@@ -82,43 +51,71 @@
 │   │   │   └── page.tsx
 │   │   ├── not-found.tsx
 │   │   ├── page.tsx
-│   │   └── songs
-│   │       ├── SongsClient.tsx
-│   │       ├── [songId]
-│   │       │   ├── error.tsx
-│   │       │   ├── loading.tsx
-│   │       │   └── page.tsx
-│   │       ├── error.tsx
-│   │       ├── loading.tsx
+│   │   ├── search
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── songs
+│   │   │   ├── SongsClient.tsx
+│   │   │   ├── [songId]
+│   │   │   │   ├── error.tsx
+│   │   │   │   ├── loading.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── stats
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   └── timeline
 │   │       └── page.tsx
 │   ├── components
+│   │   ├── AdvancedSearch
+│   │   │   ├── AdvancedSearch.tsx
+│   │   │   └── index.ts
+│   │   ├── Breadcrumbs
+│   │   │   ├── Breadcrumbs.tsx
+│   │   │   └── index.ts
 │   │   ├── Header
 │   │   │   ├── Header.tsx
-│   │   │   └── __tests__
-│   │   │       └── Header.test.tsx
+│   │   │   └── index.ts
 │   │   ├── LiveCard
 │   │   │   └── LiveCard.tsx
 │   │   ├── LiveList
-│   │   │   ├── LiveListClient.tsx
-│   │   │   └── __tests__
+│   │   │   └── LiveListClient.tsx
+│   │   ├── LiveTimeline
+│   │   │   ├── LiveTimeline.tsx
+│   │   │   └── index.ts
+│   │   ├── LiveViewIntegrated
+│   │   │   ├── LiveViewIntegrated.tsx
+│   │   │   └── index.ts
+│   │   ├── PerformanceHeatmap
+│   │   │   ├── PerformanceHeatmap.tsx
+│   │   │   └── index.ts
 │   │   ├── SetlistPreview
 │   │   │   └── SetlistPreview.tsx
 │   │   ├── SetlistView
-│   │   │   └── __tests__
-│   │   └── SongCard
-│   │       └── SongCard.tsx
+│   │   │   └── SetlistView.tsx
+│   │   ├── Settings
+│   │   │   ├── SettingsContext.tsx
+│   │   │   └── index.ts
+│   │   ├── SongCard
+│   │   │   └── SongCard.tsx
+│   │   └── StatsDashboard
+│   │       ├── StatsDashboard.tsx
+│   │       └── index.ts
 │   ├── types
-│   │   ├── __tests__
-│   │   │   └── live.test.ts
 │   │   ├── live.ts
 │   │   ├── setlist.ts
 │   │   └── song.ts
 │   └── utils
 │       ├── api.ts
-│       └── data-converter.ts
+│       ├── data-converter.ts
+│       └── song-enricher.ts
 ├── tailwind.config.js
 ├── tailwind.config.ts
 ├── tree.txt
 └── tsconfig.json
 
-27 directories, 95 files
+36 directories, 83 files

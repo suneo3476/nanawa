@@ -1,22 +1,38 @@
+// src/utils/data-converter.ts
+
 import type { Live } from '@/types/live';
 import type { Song } from '@/types/song';
 import type { SetlistItem } from '@/types/setlist';
+import { enrichSongData, analyzeSongReleaseHistory } from './song-enricher';
 
 /**
  * CSVデータをライブ情報に変換する
+ * 更新版：ライブIDをデータから取得
  */
 export function parseLiveHistory(liveHistoryText: string): Live[] {
   const lives: Live[] = [];
   const lines = liveHistoryText.split('\n').filter(line => line.trim());
   
-  let liveId = 1;
+  // ヘッダー行をスキップするフラグ
+  let skipHeader = false;
   
-  for (const line of lines) {
-    // "日付	イベント名＠会場名" の形式を解析
+  // 先頭行が「出演イベントID」を含むかチェック
+  if (lines.length > 0 && lines[0].includes('出演イベントID')) {
+    skipHeader = true;
+  }
+  
+  for (let i = 0; i < lines.length; i++) {
+    // ヘッダー行をスキップ
+    if (i === 0 && skipHeader) continue;
+    
+    const line = lines[i];
+    // "出演イベントID	日付	イベント名＠会場名" の形式を解析
     const parts = line.split('\t');
-    if (parts.length >= 2) {
-      const date = parts[0].trim();
-      const eventVenue = parts[1].trim();
+    
+    if (parts.length >= 3) {
+      const eventId = parts[0].trim();
+      const date = parts[1].trim();
+      const eventVenue = parts[2].trim();
       
       // "イベント名@会場名" を分割
       const match = eventVenue.match(/(.*?)@(.*)/);
@@ -24,14 +40,12 @@ export function parseLiveHistory(liveHistoryText: string): Live[] {
         const [, name, venue] = match;
         
         lives.push({
-          liveId: `live_${String(liveId).padStart(3, '0')}`,
+          liveId: `live_${eventId}`, // IDを直接使用
           date: formatDate(date), // YYYY/MM/DD -> YYYY-MM-DD
           name: name.trim(),
           venue: venue.trim(),
-          memo: parts[2] ? parts[2].trim() : undefined
+          memo: parts[3] ? parts[3].trim() : undefined
         });
-        
-        liveId++;
       }
     }
   }
@@ -41,33 +55,55 @@ export function parseLiveHistory(liveHistoryText: string): Live[] {
 
 /**
  * セットリスト履歴からセットリスト情報と楽曲情報を抽出
+ * 更新版：イベントIDを使用して対応するライブを特定
  */
-export function parseSetlistHistory(
+export async function parseSetlistHistory(
   setlistText: string,
   lives: Live[]
-): { setlists: SetlistItem[], songs: Map<string, Song> } {
+): Promise<{ setlists: SetlistItem[], songs: Song[] }> {
   const setlists: SetlistItem[] = [];
   const songsMap = new Map<string, Song>();
   
   const lines = setlistText.split('\n').filter(line => line.trim());
   let songId = 1;
   
-  for (const line of lines) {
-    // "イベント名＠会場名	曲名	演奏順	形態" の形式を解析
+  // ヘッダー行をスキップするフラグ
+  let skipHeader = false;
+  
+  // 先頭行が「出演イベントID」を含むかチェック
+  if (lines.length > 0 && lines[0].includes('出演イベントID')) {
+    skipHeader = true;
+  }
+  
+  // IDベースのライブマッピングを作成
+  const liveIdMap = new Map<string, string>();
+  lives.forEach(live => {
+    // live_XXXの形式からXXXを抽出
+    const idMatch = live.liveId.match(/live_(\d+)/);
+    if (idMatch && idMatch[1]) {
+      liveIdMap.set(idMatch[1], live.liveId);
+    }
+  });
+  
+  for (let i = skipHeader ? 1 : 0; i < lines.length; i++) {
+    const line = lines[i];
+    // "出演イベントID	イベント名＠会場名	曲名	演奏順	形態" の形式を解析
     const parts = line.split('\t');
-    if (parts.length >= 4) {
-      const eventVenue = parts[0].trim();
-      const songTitle = parts[1].trim();
-      const orderStr = parts[2].trim();
-      const type = parts[3].trim();
+    
+    if (parts.length >= 5) {
+      const eventId = parts[0].trim();
+      const eventVenue = parts[1].trim();
+      const songTitle = parts[2].trim();
+      const orderStr = parts[3].trim();
+      const type = parts[4].trim();
       
-      // ライブIDを検索
-      const live = lives.find(l => {
-        const fullName = `${l.name}@${l.venue}`;
-        return fullName === eventVenue;
-      });
+      // イベントIDに対応するライブIDを取得
+      const liveId = liveIdMap.get(eventId);
       
-      if (!live) continue;
+      if (!liveId) {
+        console.warn(`対応するライブが見つかりません: イベントID="${eventId}"`);
+        continue;
+      }
       
       // 楽曲を検索または作成
       let currentSongId: string | undefined;
@@ -83,19 +119,18 @@ export function parseSetlistHistory(
       // 新しい曲を作成
       if (!currentSongId) {
         currentSongId = `song_${String(songId).padStart(3, '0')}`;
-        const currentSong: Song = {
+        songsMap.set(currentSongId, {
           songId: currentSongId,
           title: songTitle,
           album: '', // 後で補完
           releaseDate: ''
-        };
-        songsMap.set(currentSongId, currentSong);
+        });
         songId++;
       }
       
       // セットリストアイテムを作成
       setlists.push({
-        liveId: live.liveId,
+        liveId,
         songId: currentSongId,
         order: parseInt(orderStr),
         memo: type === 'メドレー' ? 'メドレー形式で演奏' : ''
@@ -103,7 +138,22 @@ export function parseSetlistHistory(
     }
   }
   
-  return { setlists, songs: songsMap };
+  // 楽曲情報を補完
+  let songs = Array.from(songsMap.values());
+  
+  // 新しい楽曲エンリッチャーを使用（非同期処理）
+  try {
+    // まずはaikoディスコグラフィデータを使用して基本情報を補完
+    songs = await enrichSongData(songs);
+    
+    // さらに詳細なリリース履歴分析を行う
+    songs = await analyzeSongReleaseHistory(songs);
+  } catch (error) {
+    console.error('Failed to enrich song data:', error);
+    // 基本的な情報だけで続行
+  }
+  
+  return { setlists, songs };
 }
 
 /**
@@ -113,36 +163,5 @@ function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   return dateStr.replace(/(\d{4})\/(\d{1,2})\/(\d{1,2})/, (_, year, month, day) => {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  });
-}
-
-/**
- * 曲情報の補完
- */
-export function enrichSongData(songs: Song[]): Song[] {
-  // aikoの代表曲の情報
-  const aikoSongInfo: Record<string, { album: string, releaseDate: string }> = {
-    'カブトムシ': { album: '暁のラブレター', releaseDate: '2004-08-04' },
-    '花火': { album: '秘密', releaseDate: '2008-11-12' },
-    'ボーイフレンド': { album: '秘密', releaseDate: '2008-11-12' },
-    'キラキラ': { album: '暁のラブレター', releaseDate: '2004-08-04' },
-    'ロージー': { album: 'ロージー', releaseDate: '2005-11-30' },
-    '愛の病': { album: '彼女', releaseDate: '2006-06-21' },
-    'マント': { album: 'まとめ I', releaseDate: '2003-11-12' },
-    '蝶々結び': { album: '蝶々結び', releaseDate: '2010-03-31' },
-    // 他の曲情報
-  };
-  
-  return songs.map(song => {
-    const info = aikoSongInfo[song.title];
-    if (info) {
-      return {
-        ...song,
-        album: info.album,
-        releaseDate: info.releaseDate
-      };
-    }
-    // 情報がない場合はそのまま返す
-    return song;
   });
 }

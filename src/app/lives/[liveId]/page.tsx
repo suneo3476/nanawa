@@ -1,5 +1,5 @@
 // src/app/lives/[liveId]/page.tsx
-import { Header } from '@/components/Header/Header';
+
 import { notFound } from 'next/navigation';
 import { CalendarDays, MapPin, MessageCircle, Music } from 'lucide-react';
 import Link from 'next/link';
@@ -86,7 +86,6 @@ export default async function LiveDetailPage({ params }: Props) {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">{data.live.name}</h1>
