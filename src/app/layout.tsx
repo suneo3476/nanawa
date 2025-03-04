@@ -1,7 +1,3 @@
-// src/app/layout.tsx
-
-import './globals.css';
-
 import { Suspense } from 'react';
 import { Header } from '@/components/Header/Header';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
