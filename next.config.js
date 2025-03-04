@@ -7,6 +7,7 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+    tsconfigPath: 'ignored-tsconfig.json'
   },
   images: {
     domains: ['placehold.jp'],
