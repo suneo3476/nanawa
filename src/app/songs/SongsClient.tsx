@@ -3,7 +3,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { SongCard } from '@/components/SongCard/SongCard';
+import { SongCard } from '@/components/SongCard';
 import type { Song } from '@/types/song';
 
 type SongsClientProps = {
