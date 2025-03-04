@@ -10,12 +10,14 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // 静的エクスポートモードを有効化（重要）
+  output: 'export',
+  
   // イメージ設定
   images: {
+    unoptimized: true, // 静的エクスポートでは必要
     domains: ['placehold.jp'],
   },
-  
-  // amp設定を削除
 };
 
 module.exports = nextConfig;
