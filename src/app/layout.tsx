@@ -8,20 +8,28 @@ export const metadata = {
   description: 'aikoコピーバンド「七輪」の活動記録',
 };
 
+// カスタムローディングコンポーネント
+function CustomLoading() {
+  return <div className="p-4 text-center">Loading...</div>;
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ja" className="h-full mdl-js">
-      <body className="h-full bg-gray-50 vsc-initialized">
+    <html lang="ja" className="h-full">
+      <body className="h-full bg-gray-50">
         <SettingsProvider>
           <Header />
           <main className="container mx-auto px-4 py-8">
-            <Breadcrumbs />
-            <Suspense fallback={<div>Loading...</div>}>
-              {children}
+            {/* ネストされたSuspenseを使用してより確実に対応 */}
+            <Suspense fallback={<CustomLoading />}>
+              <Breadcrumbs />
+              <Suspense fallback={<CustomLoading />}>
+                {children}
+              </Suspense>
             </Suspense>
           </main>
         </SettingsProvider>
