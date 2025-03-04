@@ -1,4 +1,3 @@
-# amplify.yml
 version: 1
 frontend:
   phases:
@@ -8,9 +7,13 @@ frontend:
         - npm ci
     build:
       commands:
-        - node scripts/disable-dynamic-routes.js
-        - npm run build
-        - node scripts/restore-dynamic-routes.js
+        # 既に無効化されているディレクトリが存在する場合に備えて復元を先に試みる
+        - node scripts/restore-dynamic-routes.js || true
+        # 問題のページを直接置き換える
+        - rm -rf src/app/not-found.tsx || true
+        - echo 'export default function NotFound() { return <div className="container mx-auto py-16 px-4 text-center"><div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md"><h1 className="text-3xl font-bold mb-4">ページが見つかりません</h1><p className="mb-8">お探しのページは存在しないか、移動した可能性があります。</p><a href="/" className="bg-purple-600 text-white px-6 py-3 rounded-full">トップページへ戻る</a></div></div> }' > src/app/not-found.js
+        # プリレンダリングを無効化してビルド
+        - NEXT_DISABLE_PRERENDER=true npm run build
   artifacts:
     baseDirectory: .next
     files:

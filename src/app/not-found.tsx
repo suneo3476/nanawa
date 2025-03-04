@@ -1,9 +1,9 @@
-// src/app/not-found.tsx
+// src/app/not-found.js
 
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 
-export default function NotFoundPage() {
+export default function NotFound() {
+  // サーバーコンポーネントとして、クライアントサイド機能を使わない
   return (
     <div className="container mx-auto py-16 px-4 text-center">
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
@@ -12,9 +12,8 @@ export default function NotFoundPage() {
         
         <Link 
           href="/" 
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white px-6 py-3 rounded-full hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-full"
         >
-          <ArrowLeft size={16} />
           トップページへ戻る
         </Link>
       </div>
