@@ -1,4 +1,4 @@
-// components/AdvancedSearch/AdvancedSearch.tsx
+// src/components/AdvancedSearch/AdvancedSearch.tsx
 'use client';
 
 import { Suspense } from 'react';

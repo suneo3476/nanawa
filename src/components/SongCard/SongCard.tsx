@@ -1,5 +1,4 @@
 // src/components/SongCard/SongCard.tsx
-
 'use client';
 
 import React from 'react';

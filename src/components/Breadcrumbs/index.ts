@@ -1,6 +1,4 @@
 // src/components/Breadcrumbs/index.ts
+export { default as Breadcrumbs } from './Breadcrumbs';
 
-import { Breadcrumbs } from './Breadcrumbs';
-
-export { Breadcrumbs };
-export default Breadcrumbs;
+/

@@ -1,12 +1,11 @@
 // src/components/LiveCard/LiveCard.tsx
-
 'use client';
 
 import React, { useMemo } from 'react';
 import { CalendarDays, MapPin, MessageCircle } from 'lucide-react';
 import { type Live } from '@/types/live';
 import { type Song } from '@/types/song';
-import { SetlistPreview } from '../SetlistPreview/SetlistPreview';
+import { SetlistPreview } from '../SetlistPreview';
 import { useRouter } from 'next/navigation';
 
 interface LiveCardProps {
@@ -32,39 +31,37 @@ export const LiveCard: React.FC<LiveCardProps> = ({ live, onSelect }) => {
       className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 cursor-pointer"
       onClick={() => onSelect ? onSelect(live.liveId) : router.push(`/lives/${live.liveId}`)}
     >
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
-        <div className="flex items-start justify-between">
-          <h3 className="text-xl font-bold text-gray-800">{live.name}</h3>
-          {isUpcoming && (
-            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
-              Coming up
-            </span>
-          )}
-        </div>
-        <div className="mt-4 space-y-2 text-gray-600">
-          <div className="flex items-center gap-2">
-            <CalendarDays aria-hidden="true" size={18} className="text-purple-500" />
-            <time dateTime={live.date}>{live.date}</time>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin aria-hidden="true" size={18} className="text-purple-500" />
-            <span>{live.venue}</span>
-          </div>
-          {live.memo && (
-            <div className="flex items-start gap-2">
-              <MessageCircle aria-hidden="true" size={18} className="text-purple-500" />
-              <span className="text-sm">{live.memo}</span>
-            </div>
-          )}
-        </div>
-        {live.setlist && (
-          <SetlistPreview 
-            songs={live.setlist}
-            onViewDetails={() => onSelect?.(live.liveId)}
-            liveId={live.liveId}
-          />
+      <div className="flex items-start justify-between">
+        <h3 className="text-xl font-bold text-gray-800">{live.name}</h3>
+        {isUpcoming && (
+          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+            Coming up
+          </span>
         )}
       </div>
+      <div className="mt-4 space-y-2 text-gray-600">
+        <div className="flex items-center gap-2">
+          <CalendarDays aria-hidden="true" size={18} className="text-purple-500" />
+          <time dateTime={live.date}>{live.date}</time>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPin aria-hidden="true" size={18} className="text-purple-500" />
+          <span>{live.venue}</span>
+        </div>
+        {live.memo && (
+          <div className="flex items-start gap-2">
+            <MessageCircle aria-hidden="true" size={18} className="text-purple-500" />
+            <span className="text-sm">{live.memo}</span>
+          </div>
+        )}
+      </div>
+      {live.setlist && (
+        <SetlistPreview 
+          songs={live.setlist}
+          onViewDetails={() => onSelect?.(live.liveId)}
+          liveId={live.liveId}
+        />
+      )}
     </div>
   );
 };

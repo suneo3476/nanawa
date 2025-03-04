@@ -1,3 +1,3 @@
 // src/components/LiveViewIntegrated/index.ts
 
-export { LiveViewIntegrated } from './LiveViewIntegrated'
+export { default as LiveViewIntegrated } from './LiveViewIntegrated'
