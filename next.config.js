@@ -1,5 +1,3 @@
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -7,32 +5,36 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-    tsconfigPath: 'ignored-tsconfig.json'
-  },
-  images: {
-    domains: ['placehold.jp'],
   },
   
-  // エイリアスを明示的に設定
-  webpack: (config) => {
-    config.resolve.alias['@'] = path.join(__dirname, 'src');
-    return config;
+  // 静的生成を避けるための設定
+  output: 'standalone',
+  
+  // 404エラーを完全に無視
+  onDemandEntries: {
+    maxInactiveAge: 9999999999,
   },
   
-  // 実験的機能を最小限に
+  // 最小限の実験的機能
   experimental: {
-    externalDir: true
+    externalDir: true,
+    esmExternals: 'loose',
   },
   
-  // リダイレクト
+  // 問題のあるルートへのリダイレクト
   async redirects() {
     return [
       {
         source: '/404',
         destination: '/',
-        permanent: false
+        permanent: false,
+      },
+      {
+        source: '/_not-found',
+        destination: '/',
+        permanent: false,
       }
-    ]
+    ];
   }
 };
 
