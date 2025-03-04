@@ -1,11 +1,12 @@
 // src/components/LiveCard/LiveCard.tsx
+
 'use client';
 
 import React, { useMemo } from 'react';
 import { CalendarDays, MapPin, MessageCircle } from 'lucide-react';
 import { type Live } from '@/types/live';
 import { type Song } from '@/types/song';
-import { SetlistPreview } from '../SetlistPreview';
+import { SetlistPreview } from '../SetlistPreview/SetlistPreview';
 import { useRouter } from 'next/navigation';
 
 interface LiveCardProps {
@@ -65,3 +66,6 @@ export const LiveCard: React.FC<LiveCardProps> = ({ live, onSelect }) => {
     </div>
   );
 };
+
+// Add default export
+export default LiveCard;

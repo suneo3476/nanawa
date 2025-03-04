@@ -1,10 +1,16 @@
+// src/app/NotFoundContent.tsx
 'use client';
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+/**
+ * 404ページのコンテンツコンポーネント
+ * useSearchParamsを使用してクエリパラメータを取得
+ */
 export default function NotFoundContent() {
+  // useSearchParamsは親コンポーネントのSuspenseでラップされる
   const searchParams = useSearchParams();
   const fromPath = searchParams.get('from') || '';
   

@@ -1,4 +1,5 @@
 // src/components/SongCard/SongCard.tsx
+
 'use client';
 
 import React from 'react';
@@ -71,3 +72,6 @@ export const SongCard: React.FC<SongCardProps> = ({ song, stats, onSelect }) => 
     </div>
   );
 };
+
+// Add default export
+export default SongCard;
