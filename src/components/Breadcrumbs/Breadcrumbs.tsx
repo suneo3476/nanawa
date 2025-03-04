@@ -4,10 +4,6 @@
 import { Suspense } from 'react';
 import BreadcrumbsContent from './BreadcrumbsContent';
 
-/**
- * パンくずリストのラッパーコンポーネント
- * SuspenseでラップしてuseSearchParamsとusePathnameを安全に使用できるようにする
- */
 export default function Breadcrumbs() {
   return (
     <Suspense fallback={

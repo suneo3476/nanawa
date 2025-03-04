@@ -2,10 +2,10 @@
 
 import './globals.css';
 
+import { Suspense } from 'react';
 import { Header } from '@/components/Header/Header';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { SettingsProvider } from '@/components/Settings';
-import { Suspense } from 'react';
 
 export const metadata = {
   title: '七輪',
@@ -24,7 +24,7 @@ export default function RootLayout({
           <Header />
           <main className="container mx-auto px-4 py-8">
             <Breadcrumbs />
-            <Suspense>
+            <Suspense fallback={<div>Loading...</div>}>
               {children}
             </Suspense>
           </main>
