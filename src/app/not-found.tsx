@@ -1,11 +1,9 @@
 // src/app/not-found.tsx
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { Suspense } from 'react';
 
-// useSearchParamsを使用する可能性のあるコンポーネントをラップ
-function NotFoundContent() {
-  // ここに内容を移動
+export default function NotFoundPage() {
   return (
     <div className="container mx-auto py-16 px-4 text-center">
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
@@ -21,13 +19,5 @@ function NotFoundContent() {
         </Link>
       </div>
     </div>
-  );
-}
-
-export default function NotFoundPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <NotFoundContent />
-    </Suspense>
   );
 }

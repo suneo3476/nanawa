@@ -1,21 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ESLintチェックをスキップ
+  // `output: 'export'` をコメントアウトまたは削除
+  // output: 'export',
+  
+  // 他の設定はそのままに
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
-  // TypeScriptエラーをスキップ
   typescript: {
     ignoreBuildErrors: true,
   },
-  
-  // イメージ設定
   images: {
     domains: ['placehold.jp'],
   },
-  
-  // amp設定を削除
+  amp: false,
 };
 
 module.exports = nextConfig;
