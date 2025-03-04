@@ -1,55 +1,7 @@
 .
 ├── README.md
 ├── add-filename-comments.sh
-├── copy
-│   ├── AdvancedSearch.tsx
-│   ├── Breadcrumbs.tsx
-│   ├── Header.tsx
-│   ├── LiveCard.tsx
-│   ├── LiveListClient.tsx
-│   ├── LiveTimeline.tsx
-│   ├── LiveViewIntegrated.tsx
-│   ├── PerformanceHeatmap.tsx
-│   ├── README.md
-│   ├── SetlistPreview.tsx
-│   ├── SetlistView.tsx
-│   ├── SettingsContext.tsx
-│   ├── SongCard.tsx
-│   ├── SongsClient.tsx
-│   ├── StatsDashboard.tsx
-│   ├── add-filename-comments.sh
-│   ├── api.ts
-│   ├── copytree.command
-│   ├── data-converter.ts
-│   ├── discography.txt
-│   ├── error.tsx
-│   ├── eslint.config.mjs
-│   ├── globals.css
-│   ├── index.ts
-│   ├── jest.config.ts
-│   ├── jest.setup.ts
-│   ├── layout.tsx
-│   ├── live.ts
-│   ├── live_history.txt
-│   ├── loading.tsx
-│   ├── migrate-data.ts
-│   ├── next-env.d.ts
-│   ├── not-found.tsx
-│   ├── package.json
-│   ├── page.tsx
-│   ├── postcss.config.js
-│   ├── postcss.config.mjs
-│   ├── route.ts
-│   ├── setlist.ts
-│   ├── setlist_history.txt
-│   ├── settings.json
-│   ├── song-enricher.ts
-│   ├── song.ts
-│   ├── tailwind.config.js
-│   ├── tailwind.config.ts
-│   ├── tracks.txt
-│   ├── tree.txt
-│   └── tsconfig.json
+├── amplify.yml
 ├── copytree.command
 ├── data
 │   ├── discography.txt
@@ -141,9 +93,11 @@
 │   │   │   ├── Header.tsx
 │   │   │   └── index.ts
 │   │   ├── LiveCard
-│   │   │   └── LiveCard.tsx
+│   │   │   ├── LiveCard.tsx
+│   │   │   └── index.ts
 │   │   ├── LiveList
-│   │   │   └── LiveListClient.tsx
+│   │   │   ├── LiveListClient.tsx
+│   │   │   └── index.ts
 │   │   ├── LiveTimeline
 │   │   │   ├── LiveTimeline.tsx
 │   │   │   └── index.ts
@@ -156,14 +110,17 @@
 │   │   │   ├── PerformanceHeatmap.tsx
 │   │   │   └── index.ts
 │   │   ├── SetlistPreview
-│   │   │   └── SetlistPreview.tsx
+│   │   │   ├── SetlistPreview.tsx
+│   │   │   └── index.ts
 │   │   ├── SetlistView
-│   │   │   └── SetlistView.tsx
+│   │   │   ├── SetlistView.tsx
+│   │   │   └── index.ts
 │   │   ├── Settings
 │   │   │   ├── SettingsContext.tsx
 │   │   │   └── index.ts
 │   │   ├── SongCard
-│   │   │   └── SongCard.tsx
+│   │   │   ├── SongCard.tsx
+│   │   │   └── index.ts
 │   │   └── StatsDashboard
 │   │       ├── StatsDashboard.tsx
 │   │       └── index.ts
@@ -182,4 +139,4 @@
 ├── tree.txt
 └── tsconfig.json
 
-39 directories, 144 files
+38 directories, 102 files
