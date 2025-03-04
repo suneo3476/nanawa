@@ -1,5 +1,5 @@
 // src/app/not-found.tsx
-// 'use client'指示子を削除 - サーバーコンポーネントにする
+// クライアントコンポーネントの利用を完全に削除
 
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';

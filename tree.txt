@@ -31,7 +31,7 @@
 │   └── restore-dynamic-routes.js
 ├── src
 │   ├── app
-│   │   ├── NotFoundContent.tsx
+│   │   ├── ClientSidePath.tsx
 │   │   ├── api
 │   │   │   ├── lives
 │   │   │   │   ├── [liveId]
