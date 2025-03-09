@@ -4,7 +4,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 import { useSettings } from '@/components/Settings';
 
@@ -19,12 +18,9 @@ type BreadcrumbItem = {
 // 特定のパスに対する表示ラベルのマッピング
 const pathLabels: Record<string, string> = {
   '/': 'ホーム',
-  '/lives': 'ライブ一覧',
-  '/songs': '楽曲一覧',
-  '/search': '詳細検索',
-  '/stats': '演奏統計',
+  '/search': 'ライブとセトリ',
+  '/stats': 'アクティビティ',
   '/heatmap': 'ヒートマップ',
-  '/timeline': 'タイムライン',
 };
 
 // ライブデータと楽曲データのキャッシュ
@@ -32,11 +28,10 @@ const liveCache = new Map<string, { name: string; venue: string }>();
 const songCache = new Map<string, { title: string }>();
 
 export const Breadcrumbs = () => {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [history, setHistory] = useState<BreadcrumbItem[]>([]);
   const { breadcrumbsMode, isBreadcrumbsEnabled } = useSettings();
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPath, setCurrentPath] = useState('');
   
   // 履歴を最大10アイテムまでに制限（長いナビゲーション履歴に対応）
   const MAX_HISTORY_ITEMS = 10;
@@ -52,7 +47,7 @@ export const Breadcrumbs = () => {
     return { type: 'other', id: null };
   }, []);
 
-  // IDに基づいてライブ名や曲名を取得する関数
+  // IDに基づいてライブ名や曲名を取得する関数（SSG対応のため簡略化）
   const fetchEntityName = useCallback(async (type: 'live' | 'song', id: string): Promise<string> => {
     // キャッシュをチェック
     if (type === 'live' && liveCache.has(id)) {
@@ -63,32 +58,8 @@ export const Breadcrumbs = () => {
       return songCache.get(id)!.title;
     }
 
-    try {
-      let response;
-      if (type === 'live') {
-        response = await fetch(`/api/lives/${id}`);
-      } else {
-        response = await fetch(`/api/songs/${id}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${type} data`);
-      }
-
-      const data = await response.json();
-      
-      if (type === 'live') {
-        const liveName = `${data.name}@${data.venue}`;
-        liveCache.set(id, { name: data.name, venue: data.venue });
-        return liveName;
-      } else {
-        songCache.set(id, { title: data.title });
-        return data.title;
-      }
-    } catch (error) {
-      console.error(`Error fetching ${type} data:`, error);
-      return type === 'live' ? 'ライブ詳細' : '楽曲詳細';
-    }
+    // SSGではAPI呼び出しを行わないので、汎用的なラベルを返す
+    return type === 'live' ? 'ライブ詳細' : '楽曲詳細';
   }, []);
 
   // パスからラベルと種類を取得する関数
@@ -143,15 +114,9 @@ export const Breadcrumbs = () => {
     for (const segment of segments) {
       currentPath += `/${segment}`;
       
-      // クエリパラメータがある場合は維持
-      let pathWithParams = currentPath;
-      if (path === currentPath && searchParams.toString()) {
-        pathWithParams += `?${searchParams.toString()}`;
-      }
-      
       const { label, type } = await getPathLabelAndType(currentPath);
       breadcrumbs.push({
-        path: pathWithParams,
+        path: currentPath,
         label,
         timestamp: Date.now(),
         type
@@ -159,7 +124,7 @@ export const Breadcrumbs = () => {
     }
     
     return breadcrumbs;
-  }, [getPathLabelAndType, searchParams]);
+  }, [getPathLabelAndType]);
 
   // 現在のパスに対する具体的なラベルと種類を取得
   const updateCurrentPageLabel = useCallback(async (item: BreadcrumbItem): Promise<BreadcrumbItem> => {
@@ -195,7 +160,11 @@ export const Breadcrumbs = () => {
     return updatedItems;
   }, [updateCurrentPageLabel]);
 
+  // ページのロード時とルート変更時に履歴を更新
   useEffect(() => {
+    // サーバーサイドレンダリング時は何もしない
+    if (typeof window === 'undefined') return;
+    
     // パンくずリストが無効の場合は何もしない
     if (!isBreadcrumbsEnabled) return;
     
@@ -203,22 +172,30 @@ export const Breadcrumbs = () => {
       setIsLoading(true);
       
       try {
+        // 現在のパスを取得
+        const path = window.location.pathname;
+        setCurrentPath(path);
+        
         // locationモードの場合は階層構造を生成
         if (breadcrumbsMode === 'location') {
-          const locationCrumbs = await getLocationBreadcrumbs(pathname);
+          const locationCrumbs = await getLocationBreadcrumbs(path);
           setHistory(locationCrumbs);
+          
+          // localStorageに保存
+          try {
+            localStorage.setItem('breadcrumbsHistory', JSON.stringify(locationCrumbs));
+          } catch (error) {
+            console.error('Error saving breadcrumbs to localStorage:', error);
+          }
+          
           setIsLoading(false);
           return;
         }
         
         // historyモードの場合の処理
-        // URLパラメータを含むフルパスを構築
-        let fullPath = pathname;
-        if (searchParams.toString()) {
-          fullPath += `?${searchParams.toString()}`;
-        }
+        const fullPath = path;
         
-        const { label, type } = await getPathLabelAndType(pathname);
+        const { label, type } = await getPathLabelAndType(path);
         
         // 現在のページ情報を生成
         const currentPage: BreadcrumbItem = {
@@ -231,7 +208,7 @@ export const Breadcrumbs = () => {
         setHistory(prevHistory => {
           // 現在のページが既に履歴にある場合は、そこまでの履歴を残す
           const existingIndex = prevHistory.findIndex((item) => 
-            item.path.split('?')[0] === fullPath.split('?')[0]); // クエリパラメータは無視して比較
+            item.path === fullPath); // クエリパラメータをサポートしないためシンプルに比較
           
           let newHistory;
           if (existingIndex >= 0) {
@@ -248,6 +225,13 @@ export const Breadcrumbs = () => {
             }
           }
           
+          // localStorageに保存
+          try {
+            localStorage.setItem('breadcrumbsHistory', JSON.stringify(newHistory));
+          } catch (error) {
+            console.error('Error saving breadcrumbs to localStorage:', error);
+          }
+          
           return newHistory;
         });
         
@@ -258,14 +242,37 @@ export const Breadcrumbs = () => {
       }
     };
     
+    // 初期ロード時に履歴を取得
+    const loadSavedHistory = () => {
+      try {
+        const savedHistory = localStorage.getItem('breadcrumbsHistory');
+        if (savedHistory) {
+          setHistory(JSON.parse(savedHistory));
+        }
+      } catch (error) {
+        console.error('Error loading saved breadcrumbs:', error);
+      }
+    };
+    
+    loadSavedHistory();
     updateBreadcrumbs();
+    
+    // ルート変更のイベントリスナーを設定
+    const handleRouteChange = () => {
+      updateBreadcrumbs();
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, [
-    pathname, 
-    searchParams.toString(), // 検索パラメータが変更された場合にも更新
-    breadcrumbsMode, 
-    isBreadcrumbsEnabled, 
-    getPathLabelAndType, 
-    getLocationBreadcrumbs
+    breadcrumbsMode,
+    isBreadcrumbsEnabled,
+    getPathLabelAndType,
+    getLocationBreadcrumbs,
+    updateHistoryLabels
   ]);
 
   // パンくずリストが無効の場合は何も表示しない

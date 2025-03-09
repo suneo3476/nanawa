@@ -1,26 +1,30 @@
 // src/app/search/page.tsx
 
+import { Suspense } from 'react';
+import { loadLivesData, loadSongsAndSetlists } from '@/utils/static-data-loader';
 import AdvancedSearch from '@/components/AdvancedSearch/AdvancedSearch';
-import { fetchLives, fetchSongs, fetchSetlists } from '@/utils/api';
+
+// Static Site Generationのためのデータロード
+export async function generateStaticParams() {
+  return [{}]; // 静的に生成するパラメータがないので空のオブジェクト
+}
 
 export default async function SearchPage() {
-  // データを並列で取得
-  const [lives, songs, setlists] = await Promise.all([
-    fetchLives(),
-    fetchSongs(),
-    fetchSetlists()
-  ]);
-
+  // ビルド時に実行されるデータロード
+  const lives = loadLivesData();
+  const { songs, setlists } = await loadSongsAndSetlists();
+  
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">詳細検索</h1>
-        <AdvancedSearch 
-          lives={lives} 
-          songs={songs} 
-          setlists={setlists} 
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">これまでのライブとセトリ</h1>
+      
+      <Suspense fallback={<div>Loading search...</div>}>
+        <AdvancedSearch
+          lives={lives}
+          songs={songs}
+          setlists={setlists}
         />
-      </main>
+      </Suspense>
     </div>
   );
 }

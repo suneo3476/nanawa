@@ -2,11 +2,11 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, List, SlidersHorizontal, Search } from 'lucide-react';
 import { LiveTimeline } from '@/components/LiveTimeline';
 import { LiveListClient } from '@/components/LiveList/LiveListClient';
-import { useSearchParams, usePathname } from 'next/navigation';
+// useSearchParams と usePathname を削除
 import type { Live } from '@/types/live';
 import type { Song } from '@/types/song';
 
@@ -19,9 +19,6 @@ interface LiveViewIntegratedProps {
 }
 
 export const LiveViewIntegrated: React.FC<LiveViewIntegratedProps> = ({ lives }) => {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  
   // ビューモードの状態管理
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   
@@ -31,149 +28,90 @@ export const LiveViewIntegrated: React.FC<LiveViewIntegratedProps> = ({ lives })
   const [yearFilter, setYearFilter] = useState<number | null>(null);
   const [venueFilter, setVenueFilter] = useState<string | null>(null);
   
-  // URLのクエリパラメータを監視し、変更があればビューモードを更新
+  // 初期ロード時にlocalStorageからビューモードを読み込む
   useEffect(() => {
-    // next/navigationのuseSearchParamsを使用
-    const viewParam = searchParams.get('view');
-    
-    if (viewParam === 'timeline' || viewParam === 'list') {
-      // URLパラメータに基づいてビューモードを設定
-      setViewMode(viewParam);
-      // ローカルストレージにも保存
-      try {
-        localStorage.setItem('liveViewMode', viewParam);
-      } catch (error) {
-        console.error('LocalStorage error:', error);
+    try {
+      const savedViewMode = localStorage.getItem('liveViewMode');
+      if (savedViewMode === 'list' || savedViewMode === 'timeline') {
+        setViewMode(savedViewMode as ViewMode);
       }
-    } else if (!viewParam) {
-      // URLパラメータがない場合はローカルストレージから読み込む
-      try {
-        const savedViewMode = localStorage.getItem('liveViewMode');
-        if (savedViewMode === 'list' || savedViewMode === 'timeline') {
-          setViewMode(savedViewMode as ViewMode);
-        }
-      } catch (error) {
-        console.error('LocalStorage error:', error);
-      }
+      
+      // 保存されたフィルター設定も読み込む（オプション）
+      const savedQuery = localStorage.getItem('liveViewQuery');
+      if (savedQuery) setSearchQuery(savedQuery);
+      
+      const savedYear = localStorage.getItem('liveViewYear');
+      if (savedYear) setYearFilter(parseInt(savedYear));
+      
+      const savedVenue = localStorage.getItem('liveViewVenue');
+      if (savedVenue) setVenueFilter(savedVenue);
+    } catch (error) {
+      console.error('LocalStorage error:', error);
     }
-    
-    // 検索クエリの処理
-    const q = searchParams.get('q');
-    if (q !== null) {
-      setSearchQuery(q);
-    } else if (q === null && searchQuery !== '') {
-      setSearchQuery('');
-    }
-    
-    // 年フィルターの処理
-    const year = searchParams.get('year');
-    if (year !== null && !isNaN(Number(year))) {
-      setYearFilter(Number(year));
-    } else if (year === null && yearFilter !== null) {
-      setYearFilter(null);
-    }
-    
-    // 会場フィルターの処理
-    const venue = searchParams.get('venue');
-    if (venue !== null) {
-      setVenueFilter(venue);
-    } else if (venue === null && venueFilter !== null) {
-      setVenueFilter(null);
-    }
-    
-  }, [searchParams, searchQuery, yearFilter, venueFilter]); // searchParamsと他の状態が変更されたときに実行
+  }, []);
   
-  // ビューモード変更時にURLとローカルストレージを更新
+  // ビューモード変更時にlocalStorageに保存
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
     try {
-      // ローカルストレージに保存
       localStorage.setItem('liveViewMode', mode);
-      
-      // URLを更新（ブラウザの履歴を保持）
-      const url = new URL(window.location.href);
-      url.searchParams.set('view', mode);
-      
-      // 現在のフィルター状態もURLに反映
-      if (searchQuery) url.searchParams.set('q', searchQuery);
-      else url.searchParams.delete('q');
-      
-      if (yearFilter) url.searchParams.set('year', yearFilter.toString());
-      else url.searchParams.delete('year');
-      
-      if (venueFilter) url.searchParams.set('venue', venueFilter);
-      else url.searchParams.delete('venue');
-      
-      window.history.pushState({}, '', url.toString());
     } catch (error) {
-      console.error('URL or LocalStorage update error:', error);
+      console.error('LocalStorage error:', error);
     }
   };
   
-  // URLパラメータを更新する共通関数
-  const updateURLParams = (params: {
-    view?: ViewMode | null;
-    q?: string | null;
-    year?: number | null;
-    venue?: string | null;
-  }) => {
+  // フィルター設定をlocalStorageに保存する関数
+  const saveFiltersToStorage = (
+    query: string, 
+    year: number | null, 
+    venue: string | null
+  ) => {
     try {
-      const url = new URL(window.location.href);
+      if (query) localStorage.setItem('liveViewQuery', query);
+      else localStorage.removeItem('liveViewQuery');
       
-      // 各パラメータを更新または削除
-      if (params.view !== undefined) {
-        params.view ? url.searchParams.set('view', params.view) : url.searchParams.delete('view');
-      }
+      if (year) localStorage.setItem('liveViewYear', year.toString());
+      else localStorage.removeItem('liveViewYear');
       
-      if (params.q !== undefined) {
-        params.q ? url.searchParams.set('q', params.q) : url.searchParams.delete('q');
-      }
-      
-      if (params.year !== undefined) {
-        params.year ? url.searchParams.set('year', params.year.toString()) : url.searchParams.delete('year');
-      }
-      
-      if (params.venue !== undefined) {
-        params.venue ? url.searchParams.set('venue', params.venue) : url.searchParams.delete('venue');
-      }
-      
-      // 履歴を保持してURLを更新
-      window.history.pushState({}, '', url.toString());
+      if (venue) localStorage.setItem('liveViewVenue', venue);
+      else localStorage.removeItem('liveViewVenue');
     } catch (error) {
-      console.error('URL update error:', error);
+      console.error('LocalStorage error:', error);
     }
   };
   
   // フィルタリングされたライブデータ
-  const filteredLives = lives.filter(live => {
-    // 検索クエリでフィルタリング
-    if (searchQuery && !live.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !live.venue.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // 年でフィルタリング
-    if (yearFilter) {
-      const liveYear = new Date(live.date).getFullYear();
-      if (liveYear !== yearFilter) {
+  const filteredLives = useMemo(() => {
+    return lives.filter(live => {
+      // 検索クエリでフィルタリング
+      if (searchQuery && !live.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !live.venue.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-    }
-    
-    // 会場でフィルタリング
-    if (venueFilter && live.venue !== venueFilter) {
-      return false;
-    }
-    
-    return true;
-  });
+      
+      // 年でフィルタリング
+      if (yearFilter) {
+        const liveYear = new Date(live.date).getFullYear();
+        if (liveYear !== yearFilter) {
+          return false;
+        }
+      }
+      
+      // 会場でフィルタリング
+      if (venueFilter && live.venue !== venueFilter) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [lives, searchQuery, yearFilter, venueFilter]);
   
   // 利用可能な年と会場のリストを計算
-  const availableYears = Array.from(new Set(lives.map(live => 
+  const availableYears = useMemo(() => Array.from(new Set(lives.map(live => 
     new Date(live.date).getFullYear()
-  ))).sort((a, b) => b - a); // 新しい年順
+  ))).sort((a, b) => b - a), [lives]); // 新しい年順
   
-  const availableVenues = Array.from(new Set(lives.map(live => live.venue))).sort();
+  const availableVenues = useMemo(() => Array.from(new Set(lives.map(live => live.venue))).sort(), [lives]);
   
   // モバイル向けの分岐とヘルプコンテンツ
   const [showViewHelp, setShowViewHelp] = useState(false);
@@ -231,8 +169,7 @@ export const LiveViewIntegrated: React.FC<LiveViewIntegratedProps> = ({ lives })
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                // URLに検索クエリを反映
-                updateURLParams({ q: e.target.value || null });
+                saveFiltersToStorage(e.target.value, yearFilter, venueFilter);
               }}
               className="pl-9 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none w-full"
             />
@@ -266,7 +203,7 @@ export const LiveViewIntegrated: React.FC<LiveViewIntegratedProps> = ({ lives })
               onChange={(e) => {
                 const newValue = e.target.value ? parseInt(e.target.value) : null;
                 setYearFilter(newValue);
-                updateURLParams({ year: newValue });
+                saveFiltersToStorage(searchQuery, newValue, venueFilter);
               }}
               className="w-full p-2 border border-gray-300 rounded-lg"
             >
@@ -284,7 +221,7 @@ export const LiveViewIntegrated: React.FC<LiveViewIntegratedProps> = ({ lives })
               onChange={(e) => {
                 const newValue = e.target.value || null;
                 setVenueFilter(newValue);
-                updateURLParams({ venue: newValue });
+                saveFiltersToStorage(searchQuery, yearFilter, newValue);
               }}
               className="w-full p-2 border border-gray-300 rounded-lg"
             >
@@ -303,12 +240,8 @@ export const LiveViewIntegrated: React.FC<LiveViewIntegratedProps> = ({ lives })
                 setVenueFilter(null);
                 setSearchQuery('');
                 
-                // URLからフィルターパラメータを削除
-                updateURLParams({
-                  q: null,
-                  year: null,
-                  venue: null
-                });
+                // localStorageから削除
+                saveFiltersToStorage('', null, null);
               }}
               className="px-4 py-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50"
             >

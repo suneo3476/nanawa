@@ -1,25 +1,31 @@
 // src/app/stats/page.tsx
 
+import { Suspense } from 'react';
+import { loadLivesData, loadSongsAndSetlists } from '@/utils/static-data-loader';
 import { StatsDashboard } from '@/components/StatsDashboard';
-import { fetchLives, fetchSongs, fetchSetlists } from '@/utils/api';
+
+// Static Site Generationのためのデータロード
+export async function generateStaticParams() {
+  return [{}]; // 静的に生成するパラメータがないので空のオブジェクト
+}
 
 export default async function StatsPage() {
-  // サーバーコンポーネントでデータ取得
-  const [lives, songs, setlists] = await Promise.all([
-    fetchLives(),
-    fetchSongs(),
-    fetchSetlists()
-  ]);
+  // ビルド時に実行されるデータロード
+  const lives = loadLivesData();
+  const { songs, setlists } = await loadSongsAndSetlists();
   
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">演奏統計</h1>
-        <StatsDashboard 
-          lives={lives} 
-          songs={songs} 
-          setlists={setlists}
-        />
+        
+        <Suspense fallback={<div>Loading statistics...</div>}>
+          <StatsDashboard 
+            lives={lives} 
+            songs={songs} 
+            setlists={setlists}
+          />
+        </Suspense>
       </main>
     </div>
   );
