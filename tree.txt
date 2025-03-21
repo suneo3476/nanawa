@@ -1,6 +1,7 @@
 .
 ├── README.md
 ├── add-filename-comments.sh
+├── amplify.yml
 ├── copytree.command
 ├── data
 │   ├── discography.txt
@@ -12,12 +13,14 @@
 ├── jest.setup.ts
 ├── nanawa-archive.zip
 ├── next-env.d.ts
+├── next.config.mjs
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.js
 ├── postcss.config.mjs
 ├── public
+│   ├── _redirects
 │   ├── file.svg
 │   ├── globe.svg
 │   ├── next.svg
@@ -27,17 +30,6 @@
 │   └── migrate-data.ts
 ├── src
 │   ├── app
-│   │   ├── api
-│   │   │   ├── lives
-│   │   │   │   ├── [liveId]
-│   │   │   │   │   └── route.ts
-│   │   │   │   └── route.ts
-│   │   │   ├── setlists
-│   │   │   │   └── route.ts
-│   │   │   └── songs
-│   │   │       ├── [songId]
-│   │   │       │   └── route.ts
-│   │   │       └── route.ts
 │   │   ├── favicon.ico
 │   │   ├── globals.css
 │   │   ├── heatmap
@@ -45,23 +37,9 @@
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
-│   │   ├── lives
-│   │   │   ├── [liveId]
-│   │   │   │   ├── loading.tsx
-│   │   │   │   └── page.tsx
-│   │   │   └── page.tsx
 │   │   ├── not-found.tsx
 │   │   ├── page.tsx
 │   │   ├── search
-│   │   │   ├── error.tsx
-│   │   │   ├── loading.tsx
-│   │   │   └── page.tsx
-│   │   ├── songs
-│   │   │   ├── SongsClient.tsx
-│   │   │   ├── [songId]
-│   │   │   │   ├── error.tsx
-│   │   │   │   ├── loading.tsx
-│   │   │   │   └── page.tsx
 │   │   │   ├── error.tsx
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
@@ -113,10 +91,11 @@
 │   └── utils
 │       ├── api.ts
 │       ├── data-converter.ts
-│       └── song-enricher.ts
+│       ├── song-enricher.ts
+│       └── static-data-loader.ts
 ├── tailwind.config.js
 ├── tailwind.config.ts
 ├── tree.txt
 └── tsconfig.json
 
-36 directories, 84 files
+26 directories, 73 files
