@@ -1,8 +1,8 @@
 // src/app/heatmap/page.tsx
 
 import { Suspense } from 'react';
-import { loadLivesData, loadSongsAndSetlists } from '@/utils/static-data-loader';
-import { PerformanceHeatmap } from '@/components/PerformanceHeatmap';
+import { loadLivesData, loadSongsAndSetlists } from '../../utils/static-data-loader';
+import { PerformanceHeatmap } from '../../components/PerformanceHeatmap';
 
 // Static Site Generationのためのデータロード
 export async function generateStaticParams() {
