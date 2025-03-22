@@ -1,6 +1,6 @@
 // src/app/not-found.tsx
 
-import { Search } from 'lucide-react';
+import { Search, Home } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AppNotFound() {
@@ -27,20 +27,13 @@ export default function AppNotFound() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/"
-              className="w-full sm:w-auto inline-flex items-center justify-center bg-purple-600 text-white 
-                     px-6 py-2 rounded-full hover:bg-purple-700 transition-colors focus:outline-none 
-                     focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-            >
-              トップページへ
-            </Link>
-            <Link
-              href="/search?view=list"
-              className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-purple-600 
-                     px-6 py-2 rounded-full border border-purple-600 hover:bg-purple-50 
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-purple-600 text-white
+                     px-6 py-2 rounded-full hover:bg-purple-700 
                      transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
                      focus:ring-offset-2"
             >
-              ライブ一覧へ
+              <Home size={18} className="mr-2" />
+              トップページへ
             </Link>
             <Link
               href="/search"
@@ -49,7 +42,25 @@ export default function AppNotFound() {
                      transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
                      focus:ring-offset-2"
             >
-              楽曲一覧へ
+              ライブとセトリへ
+            </Link>
+            <Link
+              href="/stats"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-purple-600 
+                     px-6 py-2 rounded-full border border-purple-600 hover:bg-purple-50 
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
+                     focus:ring-offset-2"
+            >
+              アクティビティへ
+            </Link>
+            <Link
+              href="/heatmap"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-purple-600 
+                     px-6 py-2 rounded-full border border-purple-600 hover:bg-purple-50 
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
+                     focus:ring-offset-2"
+            >
+              ヒートマップへ
             </Link>
           </div>
         </div>
