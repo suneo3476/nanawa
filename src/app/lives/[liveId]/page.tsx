@@ -1,45 +1,48 @@
 // src/app/lives/[liveId]/page.tsx
 
-import { Suspense } from 'react';
-import { 
-  getLiveById, 
-  getSetlistForLive, 
-  getAllLiveIds,
-  loadLivesData
-} from '@/utils/static-data-loader';
-import { SetlistView } from '@/components/SetlistView/SetlistView';
-import { CalendarDays, MapPin, MessageCircle, ArrowLeft, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { Metadata, ResolvingMetadata } from 'next';
+import { Metadata, ResolvingMetadata } from 'next';
+import { getLiveById, getSetlistForLive } from '@/utils/static-data-loader';
+import { SetlistView } from '@/components/SetlistView/SetlistView';
 
-// メタデータを動的に生成
+/**
+ * 静的生成のためのパラメータを生成
+ */
+export async function generateStaticParams() {
+  // 静的ビルド時に利用可能なすべてのliveIdを返す
+  // 実際の実装はstatic-data-loader.tsの getAllLiveIds 関数で行われる
+  const { getAllLiveIds } = await import('@/utils/static-data-loader');
+  const liveIds = getAllLiveIds();
+  return liveIds;
+}
+
+/**
+ * メタデータを生成（SEO対応）
+ */
 export async function generateMetadata(
   { params }: { params: { liveId: string } },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const live = getLiveById(params.liveId);
+  // Next.js 15では params を await する必要がある
+  const liveId = (await params).liveId;
+  const live = getLiveById(liveId);
   
   if (!live) {
     return {
-      title: 'ライブが見つかりません | 七輪アーカイブ',
+      title: 'ライブが見つかりません',
+      description: '指定されたライブは存在しないか、削除された可能性があります。',
     };
   }
   
   return {
     title: `${live.name} | 七輪アーカイブ`,
-    description: `${live.date}に${live.venue}で開催された「${live.name}」のライブ情報とセットリスト。`,
+    description: `${live.date} @ ${live.venue} のライブ情報とセットリスト`,
   };
 }
 
-// ビルド時に全ライブページを静的生成するためのパラメータを取得
-export function generateStaticParams() {
-  const liveIds = getAllLiveIds();
-  return liveIds;
-}
-
 export default async function LivePage({ params }: { params: { liveId: string } }) {
-  const liveId = params.liveId;
+  // Next.js 15では params を await する必要がある
+  const liveId = (await params).liveId;
   const live = getLiveById(liveId);
   
   // ライブが見つからない場合は404ページへ
@@ -50,111 +53,86 @@ export default async function LivePage({ params }: { params: { liveId: string } 
   // セットリスト情報を取得
   const setlist = await getSetlistForLive(liveId);
   
-  // 前後のライブを取得
-  const allLives = loadLivesData();
-  const sortedLives = allLives.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const currentIndex = sortedLives.findIndex(l => l.liveId === liveId);
+  // フォーマット日付（YYYY-MM-DD → YYYY年MM月DD日）
+  const formattedDate = live.date.replace(
+    /(\d{4})-(\d{2})-(\d{2})/,
+    '$1年$2月$3日'
+  );
   
-  const previousLive = currentIndex > 0 ? sortedLives[currentIndex - 1] : null;
-  const nextLive = currentIndex < sortedLives.length - 1 ? sortedLives[currentIndex + 1] : null;
-  
-  // 日付のフォーマット
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long',
-    });
-  };
+  // セットリストビュー用のデータ構造に変換
+  const setlistItems = setlist.map(item => ({
+    order: item.order,
+    songId: item.song.songId,
+    songTitle: item.song.title,
+    albums: item.song.appearsOn || [item.song.album],
+    isSingle: item.song.isSingle,
+    memo: item.memo
+  }));
   
   return (
-    <div className="space-y-8">
-      {/* ライブ情報ヘッダー */}
+    <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">{live.name}</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">{live.name}</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-gray-600">
-              <CalendarDays aria-hidden="true" size={20} className="text-purple-500" />
-              <time dateTime={live.date} className="text-lg">{formatDate(live.date)}</time>
+        <div className="space-y-4">
+          {/* ライブ情報 */}
+          <div className="flex flex-wrap gap-4 text-gray-600">
+            <div className="flex items-center gap-2">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="w-5 h-5 text-purple-500"
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                />
+              </svg>
+              <time dateTime={live.date}>{formattedDate}</time>
             </div>
             
-            <div className="flex items-center gap-2 text-gray-600">
-              <MapPin aria-hidden="true" size={20} className="text-purple-500" />
-              <span className="text-lg">{live.venue}</span>
+            <div className="flex items-center gap-2">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="w-5 h-5 text-purple-500"
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" 
+                />
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" 
+                />
+              </svg>
+              <span>{live.venue}</span>
             </div>
-            
-            {live.memo && (
-              <div className="flex items-start gap-2 text-gray-600">
-                <MessageCircle aria-hidden="true" size={20} className="text-purple-500 flex-shrink-0 mt-1" />
-                <div className="text-base">{live.memo}</div>
-              </div>
-            )}
           </div>
           
-          {/* ナビゲーションリンク */}
-          <div className="flex flex-col gap-3 justify-end">
-            {previousLive && (
-              <Link 
-                href={`/lives/${previousLive.liveId}`} 
-                className="flex items-center justify-start gap-2 text-purple-600 hover:text-purple-800 transition-colors"
-              >
-                <ArrowLeft size={18} />
-                <div className="flex flex-col">
-                  <span className="text-xs text-gray-500">前のライブ</span>
-                  <span>{previousLive.name}</span>
-                  <span className="text-xs text-gray-500">{previousLive.date}</span>
-                </div>
-              </Link>
-            )}
-            
-            {nextLive && (
-              <Link 
-                href={`/lives/${nextLive.liveId}`} 
-                className="flex items-center justify-end gap-2 text-purple-600 hover:text-purple-800 transition-colors"
-              >
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-gray-500">次のライブ</span>
-                  <span>{nextLive.name}</span>
-                  <span className="text-xs text-gray-500">{nextLive.date}</span>
-                </div>
-                <ArrowRight size={18} />
-              </Link>
-            )}
+          {/* メモがあれば表示 */}
+          {live.memo && (
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <p className="text-purple-800">{live.memo}</p>
+            </div>
+          )}
+          
+          {/* セットリスト表示 */}
+          <div className="mt-8">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">セットリスト</h2>
+            <SetlistView setlist={setlistItems} date={live.date} />
           </div>
         </div>
-      </div>
-      
-      {/* セットリスト */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">セットリスト</h2>
-        
-        <Suspense fallback={<div className="text-gray-500">セットリスト情報を読み込み中...</div>}>
-          <SetlistView 
-            setlist={setlist.map(item => ({
-              order: item.order,
-              songId: item.song.songId,
-              songTitle: item.song.title,
-              albums: item.song.appearsOn || [item.song.album],
-              isSingle: item.song.isSingle,
-              memo: item.memo
-            }))}
-            date={live.date}
-          />
-        </Suspense>
-      </div>
-      
-      {/* 戻るリンク */}
-      <div className="flex justify-center">
-        <Link
-          href="/search"
-          className="inline-flex items-center px-4 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-white hover:bg-purple-50"
-        >
-          ライブ一覧に戻る
-        </Link>
       </div>
     </div>
   );
