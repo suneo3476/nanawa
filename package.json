@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next build"
+    "export": "next build",
+    "verify-ssg": "node bin/verify-ssg.js"
   },
   "dependencies": {
     "lucide-react": "^0.476.0",

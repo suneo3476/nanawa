@@ -1,6 +1,5 @@
 .
 ├── README.md
-├── add-filename-comments.sh
 ├── amplify.yml
 ├── copytree.command
 ├── data
@@ -14,10 +13,9 @@
 ├── nanawa-archive.zip
 ├── next-env.d.ts
 ├── next.config.mjs
-├── next.config.ts
+├── out.zip
 ├── package-lock.json
 ├── package.json
-├── postcss.config.js
 ├── postcss.config.mjs
 ├── public
 │   ├── _redirects
@@ -27,7 +25,6 @@
 │   ├── vercel.svg
 │   └── window.svg
 ├── scripts
-│   └── migrate-data.ts
 ├── src
 │   ├── app
 │   │   ├── favicon.ico
@@ -37,12 +34,22 @@
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
+│   │   ├── lives
+│   │   │   └── [liveId]
+│   │   │       ├── error.tsx
+│   │   │       ├── loading.tsx
+│   │   │       └── page.tsx
 │   │   ├── not-found.tsx
 │   │   ├── page.tsx
 │   │   ├── search
 │   │   │   ├── error.tsx
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
+│   │   ├── songs
+│   │   │   └── [songId]
+│   │   │       ├── error.tsx
+│   │   │       ├── loading.tsx
+│   │   │       └── page.tsx
 │   │   ├── stats
 │   │   │   ├── error.tsx
 │   │   │   ├── loading.tsx
@@ -81,6 +88,10 @@
 │   │   │   └── index.ts
 │   │   ├── SongCard
 │   │   │   └── SongCard.tsx
+│   │   ├── SongPerformanceChart
+│   │   │   ├── SongPerformanceChart.tsx
+│   │   │   ├── SongPerformanceChartWrapper.tsx
+│   │   │   └── index.ts
 │   │   └── StatsDashboard
 │   │       ├── StatsDashboard.tsx
 │   │       └── index.ts
@@ -89,13 +100,11 @@
 │   │   ├── setlist.ts
 │   │   └── song.ts
 │   └── utils
-│       ├── api.ts
 │       ├── data-converter.ts
 │       ├── song-enricher.ts
 │       └── static-data-loader.ts
-├── tailwind.config.js
 ├── tailwind.config.ts
 ├── tree.txt
 └── tsconfig.json
 
-26 directories, 73 files
+31 directories, 77 files

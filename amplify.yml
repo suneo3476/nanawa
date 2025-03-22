@@ -1,19 +1,10 @@
-# amplify.yml
 version: 1
 frontend:
   phases:
-    preBuild:
-      commands:
-        - npm ci
     build:
       commands:
-        - echo "AMPLIFY_DIFF_DEPLOY=false" >> .env
-        - npm run build
+        - echo "Skipping build"
   artifacts:
     baseDirectory: out
     files:
       - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .next/cache/**/*

@@ -34,7 +34,7 @@ export default function AppNotFound() {
               トップページへ
             </Link>
             <Link
-              href="/lives"
+              href="/search?view=list"
               className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-purple-600 
                      px-6 py-2 rounded-full border border-purple-600 hover:bg-purple-50 
                      transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
@@ -43,7 +43,7 @@ export default function AppNotFound() {
               ライブ一覧へ
             </Link>
             <Link
-              href="/songs"
+              href="/search"
               className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-purple-600 
                      px-6 py-2 rounded-full border border-purple-600 hover:bg-purple-50 
                      transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 

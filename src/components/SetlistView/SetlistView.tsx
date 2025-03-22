@@ -53,7 +53,7 @@ export const SetlistView: React.FC<SetlistViewProps> = ({ setlist, date }) => {
               <div className="flex-1 min-w-0">
                 <Link
                   href={`/songs/${item.songId}`}
-                  className="text-lg font-medium text-gray-900 hover:text-purple-700"
+                  className="text-lg font-medium text-gray-900 hover:text-purple-700 transition-colors"
                 >
                   🎵 {item.songTitle}
                 </Link>

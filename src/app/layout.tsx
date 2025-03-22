@@ -2,8 +2,8 @@
 
 import './globals.css';
 
-import { Header } from '@/components/Header/Header';
-import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { Header } from '../components/Header/Header';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import { SettingsProvider } from '@/components/Settings';
 
 export const metadata = {

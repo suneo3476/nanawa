@@ -124,7 +124,7 @@ export const Breadcrumbs = () => {
     }
     
     return breadcrumbs;
-  }, [getPathLabelAndType]);
+  }, [getPathLabelAndType]);  
 
   // 現在のパスに対する具体的なラベルと種類を取得
   const updateCurrentPageLabel = useCallback(async (item: BreadcrumbItem): Promise<BreadcrumbItem> => {

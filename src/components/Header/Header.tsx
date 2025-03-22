@@ -97,69 +97,69 @@ export const Header = () => {
           <Link href="/" className="hover:opacity-90 transition-opacity">七輪</Link>
         </h1>
         <div className="flex items-center gap-2">
-          <nav aria-label="メインナビゲーション">
-            <ul className="flex flex-wrap space-x-2 items-center">
-              <li className="relative group">
-                <Link 
-                  href="/search"
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-flex items-center gap-1 ${
-                    isActive('/search') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
+        <nav aria-label="メインナビゲーション">
+          <ul className="flex flex-wrap space-x-2 items-center">
+            <li className="relative group">
+              <Link 
+                href="/search"
+                className={`px-3 py-1 rounded-full text-sm transition-colors inline-flex items-center gap-1 ${
+                  isActive('/search') 
+                    ? 'bg-white/30 text-white' 
+                    : 'hover:bg-white/20 text-white'
+                }`}
+              >
+                <span>ライブとセトリ</span>
+              </Link>
+              
+              {/* ビュー切替サブメニュー */}
+              <div className="absolute left-0 mt-1 py-1 bg-white rounded-lg shadow-lg whitespace-nowrap z-10 hidden group-hover:block">
+                <button
+                  onClick={() => handleViewModeChange('list')}
+                  className={`block px-4 py-2 text-sm w-full text-left ${
+                    currentViewMode === 'list' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
                   }`}
                 >
-                  <span>ライブとセトリ</span>
-                </Link>
-                
-                {/* ビュー切替サブメニュー */}
-                <div className="absolute left-0 mt-1 py-1 bg-white rounded-lg shadow-lg whitespace-nowrap z-10 hidden group-hover:block">
-                  <button
-                    onClick={() => handleViewModeChange('list')}
-                    className={`block px-4 py-2 text-sm w-full text-left ${
-                      currentViewMode === 'list' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <List size={14} className="inline mr-2" />
-                    リスト表示
-                  </button>
-                  <button
-                    onClick={() => handleViewModeChange('timeline')}
-                    className={`block px-4 py-2 text-sm w-full text-left ${
-                      currentViewMode === 'timeline' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Calendar size={14} className="inline mr-2" />
-                    タイムライン表示
-                  </button>
-                </div>
-              </li>
-              <li>
-                <Link 
-                  href="/stats" 
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
-                    isActive('/stats') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
+                  <List size={14} className="inline mr-2" />
+                  リスト表示
+                </button>
+                <button
+                  onClick={() => handleViewModeChange('timeline')}
+                  className={`block px-4 py-2 text-sm w-full text-left ${
+                    currentViewMode === 'timeline' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
                   }`}
                 >
-                  アクティビティ
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/heatmap" 
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
-                    isActive('/heatmap') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
-                  }`}
-                >
-                  ヒートマップ
-                </Link>
-              </li>
-            </ul>
-          </nav>
-          
+                  <Calendar size={14} className="inline mr-2" />
+                  タイムライン表示
+                </button>
+              </div>
+            </li>
+            <li>
+              <Link 
+                href="/stats" 
+                className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
+                  isActive('/stats') 
+                    ? 'bg-white/30 text-white' 
+                    : 'hover:bg-white/20 text-white'
+                }`}
+              >
+                アクティビティ
+              </Link>
+            </li>
+            <li>
+              <Link 
+                href="/heatmap" 
+                className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
+                  isActive('/heatmap') 
+                    ? 'bg-white/30 text-white' 
+                    : 'hover:bg-white/20 text-white'
+                }`}
+              >
+                ヒートマップ
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
           {/* 設定ボタン */}
           <button
             className="ml-2 p-2 rounded-full hover:bg-white/20 transition-colors"

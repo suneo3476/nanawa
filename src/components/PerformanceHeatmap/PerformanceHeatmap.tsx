@@ -392,6 +392,11 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     };
   }, []);
 
+  // ライブページへ移動する関数
+  const handleLiveClick = useCallback((liveId: string) => {
+    router.push(`/lives/${liveId}`);
+  }, [router]);
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col h-full overflow-hidden">
       {/* 表示オプションのヘッダー（クリックで開閉） */}
