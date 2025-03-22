@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "export": "next build",
-    "verify-ssg": "node bin/verify-ssg.js"
+    "verify-ssg": "node bin/verify-ssg.js",
+    "yaml-to-tsv": "./script/yaml-tsv.sh to-tsv",
+    "tsv-to-yaml": "./script/yaml-tsv.sh to-yaml"
   },
   "dependencies": {
+    "js-yaml": "^4.1.0",
     "lucide-react": "^0.476.0",
     "next": "15.1.7",
     "react": "^19.0.0",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

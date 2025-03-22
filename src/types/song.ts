@@ -1,39 +1,24 @@
 // src/types/song.ts
-
 export type Song = {
-  songId: string;          // 曲ID
-  title: string;           // 曲名
-  album: string;           // アルバム名
-  releaseDate: string;     // リリース日
+  id: string;          // 曲ID (e.g., song001)
+  title: string;       // 曲名
+  album: string;       // 主アルバム名
+  releaseDate: string; // リリース日
+  trackNumber: number; // トラック番号
+  isSingle: boolean;   // シングル曲かどうか
   
-  // 拡張情報
-  trackNumber?: number;          // トラック番号
-  isSingle?: boolean;            // シングル曲かどうか
-  albumCategory?: string;        // アルバムカテゴリ（アルバム、シングル、ベスト）
-  
-  // リリース履歴
-  firstRelease?: {
-    album: string;
-    releaseDate: string;
-    category: string;           // アルバム/シングル/ベスト
-    subCategory: string;        // メジャー/インディーズなど
-  };
-  
-  originalAlbum?: string;       // 初収録オリジナルアルバム
-  appearsOn?: string[];         // 収録作品リスト
-  
-  // 演奏情報（API処理時のみ）
+  // API処理時のみの拡張プロパティ
   performances?: {
-    count: number;              // 総演奏回数
-    firstPerformance?: {        // 初演奏
+    count: number;     // 総演奏回数
+    firstPerformance?: {
       liveId: string;
       date: string;
       liveName: string;
     };
-    lastPerformance?: {         // 最終演奏
+    lastPerformance?: {
       liveId: string;
       date: string;
       liveName: string;
     };
   };
-}
+};

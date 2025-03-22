@@ -47,7 +47,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
 
   // 会場のユニークなリスト（オプション用）
   const uniqueVenues = useMemo(() => {
-    return Array.from(new Set(lives.map(live => live.venue))).sort();
+    return Array.from(new Set(lives.map(live => live.venueName))).sort();
   }, [lives]);
 
   // アルバムのユニークなリスト（オプション用）
@@ -69,14 +69,14 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
     const filteredLives = lives.filter(live => {
       // キーワード検索（イベント名、会場名）
       if (searchParams.keyword && 
-          !live.name.toLowerCase().includes(searchParams.keyword.toLowerCase()) &&
-          !live.venue.toLowerCase().includes(searchParams.keyword.toLowerCase())) {
+          !live.eventName.toLowerCase().includes(searchParams.keyword.toLowerCase()) &&
+          !live.venueName.toLowerCase().includes(searchParams.keyword.toLowerCase())) {
         return false;
       }
       
       // 会場検索
       if (searchParams.venue && 
-          live.venue !== searchParams.venue) {
+          live.venueName !== searchParams.venue) {
         return false;
       }
       
@@ -92,10 +92,10 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
       // アルバム検索（このライブで演奏されたいずれかの曲が指定アルバムに含まれるか）
       if (searchParams.album) {
         const liveSongIds = setlists
-          .filter(item => item.liveId === live.liveId)
+          .filter(item => item.liveId === live.id)
           .map(item => item.songId);
         
-        const liveSongs = songs.filter(song => liveSongIds.includes(song.songId));
+        const liveSongs = songs.filter(song => liveSongIds.includes(song.id));
         
         if (!liveSongs.some(song => song.album === searchParams.album)) {
           return false;
@@ -106,7 +106,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
     });
     
     // フィルタリングされたライブで演奏された曲のIDを収集
-    const liveIds = filteredLives.map(live => live.liveId);
+    const liveIds = filteredLives.map(live => live.id);
     
     // 各曲の演奏回数をカウント
     const songPlayCounts: Record<string, number> = {};
@@ -120,7 +120,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
     const filteredSongs = songs
       .map(song => ({
         ...song,
-        playCount: songPlayCounts[song.songId] || 0
+        playCount: songPlayCounts[song.id] || 0
       }))
       .filter(song => {
         // 演奏されていない曲は除外
@@ -378,7 +378,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
           {searchResults.lives.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {searchResults.lives.slice(0, displayCount.lives).map((live) => (
-                <LiveCard key={live.liveId} live={live} />
+                <LiveCard key={live.id} live={live} />
               ))}
             </div>
           ) : (
@@ -420,7 +420,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {searchResults.songs.slice(0, displayCount.songs).map((song) => (
                 <SongCard
-                  key={song.songId}
+                  key={song.id}
                   song={song}
                   stats={{ 
                     playCount: song.playCount,

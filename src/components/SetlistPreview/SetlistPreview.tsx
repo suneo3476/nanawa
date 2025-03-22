@@ -8,9 +8,9 @@ import { type Song } from '@/types/song';
 import { useRouter } from 'next/navigation';
 
 interface SetlistPreviewProps {
-  songs: Pick<Song, 'songId' | 'title'>[];
+  songs: Pick<Song, 'id' | 'title'>[];
   onViewDetails?: () => void;
-  liveId?: string; // liveId プロパティを追加
+  liveId?: string;
 }
 
 export const SetlistPreview: React.FC<SetlistPreviewProps> = ({ songs, onViewDetails, liveId }) => {

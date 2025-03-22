@@ -2,28 +2,44 @@
 
 import fs from 'fs';
 import path from 'path';
-import { parseLiveHistory, parseSetlistHistory } from './data-converter';
+import yaml from 'js-yaml';
 import type { Live } from '@/types/live';
 import type { Song } from '@/types/song';
 import type { SetlistItem } from '@/types/setlist';
+import type { Album } from '@/types/album';
+import type { AlbumTrack } from '@/types/albumTrack';
 
 // データキャッシュ（ビルド中に一度だけロード）
 let cachedLives: Live[] | null = null;
 let cachedSongs: Song[] | null = null;
 let cachedSetlists: SetlistItem[] | null = null;
+let cachedAlbums: Album[] | null = null;
+let cachedAlbumTracks: AlbumTrack[] | null = null;
 
 /**
- * ライブ履歴データを静的にロードする
+ * YAMLファイルを読み込んでパースする汎用関数
+ */
+function loadYamlFile<T>(filePath: string): T[] {
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    return yaml.load(fileContent) as T[];
+  } catch (error) {
+    console.error(`Failed to load YAML file ${filePath}:`, error);
+    return [];
+  }
+}
+
+/**
+ * ライブデータをYAMLから読み込む
  */
 export function loadLivesData(): Live[] {
   if (cachedLives) return cachedLives;
   
-  const dataDir = path.join(process.cwd(), 'data');
-  const liveHistoryPath = path.join(dataDir, 'live_history.txt');
+  const dataDir = path.join(process.cwd(), 'data_yaml');
+  const livesPath = path.join(dataDir, 'lives.yml');
   
   try {
-    const liveHistoryText = fs.readFileSync(liveHistoryPath, 'utf8');
-    cachedLives = parseLiveHistory(liveHistoryText);
+    cachedLives = loadYamlFile<Live>(livesPath);
     return cachedLives;
   } catch (error) {
     console.error('Failed to load lives data:', error);
@@ -32,7 +48,79 @@ export function loadLivesData(): Live[] {
 }
 
 /**
- * 楽曲とセットリストデータを静的にロードする
+ * 楽曲データをYAMLから読み込む
+ */
+export function loadSongsData(): Song[] {
+  if (cachedSongs) return cachedSongs;
+  
+  const dataDir = path.join(process.cwd(), 'data_yaml');
+  const songsPath = path.join(dataDir, 'songs.yml');
+  
+  try {
+    cachedSongs = loadYamlFile<Song>(songsPath);
+    return cachedSongs;
+  } catch (error) {
+    console.error('Failed to load songs data:', error);
+    return [];
+  }
+}
+
+/**
+ * セットリストデータをYAMLから読み込む
+ */
+export function loadSetlistsData(): SetlistItem[] {
+  if (cachedSetlists) return cachedSetlists;
+  
+  const dataDir = path.join(process.cwd(), 'data_yaml');
+  const setlistsPath = path.join(dataDir, 'setlists.yml');
+  
+  try {
+    cachedSetlists = loadYamlFile<SetlistItem>(setlistsPath);
+    return cachedSetlists;
+  } catch (error) {
+    console.error('Failed to load setlists data:', error);
+    return [];
+  }
+}
+
+/**
+ * アルバムデータをYAMLから読み込む
+ */
+export function loadAlbumsData(): Album[] {
+  if (cachedAlbums) return cachedAlbums;
+  
+  const dataDir = path.join(process.cwd(), 'data_yaml');
+  const albumsPath = path.join(dataDir, 'albums.yml');
+  
+  try {
+    cachedAlbums = loadYamlFile<Album>(albumsPath);
+    return cachedAlbums;
+  } catch (error) {
+    console.error('Failed to load albums data:', error);
+    return [];
+  }
+}
+
+/**
+ * アルバム収録曲データをYAMLから読み込む
+ */
+export function loadAlbumTracksData(): AlbumTrack[] {
+  if (cachedAlbumTracks) return cachedAlbumTracks;
+  
+  const dataDir = path.join(process.cwd(), 'data_yaml');
+  const albumTracksPath = path.join(dataDir, 'album_tracks.yml');
+  
+  try {
+    cachedAlbumTracks = loadYamlFile<AlbumTrack>(albumTracksPath);
+    return cachedAlbumTracks;
+  } catch (error) {
+    console.error('Failed to load album tracks data:', error);
+    return [];
+  }
+}
+
+/**
+ * 楽曲とセットリストデータを読み込む
  */
 export async function loadSongsAndSetlists(): Promise<{
   songs: Song[];
@@ -42,25 +130,14 @@ export async function loadSongsAndSetlists(): Promise<{
     return { songs: cachedSongs, setlists: cachedSetlists };
   }
   
-  const dataDir = path.join(process.cwd(), 'data');
-  const setlistHistoryPath = path.join(dataDir, 'setlist_history.txt');
+  const songs = loadSongsData();
+  const setlists = loadSetlistsData();
   
-  try {
-    const setlistHistoryText = fs.readFileSync(setlistHistoryPath, 'utf8');
-    const lives = loadLivesData();
-    
-    // parseSetlistHistoryはasyncなのでawaitが必要
-    const result = await parseSetlistHistory(setlistHistoryText, lives);
-    
-    // キャッシュを更新
-    cachedSongs = result.songs;
-    cachedSetlists = result.setlists;
-    
-    return result;
-  } catch (error) {
-    console.error('Failed to load songs and setlists data:', error);
-    return { songs: [], setlists: [] };
-  }
+  // キャッシュを更新
+  cachedSongs = songs;
+  cachedSetlists = setlists;
+  
+  return { songs, setlists };
 }
 
 /**
@@ -68,26 +145,27 @@ export async function loadSongsAndSetlists(): Promise<{
  */
 export function getLiveById(liveId: string): Live | null {
   const lives = loadLivesData();
-  return lives.find(live => live.liveId === liveId) || null;
+  return lives.find(live => live.id === liveId) || null;
 }
 
 /**
  * 特定の楽曲データを取得する
  */
-export async function getSongById(songId: string): Promise<Song | null> {
-  const { songs } = await loadSongsAndSetlists();
-  return songs.find(song => song.songId === songId) || null;
+export function getSongById(songId: string): Song | null {
+  const songs = loadSongsData();
+  return songs.find(song => song.id === songId) || null;
 }
 
 /**
  * ライブのセットリスト情報を取得する 
  */
-export async function getSetlistForLive(liveId: string): Promise<{
+export function getSetlistForLive(liveId: string): {
   song: Song;
   order: number;
   memo: string;
-}[]> {
-  const { songs, setlists } = await loadSongsAndSetlists();
+}[] {
+  const songs = loadSongsData();
+  const setlists = loadSetlistsData();
   
   // このライブのセットリストアイテムをフィルタリング
   const liveSetlist = setlists.filter(item => item.liveId === liveId);
@@ -97,7 +175,7 @@ export async function getSetlistForLive(liveId: string): Promise<{
   
   // 曲情報とセットリスト情報を組み合わせる
   return liveSetlist.map(item => {
-    const song = songs.find(s => s.songId === item.songId);
+    const song = songs.find(s => s.id === item.songId);
     if (!song) {
       throw new Error(`Song with ID ${item.songId} not found`);
     }
@@ -115,32 +193,32 @@ export async function getSetlistForLive(liveId: string): Promise<{
  */
 export function getAllLiveIds(): { liveId: string }[] {
   const lives = loadLivesData();
-  return lives.map(live => ({ liveId: live.liveId }));
+  return lives.map(live => ({ liveId: live.id }));
 }
 
 /**
  * 静的生成用にすべての楽曲IDを取得する
  */
-export async function getAllSongIds(): Promise<{ songId: string }[]> {
-  const { songs } = await loadSongsAndSetlists();
-  return songs.map(song => ({ songId: song.songId }));
+export function getAllSongIds(): { songId: string }[] {
+  const songs = loadSongsData();
+  return songs.map(song => ({ songId: song.id }));
 }
 
 /**
  * ライブデータをセットリスト情報と一緒に取得する
  */
-export async function getLiveWithSetlist(liveId: string): Promise<Live & { setlist: any[] }> {
+export function getLiveWithSetlist(liveId: string): Live & { setlist: any[] } {
   const live = getLiveById(liveId);
   if (!live) {
     throw new Error(`Live with ID ${liveId} not found`);
   }
   
-  const setlist = await getSetlistForLive(liveId);
+  const setlist = getSetlistForLive(liveId);
   
   return {
     ...live,
     setlist: setlist.map(item => ({
-      songId: item.song.songId,
+      songId: item.song.id,
       title: item.song.title,
       order: item.order,
       memo: item.memo
@@ -151,13 +229,13 @@ export async function getLiveWithSetlist(liveId: string): Promise<Live & { setli
 /**
  * 楽曲データをパフォーマンス情報と一緒に取得する
  */
-export async function getSongWithPerformances(songId: string): Promise<Song & { performances: any }> {
-  const song = await getSongById(songId);
+export function getSongWithPerformances(songId: string): Song & { performances: any } {
+  const song = getSongById(songId);
   if (!song) {
     throw new Error(`Song with ID ${songId} not found`);
   }
   
-  const { setlists } = await loadSongsAndSetlists();
+  const setlists = loadSetlistsData();
   const lives = loadLivesData();
   
   // この曲のパフォーマンス（演奏履歴）を取得
@@ -168,11 +246,11 @@ export async function getSongWithPerformances(songId: string): Promise<Song & { 
   
   // 演奏したライブの日付でソート
   const livePerformances = songSetlists.map(item => {
-    const live = lives.find(l => l.liveId === item.liveId);
+    const live = lives.find(l => l.id === item.liveId);
     return {
       liveId: item.liveId,
       date: live ? live.date : '',
-      liveName: live ? live.name : ''
+      liveName: live ? live.eventName : ''
     };
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
@@ -192,11 +270,30 @@ export async function getSongWithPerformances(songId: string): Promise<Song & { 
 }
 
 /**
+ * 曲の収録アルバム情報を取得する
+ */
+export function getSongAlbums(songId: string): Album[] {
+  const albumTracks = loadAlbumTracksData();
+  const albums = loadAlbumsData();
+  
+  // この曲が収録されているアルバムIDを取得
+  const albumIds = albumTracks
+    .filter(track => track.songId === songId)
+    .map(track => track.albumId);
+  
+  // アルバム情報を取得
+  return albums.filter(album => albumIds.includes(album.id));
+}
+
+/**
  * データの事前キャッシュを行う（ビルド開始時に呼び出すことでビルド時間を短縮）
  */
-export async function preloadAllData(): Promise<void> {
-  // すべてのデータを事前ロードしてキャッシュ
+export function preloadAllData(): void {
+  // すべてのデータを事前ロード
   loadLivesData();
-  await loadSongsAndSetlists();
+  loadSongsData();
+  loadSetlistsData();
+  loadAlbumsData();
+  loadAlbumTracksData();
   console.log('All data preloaded for static generation');
 }

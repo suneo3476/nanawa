@@ -71,7 +71,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     if (songSetlists.length === 0) return null;
     
     const liveDates = songSetlists.map(item => {
-      const live = lives.find(l => l.liveId === item.liveId);
+      const live = lives.find(l => l.id === item.liveId);
       return live ? new Date(live.date) : null;
     }).filter(Boolean) as Date[];
     
@@ -87,16 +87,16 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       return year >= yearRange.start && year <= yearRange.end;
     });
     
-    const filteredLiveIds = filteredLives.map(live => live.liveId);
+    const filteredLiveIds = filteredLives.map(live => live.id);
     
     // 曲ごとの期間別演奏回数を集計
     const songPeriodCounts: Record<string, Record<string, number>> = {};
     
     // すべての曲とすべての期間で初期化
     songs.forEach(song => {
-      songPeriodCounts[song.songId] = {};
+      songPeriodCounts[song.id] = {};
       allPeriods.forEach(period => {
-        songPeriodCounts[song.songId][period] = 0;
+        songPeriodCounts[song.id][period] = 0;
       });
     });
     
@@ -104,7 +104,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     setlists
       .filter(item => filteredLiveIds.includes(item.liveId))
       .forEach(item => {
-        const live = lives.find(l => l.liveId === item.liveId);
+        const live = lives.find(l => l.id === item.liveId);
         if (!live) return;
         
         const date = new Date(live.date);
@@ -138,10 +138,10 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
     });
     
     // ソート基準に従って曲をソート
-    let sortedSongs = [...songs].filter(song => songTotalCounts[song.songId] > 0);
+    let sortedSongs = [...songs].filter(song => songTotalCounts[song.id] > 0);
     
     if (sortBy === 'frequency') {
-      sortedSongs.sort((a, b) => (songTotalCounts[b.songId] || 0) - (songTotalCounts[a.songId] || 0));
+      sortedSongs.sort((a, b) => (songTotalCounts[b.id] || 0) - (songTotalCounts[a.id] || 0));
     } else if (sortBy === 'name') {
       sortedSongs.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === 'album') {
@@ -153,8 +153,8 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       });
     } else if (sortBy === 'lastPlayed') {
       sortedSongs.sort((a, b) => {
-        const dateA = getLastPlayedDate(a.songId);
-        const dateB = getLastPlayedDate(b.songId);
+        const dateA = getLastPlayedDate(a.id);
+        const dateB = getLastPlayedDate(b.id);
         if (!dateA && !dateB) return 0;
         if (!dateA) return 1;
         if (!dateB) return -1;
@@ -198,7 +198,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
           }
         })
         .map(period => {
-          const count = songPeriodCounts[song.songId]?.[period] || 0;
+          const count = songPeriodCounts[song.id]?.[period] || 0;
           
           // 期間が曲のリリース前かどうかを判定
           let isBeforeRelease = false;
@@ -220,7 +220,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       return {
         song,
         periods: periodData,
-        totalCount: songTotalCounts[song.songId] || 0,
+        totalCount: songTotalCounts[song.id] || 0,
         releaseYear
       };
     });
@@ -340,7 +340,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
       
       // この曲が演奏されたライブか確認
       return setlists.some(item => 
-        item.liveId === live.liveId && item.songId === song.songId
+        item.liveId === live.id && item.songId === song.id
       );
     });
     
@@ -603,7 +603,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
           </thead>
           <tbody>
             {heatmapData.map((row, rowIndex) => (
-              <tr key={row.song.songId} className={rowIndex % 2 === 0 ? '' : 'bg-gray-50'}>
+              <tr key={row.song.id} className={rowIndex % 2 === 0 ? '' : 'bg-gray-50'}>
                 <td 
                   style={{ 
                     position: 'sticky', 
@@ -618,7 +618,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                 >
                   <div 
                     className="cursor-pointer"
-                    onClick={() => router.push(`/songs/${row.song.songId}`)}
+                    onClick={() => router.push(`/songs/${row.song.id}`)}
                   >
                     {isCompactMode ? (
                       // コンパクトモード - 曲名のみを縦書きで表示
@@ -665,7 +665,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                     minWidth: '180px',
                   }}
                   className="py-4 px-4 border-b border-r border-gray-200 font-medium text-gray-900 cursor-pointer hover:text-purple-700 hidden md:table-cell"
-                  onClick={() => router.push(`/songs/${row.song.songId}`)}
+                  onClick={() => router.push(`/songs/${row.song.id}`)}
                 >
                   <div className="max-w-xs">
                     {/* 曲名 */}
@@ -753,15 +753,15 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
               <div className="space-y-3">
                 {selectedPeriod.lives.map(live => (
                   <div
-                    key={live.liveId}
+                    key={live.id}
                     className="p-3 bg-gray-50 hover:bg-purple-100 active:bg-purple-200 rounded-lg cursor-pointer transition-all shadow-sm hover:shadow border border-gray-200 hover:border-purple-300 flex justify-between items-center"
                     onClick={() => {
-                      router.push(`/lives/${live.liveId}`);
+                      router.push(`/lives/${live.id}`);
                       setSelectedPeriod(null);
                     }}
                   >
                     <div>
-                      <div className="font-medium">{live.name}</div>
+                      <div className="font-medium">{live.eventName}</div>
                       <div className="text-sm text-gray-600 flex items-center gap-4 mt-1">
                         <span className="flex items-center gap-1">
                           <Calendar size={14} />
@@ -769,7 +769,7 @@ export const PerformanceHeatmap: React.FC<PerformanceHeatmapProps> = ({
                         </span>
                         <span className="flex items-center gap-1">
                           <MapPin size={14} />
-                          {live.venue}
+                          {live.venueName}
                         </span>
                       </div>
                     </div>

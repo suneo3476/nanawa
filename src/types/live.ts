@@ -1,14 +1,12 @@
 // src/types/live.ts
-
 export type Live = {
-  liveId: string;      // ライブID (format: live_XXX where XXX is the event ID)
-  name: string;        // ライブ名/イベント名
+  id: string;          // ライブID (e.g., live001)
+  eventId: number;     // 元のイベントID
   date: string;        // 開催日 (YYYY-MM-DD format)
-  venue: string;       // 会場
-  memo?: string;       // ライブメモ（オプション）
-  
+  eventName: string;   // イベント名
+  venueName: string;   // 会場名
+  memo?: string;       // メモ（オプション）
   // API拡張データ（レスポンス返却時のみ）
-  eventId?: number;    // 元のイベントID（数値）
   setlist?: Array<{    // セットリスト情報（簡易版）
     songId: string;
     title: string;
