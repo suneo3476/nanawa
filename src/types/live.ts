@@ -12,6 +12,7 @@ export type Live = {
     title: string;
     order: number;
     memo?: string;
+    youtubeUrl?: string; // YouTube URL（オプション）
   }>;
   songCount?: number;  // 演奏曲数
 };

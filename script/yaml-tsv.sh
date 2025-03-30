@@ -93,7 +93,7 @@ case "$1" in
     echo "  ./script/yaml-tsv.sh to-yaml - TSVデータをYAML形式に変換します (編集内容の反映)"
     echo ""
     echo -e "${YELLOW}推奨ワークフロー:${NC}"
-    echo "1. TSVファイルからYAMLへの変換
+    echo "1. TSVからYAMLへの変換"
     echo "2. YAMLからTSVへの変換:            ./script/yaml-tsv.sh to-tsv"
     echo "3. スプレッドシートでのTSV編集"
     echo "4. TSVからYAMLへの変換:            ./script/yaml-tsv.sh to-yaml"

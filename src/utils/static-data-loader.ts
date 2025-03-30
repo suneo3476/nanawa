@@ -156,13 +156,12 @@ export function getSongById(songId: string): Song | null {
   return songs.find(song => song.id === songId) || null;
 }
 
-/**
- * ライブのセットリスト情報を取得する 
- */
+// 特定のライブのセットリスト情報を取得するメソッドを更新
 export function getSetlistForLive(liveId: string): {
   song: Song;
   order: number;
   memo: string;
+  youtubeUrl?: string;
 }[] {
   const songs = loadSongsData();
   const setlists = loadSetlistsData();
@@ -175,6 +174,7 @@ export function getSetlistForLive(liveId: string): {
   
   // 曲情報とセットリスト情報を組み合わせる
   return liveSetlist.map(item => {
+    console.table(item);
     const song = songs.find(s => s.id === item.songId);
     if (!song) {
       throw new Error(`Song with ID ${item.songId} not found`);
@@ -183,7 +183,8 @@ export function getSetlistForLive(liveId: string): {
     return {
       song,
       order: item.order,
-      memo: item.memo || ''
+      memo: item.memo || '',
+      youtubeUrl: item.youtubeUrl || '' // YouTubeリンク情報を追加
     };
   });
 }
@@ -204,9 +205,7 @@ export function getAllSongIds(): { songId: string }[] {
   return songs.map(song => ({ songId: song.id }));
 }
 
-/**
- * ライブデータをセットリスト情報と一緒に取得する
- */
+// ライブデータとセットリスト情報を合わせて取得するメソッドを更新
 export function getLiveWithSetlist(liveId: string): Live & { setlist: any[] } {
   const live = getLiveById(liveId);
   if (!live) {
@@ -221,7 +220,8 @@ export function getLiveWithSetlist(liveId: string): Live & { setlist: any[] } {
       songId: item.song.id,
       title: item.song.title,
       order: item.order,
-      memo: item.memo
+      memo: item.memo,
+      youtubeUrl: item.youtubeUrl // YouTubeリンク情報を追加
     }))
   };
 }
