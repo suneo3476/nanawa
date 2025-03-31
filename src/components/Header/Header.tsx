@@ -8,8 +8,6 @@ import { Calendar, List, Settings, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useSettings } from '@/components/Settings';
 
 export const Header = () => {
-  // usePathname, useSearchParams の削除
-  
   const { 
     breadcrumbsMode, 
     setBreadcrumbsMode,
@@ -19,7 +17,6 @@ export const Header = () => {
   
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [currentViewMode, setCurrentViewMode] = useState<'list' | 'timeline'>('list');
-  const [showViewDropdown, setShowViewDropdown] = useState(false);
   const [currentPath, setCurrentPath] = useState('/');
   
   // ページロード時に現在のパスとビューモードを取得
@@ -64,15 +61,6 @@ export const Header = () => {
     }
   };
   
-  // タッチデバイスでのドロップダウン表示切替用
-  const toggleViewDropdown = (e: React.MouseEvent) => {
-    // PCではホバーでメニューが表示されるので、タッチデバイス用に
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
-      e.preventDefault();
-      setShowViewDropdown(!showViewDropdown);
-    }
-  };
-  
   // 現在のパスがアクティブかどうかをチェック
   const isActive = (path: string) => {
     return currentPath === path || currentPath.startsWith(`${path}/`);
@@ -80,10 +68,6 @@ export const Header = () => {
 
   const toggleSettingsPanel = () => {
     setShowSettingsPanel(!showSettingsPanel);
-    // 設定パネルを開くときは、ビューメニューを閉じる
-    if (!showSettingsPanel) {
-      setShowViewDropdown(false);
-    }
   };
 
   const toggleBreadcrumbs = () => {
@@ -97,69 +81,48 @@ export const Header = () => {
           <Link href="/" className="hover:opacity-90 transition-opacity">七輪</Link>
         </h1>
         <div className="flex items-center gap-2">
-          <nav aria-label="メインナビゲーション">
-            <ul className="flex flex-wrap space-x-2 items-center">
-              <li className="relative group">
-                <Link 
-                  href="/search"
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-flex items-center gap-1 ${
-                    isActive('/search') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <span>ライブとセトリ</span>
-                </Link>
-                
-                {/* ビュー切替サブメニュー */}
-                <div className="absolute left-0 mt-1 py-1 bg-white rounded-lg shadow-lg whitespace-nowrap z-10 hidden group-hover:block">
-                  <button
-                    onClick={() => handleViewModeChange('list')}
-                    className={`block px-4 py-2 text-sm w-full text-left ${
-                      currentViewMode === 'list' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <List size={14} className="inline mr-2" />
-                    リスト表示
-                  </button>
-                  <button
-                    onClick={() => handleViewModeChange('timeline')}
-                    className={`block px-4 py-2 text-sm w-full text-left ${
-                      currentViewMode === 'timeline' ? 'text-purple-600 font-medium bg-purple-50' : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Calendar size={14} className="inline mr-2" />
-                    タイムライン表示
-                  </button>
-                </div>
-              </li>
-              <li>
-                <Link 
-                  href="/stats" 
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
-                    isActive('/stats') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
-                  }`}
-                >
-                  アクティビティ
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/heatmap" 
-                  className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
-                    isActive('/heatmap') 
-                      ? 'bg-white/30 text-white' 
-                      : 'hover:bg-white/20 text-white'
-                  }`}
-                >
-                  ヒートマップ
-                </Link>
-              </li>
-            </ul>
-          </nav>
-          
+        <nav aria-label="メインナビゲーション">
+          <ul className="flex flex-wrap space-x-2 items-center">
+            {/* ドロップダウンを削除し、通常のリンクに変更 */}
+            <li>
+              <Link 
+                href="/search"
+                className={`px-3 py-1 rounded-full text-sm transition-colors inline-flex items-center gap-1 ${
+                  isActive('/search') 
+                    ? 'bg-white/30 text-white' 
+                    : 'hover:bg-white/20 text-white'
+                }`}
+              >
+                <span>ライブとセトリ</span>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                href="/stats" 
+                className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
+                  isActive('/stats') 
+                    ? 'bg-white/30 text-white' 
+                    : 'hover:bg-white/20 text-white'
+                }`}
+              >
+                アクティビティ
+              </Link>
+            </li>
+            <li>
+              <Link 
+                href="/heatmap" 
+                className={`px-3 py-1 rounded-full text-sm transition-colors inline-block ${
+                  isActive('/heatmap') 
+                    ? 'bg-white/30 text-white' 
+                    : 'hover:bg-white/20 text-white'
+                }`}
+              >
+                ヒートマップ
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
           {/* 設定ボタン */}
           <button
             className="ml-2 p-2 rounded-full hover:bg-white/20 transition-colors"
@@ -190,12 +153,12 @@ export const Header = () => {
               <button
                 onClick={toggleBreadcrumbs}
                 aria-pressed={isBreadcrumbsEnabled}
-                className="text-purple-600 hover:text-purple-800 focus:outline-none"
+                className="focus:outline-none"
                 title={isBreadcrumbsEnabled ? "パンくずリストを非表示" : "パンくずリストを表示"}
               >
                 {isBreadcrumbsEnabled ? 
-                  <ToggleRight size={24} /> : 
-                  <ToggleLeft size={24} />
+                  <ToggleRight size={24} className="text-purple-600 fill-purple-600" /> : 
+                  <ToggleLeft size={24} className="text-purple-600" />
                 }
               </button>
             </div>

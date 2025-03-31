@@ -40,11 +40,12 @@ export function parseLiveHistory(liveHistoryText: string): Live[] {
         const [, name, venue] = match;
         
         lives.push({
-          liveId: `live_${eventId}`, // IDを直接使用
-          date: formatDate(date), // YYYY/MM/DD -> YYYY-MM-DD
-          name: name.trim(),
-          venue: venue.trim(),
-          memo: parts[3] ? parts[3].trim() : undefined
+          id: `live_${eventId}`, // Use id to match Live type
+          eventId: parseInt(eventId),
+          date: formatDate(date),
+          eventName: name.trim(), // Use eventName instead of name
+          venueName: venue.trim(), // Use venueName instead of venue
+          memo: parts[3] ? parts[3].trim() : ''
         });
       }
     }
@@ -55,7 +56,7 @@ export function parseLiveHistory(liveHistoryText: string): Live[] {
 
 /**
  * セットリスト履歴からセットリスト情報と楽曲情報を抽出
- * 更新版：イベントIDを使用して対応するライブを特定
+ * 更新版：YouTubeリンク情報を含む
  */
 export async function parseSetlistHistory(
   setlistText: string,
@@ -79,15 +80,15 @@ export async function parseSetlistHistory(
   const liveIdMap = new Map<string, string>();
   lives.forEach(live => {
     // live_XXXの形式からXXXを抽出
-    const idMatch = live.liveId.match(/live_(\d+)/);
+    const idMatch = live.id.match(/live_(\d+)/);
     if (idMatch && idMatch[1]) {
-      liveIdMap.set(idMatch[1], live.liveId);
+      liveIdMap.set(idMatch[1], live.id);
     }
   });
   
   for (let i = skipHeader ? 1 : 0; i < lines.length; i++) {
     const line = lines[i];
-    // "出演イベントID	イベント名＠会場名	曲名	演奏順	形態" の形式を解析
+    // "出演イベントID	イベント名＠会場名	曲名	演奏順	形態	Youtube" の形式を解析
     const parts = line.split('\t');
     
     if (parts.length >= 5) {
@@ -96,6 +97,8 @@ export async function parseSetlistHistory(
       const songTitle = parts[2].trim();
       const orderStr = parts[3].trim();
       const type = parts[4].trim();
+      // YouTube URLの取得（存在する場合）
+      const youtubeUrl = parts.length >= 6 ? parts[5].trim() : '';
       
       // イベントIDに対応するライブIDを取得
       const liveId = liveIdMap.get(eventId);
@@ -120,10 +123,12 @@ export async function parseSetlistHistory(
       if (!currentSongId) {
         currentSongId = `song_${String(songId).padStart(3, '0')}`;
         songsMap.set(currentSongId, {
-          songId: currentSongId,
+          id: currentSongId,
           title: songTitle,
           album: '', // 後で補完
-          releaseDate: ''
+          releaseDate: '',
+          trackNumber: 0, // Add this required property
+          isSingle: false // Add this required property
         });
         songId++;
       }
@@ -133,7 +138,9 @@ export async function parseSetlistHistory(
         liveId,
         songId: currentSongId,
         order: parseInt(orderStr),
-        memo: type === 'メドレー' ? 'メドレー形式で演奏' : ''
+        type: type === 'メドレー' ? 'medley' : 'individual', // Add this line
+        memo: type === 'メドレー' ? 'メドレー形式で演奏' : '',
+        youtubeUrl: youtubeUrl || undefined
       });
     }
   }

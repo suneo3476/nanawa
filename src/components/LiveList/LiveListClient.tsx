@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 type LiveListClientProps = {
   lives: (Live & {
-    setlist?: Pick<Song, 'songId' | 'title'>[];
+    setlist?: Pick<Song, 'id' | 'title'>[];
   })[];
 };
 
@@ -19,7 +19,7 @@ export const LiveListClient = ({ lives }: LiveListClientProps) => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {lives.map(live => (
         <LiveCard 
-          key={live.liveId} 
+          key={live.id} 
           live={live}
           onSelect={(liveId) => router.push(`/lives/${liveId}`)}
         />
