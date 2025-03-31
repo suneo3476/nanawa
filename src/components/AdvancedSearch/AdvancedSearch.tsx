@@ -35,6 +35,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
     album: '',
     playedMoreThan: '',
     playedLessThan: '',
+    hasYoutubeVideos: false // Initialize new parameter
   });
 
   // Search results state
@@ -89,7 +90,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
   // Search parameter change handler
   const handleChangeSearchParam = (
     key: keyof SearchParams,
-    value: string
+    value: any
   ) => {
     setSearchParams(prev => ({ ...prev, [key]: value }));
   };
@@ -104,6 +105,7 @@ export default function AdvancedSearch({ lives, songs, setlists }: AdvancedSearc
       album: '',
       playedMoreThan: '',
       playedLessThan: '',
+      hasYoutubeVideos: false
     });
     
     // Reset display count

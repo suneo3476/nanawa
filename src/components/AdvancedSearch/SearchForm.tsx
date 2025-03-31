@@ -1,6 +1,6 @@
 // src/components/AdvancedSearch/SearchForm.tsx
 import React from 'react';
-import { Search, Calendar, MapPin, Music, Album, Filter, X } from 'lucide-react';
+import { Search, Calendar, MapPin, Music, Album, Filter, X, Youtube } from 'lucide-react';
 import { SearchParams } from './utils/searchUtils';
 
 interface SearchFormProps {
@@ -37,9 +37,9 @@ const SearchForm: React.FC<SearchFormProps> = ({
           type="text"
           placeholder="キーワードで検索（ライブ名、会場名など）"
           value={searchParams.keyword}
-          onChange={(e) => onChangeSearchParam('keyword', e.target.value)}
-          className="pl-10 w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-        />
+          onChange={(e) => onChangeSearchParam('hasYoutubeVideos', e.target.checked ? 'true' : '')}
+          className="h-4 w-4 text-purple-600 rounded focus:ring-purple-500"        
+      />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -142,6 +142,25 @@ const SearchForm: React.FC<SearchFormProps> = ({
               onChange={(e) => onChangeSearchParam('playedLessThan', e.target.value)}
               className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
             />
+          </div>
+        </div>
+
+        {/* Youtube Filter */}
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <Youtube size={16} className="text-red-500" />
+            YouTube動画
+          </label>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={searchParams.hasYoutubeVideos}
+              onChange={(e) => onChangeSearchParam('hasYoutubeVideos', e.target.checked ? 'true' : '')}
+              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+            />
+            <label className="ml-2 text-sm text-gray-600">
+              YouTubeの動画があるライブのみ表示
+            </label>
           </div>
         </div>
       </div>

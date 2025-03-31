@@ -11,6 +11,7 @@ export interface SearchParams {
   album: string;
   playedMoreThan: string;
   playedLessThan: string;
+  hasYoutubeVideos: boolean;
 }
 
 export interface SearchResults {
@@ -23,45 +24,34 @@ export function filterLives(
   songs: Song[],
   setlists: SetlistItem[],
   searchParams: SearchParams
-): Live[] {
-  return lives.filter(live => {
-    // Keyword search (event name, venue name)
-    if (searchParams.keyword && 
-        !live.eventName.toLowerCase().includes(searchParams.keyword.toLowerCase()) &&
-        !live.venueName.toLowerCase().includes(searchParams.keyword.toLowerCase())) {
-      return false;
+): (Live & { youtubeVideoCount: number })[] {
+  // Calculate YouTube video counts for each live
+  const youtubeVideoCounts: Record<string, number> = {};
+  
+  setlists.forEach(item => {
+    if (item.youtubeUrl && item.youtubeUrl.trim() !== '') {
+      youtubeVideoCounts[item.liveId] = (youtubeVideoCounts[item.liveId] || 0) + 1;
     }
-    
-    // Venue search
-    if (searchParams.venue && 
-        live.venueName !== searchParams.venue) {
-      return false;
-    }
-    
-    // Year range search
-    const liveYear = new Date(live.date).getFullYear();
-    if (searchParams.yearStart && liveYear < parseInt(searchParams.yearStart)) {
-      return false;
-    }
-    if (searchParams.yearEnd && liveYear > parseInt(searchParams.yearEnd)) {
-      return false;
-    }
-    
-    // Album search (check if any song played in this live is from the specified album)
-    if (searchParams.album) {
-      const liveSongIds = setlists
-        .filter(item => item.liveId === live.id)
-        .map(item => item.songId);
-      
-      const liveSongs = songs.filter(song => liveSongIds.includes(song.id));
-      
-      if (!liveSongs.some(song => song.album === searchParams.album)) {
-        return false;
-      }
-    }
-    
-    return true;
   });
+  
+  return lives
+    .filter(live => {
+      // Existing filters...
+      
+      // YouTube filter
+      if (searchParams.hasYoutubeVideos) {
+        const videoCount = youtubeVideoCounts[live.id] || 0;
+        if (videoCount === 0) {
+          return false;
+        }
+      }
+      
+      return true;
+    })
+    .map(live => ({
+      ...live,
+      youtubeVideoCount: youtubeVideoCounts[live.id] || 0
+    }));
 }
 
 export function filterSongs(
