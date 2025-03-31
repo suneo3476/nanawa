@@ -1,6 +1,6 @@
 // src/utils/check-links.ts
 
-import { loadLivesData, loadSongsAndSetlists, getAllLiveIds, getAllSongIds } from './static-data-loader';
+import { loadLivesData, loadSongsAndSetlists, getAllLiveIds, getAllSongIds } from '../src/utils/static-data-loader';
 
 export async function checkLinks() {
   // 全ライブIDと楽曲IDを取得
