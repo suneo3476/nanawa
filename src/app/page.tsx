@@ -105,30 +105,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* 最近の更新セクション */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Clock className="text-purple-500" size={20} />
-          最近の更新
-        </h2>
-        
-        <div className="divide-y divide-gray-100">
-          {updates.map((update) => (
-            <div key={update.id} className="py-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-purple-100 text-purple-600 rounded-full px-2 py-1 text-xs font-medium flex items-center gap-1">
-                  <CalendarDays size={12} />
-                  {update.date}
-                </div>
-                <div>
-                  <h3 className="font-medium">{update.title}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{update.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
