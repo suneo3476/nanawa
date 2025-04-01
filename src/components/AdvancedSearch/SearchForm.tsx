@@ -31,15 +31,15 @@ const SearchForm: React.FC<SearchFormProps> = ({
       {/* Keyword search */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search size={18} className="text-gray-400" />
+          <Search size={18} className="text-gray-500" />
         </div>
         <input
           type="text"
           placeholder="キーワードで検索（ライブ名、会場名など）"
           value={searchParams.keyword}
-          onChange={(e) => onChangeSearchParam('hasYoutubeVideos', e.target.checked ? 'true' : '')}
-          className="h-4 w-4 text-purple-600 rounded focus:ring-purple-500"        
-      />
+          onChange={(e) => onChangeSearchParam('keyword', e.target.value)}
+          className="block w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+        />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -52,9 +52,9 @@ const SearchForm: React.FC<SearchFormProps> = ({
           <select
             value={searchParams.venue}
             onChange={(e) => onChangeSearchParam('venue', e.target.value)}
-            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-gray-700 placeholder-gray-700"
           >
-            <option value="">すべての会場</option>
+            <option value="" className="text-gray-700">すべての会場</option>
             {uniqueVenues.map((venue) => (
               <option key={venue} value={venue}>
                 {venue}
@@ -73,24 +73,24 @@ const SearchForm: React.FC<SearchFormProps> = ({
             <select
               value={searchParams.yearStart}
               onChange={(e) => onChangeSearchParam('yearStart', e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+              className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-gray-700"
             >
-              <option value="">開始年</option>
+              <option value="" className="text-gray-700">開始年</option>
               {Array.from({ length: yearRange.max - yearRange.min + 1 }, (_, i) => yearRange.min + i).map((year) => (
-                <option key={`start-${year}`} value={year}>
+                <option key={`start-${year}`} value={year} className="text-gray-800">
                   {year}年
                 </option>
               ))}
             </select>
-            <span className="text-gray-500">～</span>
+            <span className="text-gray-700">～</span>
             <select
               value={searchParams.yearEnd}
               onChange={(e) => onChangeSearchParam('yearEnd', e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+              className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-gray-700"
             >
-              <option value="">終了年</option>
+              <option value="" className="text-gray-700">終了年</option>
               {Array.from({ length: yearRange.max - yearRange.min + 1 }, (_, i) => yearRange.min + i).map((year) => (
-                <option key={`end-${year}`} value={year}>
+                <option key={`end-${year}`} value={year} className="text-gray-800">
                   {year}年
                 </option>
               ))}
@@ -107,11 +107,11 @@ const SearchForm: React.FC<SearchFormProps> = ({
           <select
             value={searchParams.album}
             onChange={(e) => onChangeSearchParam('album', e.target.value)}
-            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-gray-700"
           >
-            <option value="">すべてのアルバム</option>
+            <option value="" className="text-gray-700">すべてのアルバム</option>
             {uniqueAlbums.map((album) => (
-              <option key={album} value={album}>
+              <option key={album} value={album} className="text-gray-800">
                 {album}
               </option>
             ))}
@@ -133,7 +133,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               onChange={(e) => onChangeSearchParam('playedMoreThan', e.target.value)}
               className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
             />
-            <span className="text-gray-500">～</span>
+            <span className="text-gray-700">～</span>
             <input
               type="number"
               placeholder="最大"
@@ -158,7 +158,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               onChange={(e) => onChangeSearchParam('hasYoutubeVideos', e.target.checked ? 'true' : '')}
               className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
             />
-            <label className="ml-2 text-sm text-gray-600">
+            <label className="ml-2 text-sm text-gray-700">
               YouTubeの動画があるライブのみ表示
             </label>
           </div>
@@ -168,7 +168,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
       <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-100">
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-purple-500" />
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-700">
             {activeFiltersCount > 0 
               ? `${activeFiltersCount}個のフィルターが適用中` 
               : 'フィルターなし'}
@@ -188,7 +188,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
           <button
             type="button"
             onClick={onClearFilters}
-            className="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+            className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
           >
             リセット
           </button>

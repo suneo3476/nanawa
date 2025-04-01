@@ -51,7 +51,7 @@ const LivePeriodModal: React.FC<LivePeriodModalProps> = ({
                 onClick={() => onLiveClick(live.id)}
               >
                 <div>
-                  <div className="font-medium">{live.eventName}</div>
+                  <div className="font-medium text-gray-800">{live.eventName}</div>
                   <div className="text-sm text-gray-600 flex items-center gap-4 mt-1">
                     <span className="flex items-center gap-1">
                       <CalendarDays size={14} />

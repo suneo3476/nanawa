@@ -97,8 +97,8 @@ export default function Home() {
                 {link.icon}
               </div>
               <div>
-                <h2 className="text-lg font-semibold mb-1">{link.title}</h2>
-                <p className="text-gray-600">{link.description}</p>
+                <h2 className="text-lg font-semibold text-gray-800 mb-1">{link.title}</h2>
+                <p className="text-gray-700">{link.description}</p>
               </div>
             </div>
           </Link>

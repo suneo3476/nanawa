@@ -4,11 +4,11 @@ export default function HeatmapLoading() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">演奏頻度ヒートマップ</h1>
-        <p className="text-gray-600 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">演奏頻度ヒートマップ</h1>
+        <p className="text-gray-700 mb-6">
           各楽曲の時期ごとの演奏頻度を色の濃淡で表現。「七輪」のレパートリー変遷を一目で把握できます。
         </p>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-6">演奏頻度ヒートマップ</h2>
           

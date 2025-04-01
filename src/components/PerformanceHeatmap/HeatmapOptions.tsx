@@ -38,7 +38,7 @@ const HeatmapOptions: React.FC<HeatmapOptionsProps> = ({
         className="flex items-center justify-between cursor-pointer mb-3 pb-2 border-b"
         onClick={() => setIsOptionsCollapsed(!isOptionsCollapsed)}
       >
-        <div className="font-medium flex items-center gap-2">
+        <div className="font-medium flex items-center gap-2 text-gray-800">
           <Filter size={16} className="text-purple-500" />
           <span>表示オプション</span>
         </div>
@@ -63,10 +63,10 @@ const HeatmapOptions: React.FC<HeatmapOptionsProps> = ({
             <select
               value={timeUnit}
               onChange={(e) => setTimeUnit(e.target.value as TimeUnit)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
             >
-              <option value="year">年別</option>
-              <option value="quarter">四半期別</option>
+              <option value="year" className="text-gray-800">年別</option>
+              <option value="quarter" className="text-gray-800">四半期別</option>
             </select>
           </div>
           
@@ -79,13 +79,13 @@ const HeatmapOptions: React.FC<HeatmapOptionsProps> = ({
             <select
               value={songLimit}
               onChange={(e) => setSongLimit(Number(e.target.value))}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
             >
-              <option value={10}>10曲</option>
-              <option value={20}>20曲</option>
-              <option value={50}>50曲</option>
-              <option value={100}>100曲</option>
-              <option value={200}>全曲表示</option>
+              <option value={10} className="text-gray-800">10曲</option>
+              <option value={20} className="text-gray-800">20曲</option>
+              <option value={50} className="text-gray-800">50曲</option>
+              <option value={100} className="text-gray-800">100曲</option>
+              <option value={200} className="text-gray-800">全曲表示</option>
             </select>
           </div>
           
@@ -98,13 +98,13 @@ const HeatmapOptions: React.FC<HeatmapOptionsProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
             >
-              <option value="frequency">演奏回数</option>
-              <option value="name">曲名</option>
-              <option value="album">アルバム</option>
-              <option value="lastPlayed">最終演奏日</option>
-              <option value="release">リリース年順</option>
+              <option value="frequency" className="text-gray-800">演奏回数</option>
+              <option value="name" className="text-gray-800">曲名</option>
+              <option value="album" className="text-gray-800">アルバム</option>
+              <option value="lastPlayed" className="text-gray-800">最終演奏日</option>
+              <option value="release" className="text-gray-800">リリース年順</option>
             </select>
           </div>
           
@@ -118,16 +118,18 @@ const HeatmapOptions: React.FC<HeatmapOptionsProps> = ({
                 max={yearRange.end}
                 value={yearRange.start}
                 onChange={(e) => setYearRange({ ...yearRange, start: Number(e.target.value) })}
-                className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+                placeholder="開始年"
               />
-              <span className="text-gray-500">～</span>
+              <span className="text-gray-700">～</span>
               <input
                 type="number"
                 min={yearRange.start}
                 max={allYears.length > 0 ? Math.max(...allYears) : new Date().getFullYear()}
                 value={yearRange.end}
                 onChange={(e) => setYearRange({ ...yearRange, end: Number(e.target.value) })}
-                className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+                placeholder="終了年"
               />
             </div>
           </div>

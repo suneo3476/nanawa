@@ -152,7 +152,6 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">七輪 演奏統計</h2>
       
       {/* 期間フィルター */}
       <div className="bg-purple-50 rounded-lg p-4 mb-8">
@@ -171,7 +170,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
               }))}
               min="2000" 
               max={yearRange.end}
-              className="w-20 px-2 py-1 border border-gray-300 rounded"
+              className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-800 placeholder-gray-700"
             />
             <span>～</span>
             <input 
@@ -183,7 +182,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
               }))}
               min={yearRange.start} 
               max={new Date().getFullYear()}
-              className="w-20 px-2 py-1 border border-gray-300 rounded"
+              className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-800 placeholder-gray-700"
             />
           </div>
           
@@ -220,7 +219,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4 text-purple-700">
             <Music size={18} />
-            <h3 className="font-semibold">演奏回数Top10曲</h3>
+            <h3 className="font-semibold text-gray-800">演奏回数Top10曲</h3>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -248,7 +247,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4 text-purple-700">
             <Disc size={18} />
-            <h3 className="font-semibold">アルバム別演奏曲分布</h3>
+            <h3 className="font-semibold text-gray-800">アルバム別演奏曲分布</h3>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -278,7 +277,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4 text-purple-700">
             <Calendar size={18} />
-            <h3 className="font-semibold">年別ライブ回数の推移</h3>
+            <h3 className="font-semibold text-gray-800">年別ライブ回数の推移</h3>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -306,7 +305,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4 text-purple-700">
             <MapPin size={18} />
-            <h3 className="font-semibold">会場別ライブ回数ランキング</h3>
+            <h3 className="font-semibold text-gray-800">会場別ライブ回数ランキング</h3>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -334,23 +333,22 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
       {/* サマリーセクション */}
       <div className="mt-8 border-t border-gray-200 pt-6">
         <h3 className="text-lg font-semibold mb-4 text-gray-800">統計サマリー</h3>
-        
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-purple-50 p-4 rounded-lg">
             <p className="text-sm text-purple-600 mb-1">総ライブ回数</p>
-            <p className="text-2xl font-bold">{filteredLives.length}回</p>
+            <p className="text-2xl font-bold text-gray-800">{filteredLives.length}回</p>
           </div>
           
           <div className="bg-pink-50 p-4 rounded-lg">
             <p className="text-sm text-pink-600 mb-1">演奏楽曲数</p>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-gray-800">
               {new Set(filteredSetlists.map(item => item.songId)).size}曲
             </p>
           </div>
           
           <div className="bg-purple-50 p-4 rounded-lg">
             <p className="text-sm text-purple-600 mb-1">平均セットリスト曲数</p>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-gray-800">
               {filteredLives.length ? 
                 (filteredSetlists.length / filteredLives.length).toFixed(1) : 0}曲
             </p>
@@ -358,7 +356,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
           
           <div className="bg-pink-50 p-4 rounded-lg">
             <p className="text-sm text-pink-600 mb-1">最も演奏された曲</p>
-            <p className="text-2xl font-bold truncate">
+            <p className="text-2xl font-bold text-gray-800 truncate">
               {topSongsData.length > 0 ? topSongsData[0].name : '-'}
             </p>
           </div>

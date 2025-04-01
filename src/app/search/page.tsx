@@ -16,7 +16,7 @@ export default async function SearchPage() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">これまでのライブとセトリ</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">これまでのライブとセトリ</h1>
       
       <Suspense fallback={<div>Loading search...</div>}>
         <AdvancedSearch

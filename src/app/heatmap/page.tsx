@@ -16,7 +16,7 @@ export default async function HeatmapPage() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">演奏頻度ヒートマップ</h1>
+      <h1 className="text-xl font-bold text-gray-800 mb-4">演奏頻度ヒートマップ</h1>
       
       <Suspense fallback={<div>Loading heatmap...</div>}>
         <PerformanceHeatmap
