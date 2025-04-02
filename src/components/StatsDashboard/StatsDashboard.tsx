@@ -156,6 +156,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">グラフと数字で見る七輪</h2>
       
       {/* 期間フィルター */}
       <div className="bg-purple-50 rounded-lg p-4 mb-8">
