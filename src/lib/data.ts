@@ -77,6 +77,7 @@ const DATA_FILES = [
   "album_tracks",
   "song_attributes",
   "song_seasons",
+  "members",
 ];
 
 /**
@@ -419,6 +420,30 @@ export function getAllSongs(): SongDetail[] {
 
 export function getSong(songId: string): SongDetail | null {
   return getAllSongs().find((s) => s.id === songId) ?? null;
+}
+
+export interface BandMember {
+  id: string;
+  name: string;
+  /** やりたい曲の songId */
+  wishes: string[];
+}
+
+/**
+ * バンドメンバーと希望曲(data/members.yml)。
+ * 選曲ノートの初期値になる。ファイルが無ければ空配列。
+ */
+export function getMembers(): BandMember[] {
+  const d = loadDataset();
+  const songIds = new Set(d.songs.map((s) => s.id));
+  return loadOptionalYaml<Record<string, unknown>>("members").map((m) => ({
+    id: toStr(m.id),
+    name: toStr(m.name),
+    wishes: (Array.isArray(m.wishes) ? m.wishes : [])
+      .map(toStr)
+      // 曲が削除された場合に備えて、実在するIDだけ残す
+      .filter((id) => songIds.has(id)),
+  }));
 }
 
 export interface AlbumWithTracks extends Album {

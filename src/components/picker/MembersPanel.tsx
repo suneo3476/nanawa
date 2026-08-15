@@ -16,6 +16,9 @@ export function MembersPanel({
   onAdd,
   onRemove,
   onRemoveWish,
+  onSave,
+  onReload,
+  saveState,
 }: {
   members: Member[];
   pickedIds: Set<string>;
@@ -26,6 +29,11 @@ export function MembersPanel({
   onAdd: () => void;
   onRemove: (id: string) => void;
   onRemoveWish: (memberId: string, songId: string) => void;
+  /** data/members.yml に保存する */
+  onSave: () => void;
+  /** data/members.yml から読み直す */
+  onReload: () => void;
+  saveState: "idle" | "saving" | "saved" | "error";
 }) {
   const withWishes = members.filter((m) => m.wishes.length > 0);
   const satisfied = withWishes.filter((m) =>
@@ -145,6 +153,36 @@ export function MembersPanel({
       >
         + メンバーを追加
       </button>
+
+      <div className="mt-3 border-t border-border pt-2.5">
+        <p className="text-[10px] leading-relaxed text-muted">
+          メンバーと希望曲はこの端末に自動保存されます。バンド共通の記録として残すには、下から
+          data/members.yml に保存してください(他の端末や他のメンバーからも見えるようになります)。
+        </p>
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saveState === "saving"}
+            className="flex-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-strong disabled:opacity-40"
+          >
+            {saveState === "saving"
+              ? "保存中…"
+              : saveState === "saved"
+                ? "保存しました ✓"
+                : saveState === "error"
+                  ? "保存できませんでした"
+                  : "メンバーと希望曲を保存"}
+          </button>
+          <button
+            type="button"
+            onClick={onReload}
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground"
+          >
+            読み直す
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

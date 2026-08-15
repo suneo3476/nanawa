@@ -22,13 +22,28 @@ import { MembersPanel } from "./MembersPanel";
 import { SetlistExport } from "./SetlistExport";
 import { SuggestPanel } from "./SuggestPanel";
 import { suggestSetlists, type Suggestion } from "@/lib/suggest";
-import type { Draft, PickerAlbum, PickerSong } from "./types";
+import {
+  checkLocalApi,
+  loadGithubConfig,
+  saveMembersViaGithub,
+  saveMembersViaLocal,
+} from "@/lib/setlist-backend";
+import type { Draft, Member, PickerAlbum, PickerSong } from "./types";
 
 const STORAGE_KEY = "nanawa-picker-v2";
 const LEGACY_KEY = "nanawa-picker-v1";
 const DEFAULT_MEMBER_COUNT = 7;
 
-function newDraft(seq: number): Draft {
+function defaultMembers(saved: Member[]): Member[] {
+  if (saved.length > 0) return saved.map((m) => ({ ...m, wishes: [...m.wishes] }));
+  return Array.from({ length: DEFAULT_MEMBER_COUNT }, (_, i) => ({
+    id: `m${i + 1}`,
+    name: `メンバー${i + 1}`,
+    wishes: [],
+  }));
+}
+
+function newDraft(seq: number, saved: Member[] = []): Draft {
   return {
     id: `draft-${seq}`,
     eventName: "",
@@ -36,11 +51,7 @@ function newDraft(seq: number): Draft {
     venueName: "",
     memo: "",
     items: [],
-    members: Array.from({ length: DEFAULT_MEMBER_COUNT }, (_, i) => ({
-      id: `m${i + 1}`,
-      name: `メンバー${i + 1}`,
-      wishes: [],
-    })),
+    members: defaultMembers(saved),
     tempoDir: "none",
     fameDir: "none",
   };
@@ -55,19 +66,25 @@ interface Store {
 export function SetlistPlanner({
   songs,
   albums,
+  members: savedMembers,
   nextLiveNumber,
   nextEventId,
 }: {
   songs: PickerSong[];
   albums: PickerAlbum[];
+  /** data/members.yml のメンバーと希望曲(新規セトリの初期値) */
+  members: Member[];
   nextLiveNumber: number;
   nextEventId: number;
 }) {
   const [store, setStore] = useState<Store>(() => ({
-    drafts: [newDraft(1)],
+    drafts: [newDraft(1, savedMembers)],
     currentId: "draft-1",
     seq: 1,
   }));
+  const [memberSaveState, setMemberSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [loaded, setLoaded] = useState(false);
   const [urlList, setUrlList] = useState<string[] | null>(null);
   const [copied, setCopied] = useState<"" | "link" | "text">("");
@@ -99,7 +116,7 @@ export function SetlistPlanner({
             songById.has(id),
           );
           if (ids.length) {
-            const d = newDraft(1);
+            const d = newDraft(1, savedMembers);
             d.items = ids.map((songId) => ({ songId, confirmed: false }));
              
             setStore({ drafts: [d], currentId: d.id, seq: 1 });
@@ -117,6 +134,9 @@ export function SetlistPlanner({
     }
      
     setLoaded(true);
+    // savedMembers は初回の下書き作成にしか使わないので、依存に入れて
+    // 読み直しが走らないようにする(入れると保存のたびに復元されてしまう)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songById]);
 
   useEffect(() => {
@@ -127,6 +147,21 @@ export function SetlistPlanner({
       // 保存できなくても致命的ではない
     }
   }, [store, loaded]);
+
+  // 別のタブで更新されたら取り込む(古いタブが新しい内容を上書きするのを防ぐ)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        const parsed = JSON.parse(e.newValue) as Store;
+        if (parsed?.drafts?.length) setStore(parsed);
+      } catch {
+        // 壊れた値は無視
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     if (!poolModalOpen) return;
@@ -350,6 +385,41 @@ export function SetlistPlanner({
 
   const wishMember = draft.members.find((m) => m.id === wishMemberId) ?? null;
 
+  const saveMembers = async () => {
+    setMemberSaveState("saving");
+    const payload = draft.members.map((m) => ({
+      id: m.id,
+      name: m.name,
+      wishes: m.wishes,
+    }));
+    try {
+      const local = await checkLocalApi();
+      if (local) {
+        await saveMembersViaLocal(payload);
+      } else {
+        const cfg = loadGithubConfig();
+        if (!cfg) {
+          throw new Error(
+            "保存先がありません。npm run dev で起動するか、書き出し画面でGitHubを設定してください。",
+          );
+        }
+        await saveMembersViaGithub(cfg, payload, (id) => songById.get(id)?.title);
+      }
+      setMemberSaveState("saved");
+      setTimeout(() => setMemberSaveState("idle"), 2500);
+    } catch (e) {
+      console.error(e);
+      setMemberSaveState("error");
+      setTimeout(() => setMemberSaveState("idle"), 3500);
+    }
+  };
+
+  /** data/members.yml の内容を今のセトリに読み直す */
+  const reloadMembers = () => {
+    if (savedMembers.length === 0) return;
+    updateDraft((d) => ({ ...d, members: defaultMembers(savedMembers) }));
+  };
+
   const generateSuggestions = () => {
     setSuggestions(
       suggestSetlists({
@@ -453,7 +523,7 @@ export function SetlistPlanner({
             onClick={() =>
               setStore((s) => {
                 const seq = s.seq + 1;
-                const d = newDraft(seq);
+                const d = newDraft(seq, savedMembers);
                 return { drafts: [...s.drafts, d], currentId: d.id, seq };
               })
             }
@@ -711,6 +781,9 @@ export function SetlistPlanner({
                 members: d.members.filter((m) => m.id !== id),
               }));
             }}
+            onSave={saveMembers}
+            onReload={reloadMembers}
+            saveState={memberSaveState}
             onRemoveWish={(memberId, songId) =>
               updateDraft((d) => ({
                 ...d,

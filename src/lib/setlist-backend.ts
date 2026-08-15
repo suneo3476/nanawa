@@ -136,6 +136,58 @@ export async function saveViaLocal(payload: SetlistPayload): Promise<SaveResult>
   return { liveId: json.liveId!, count: json.count! };
 }
 
+// ---- メンバーと希望曲 ----
+
+export interface MemberPayload {
+  id: string;
+  name: string;
+  wishes: string[];
+}
+
+/** data/members.yml の中身を組み立てる */
+export function buildMembersYaml(
+  members: MemberPayload[],
+  songTitle?: (songId: string) => string | undefined,
+): string {
+  const header = [
+    "# バンドメンバーと、その人がやりたい曲(選曲ノートの希望曲)。",
+    "# 選曲ノートで「メンバーと希望曲を保存」を押すとこのファイルが更新されます。",
+    "# 手で編集しても構いません(songId は data/songs.yml のID)。",
+  ].join("\n");
+  const body = members
+    .map((m) => {
+      const head = [`- id: ${m.id}`, `  name: ${yamlStr(m.name)}`];
+      if (m.wishes.length === 0) return [...head, "  wishes: []"].join("\n");
+      return [
+        ...head,
+        "  wishes:",
+        ...m.wishes.map((w) => {
+          const title = songTitle?.(w);
+          return `    - ${w}${title ? ` # ${title}` : ""}`;
+        }),
+      ].join("\n");
+    })
+    .join("\n");
+  return `${header}\n${body}\n`;
+}
+
+export async function saveMembersViaLocal(
+  members: MemberPayload[],
+): Promise<number> {
+  const res = await fetch(`${LOCAL_API_BASE}/api/members`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ members }),
+  });
+  const json = (await res.json()) as {
+    ok: boolean;
+    count?: number;
+    errors?: string[];
+  };
+  if (!json.ok) throw new Error((json.errors ?? ["保存に失敗しました"]).join("\n"));
+  return json.count ?? members.length;
+}
+
 // ---- github ----
 // 静的ホスティングにデプロイした状態でも、ブラウザから GitHub の API を叩けば
 // リポジトリのYAMLを更新できる。更新をトリガーにホスティング側が再ビルドすれば
@@ -222,7 +274,8 @@ async function putFile(
       body: JSON.stringify({
         message,
         content: encodeBase64(content),
-        sha,
+        // 新規作成のときは sha を送らない
+        ...(sha ? { sha } : {}),
         branch: cfg.branch,
       }),
     },
@@ -292,6 +345,27 @@ export async function saveViaGithub(
   );
 
   return { liveId, count: payload.items.length, url: commitUrl };
+}
+
+export async function saveMembersViaGithub(
+  cfg: GithubConfig,
+  members: MemberPayload[],
+  songTitle?: (songId: string) => string | undefined,
+): Promise<number> {
+  let sha: string | undefined;
+  try {
+    sha = (await getFile(cfg, "data/members.yml")).sha;
+  } catch {
+    sha = undefined; // まだファイルが無い場合は新規作成
+  }
+  await putFile(
+    cfg,
+    "data/members.yml",
+    buildMembersYaml(members, songTitle),
+    sha ?? "",
+    "add: メンバーの希望曲を更新した",
+  );
+  return members.length;
 }
 
 /** 設定したリポジトリ/ブランチ/トークンで読み書きできるかを確認する */
