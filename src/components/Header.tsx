@@ -11,6 +11,7 @@ const NAV = [
   { href: "/songs", label: "楽曲" },
   { href: "/venues", label: "会場" },
   { href: "/stats", label: "統計" },
+  { href: "/picker", label: "選曲" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
