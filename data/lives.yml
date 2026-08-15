@@ -1,3 +1,33 @@
+- id: live093
+  eventId: 93
+  date: '2026-10-10'
+  eventName: やらまいかミュージックフェスティバル2026
+  venueName: キタラ
+  memo: ''
+- id: live092
+  eventId: 92
+  date: '2025-11-15'
+  eventName: BUZZ ROCK
+  venueName: 弁天島マルガリータ
+  memo: ''
+- id: live091
+  eventId: 91
+  date: '2025-10-11'
+  eventName: 第17回やらまいかミュージックフェスティバル
+  venueName: キタラステージ
+  memo: ''
+- id: live090
+  eventId: 90
+  date: '2025-09-13'
+  eventName: みっくすさらだばー vol.2
+  venueName: スタジオ246 名古屋
+  memo: ''
+- id: live089
+  eventId: 89
+  date: '2025-04-05'
+  eventName: DYL vol.58
+  venueName: 川崎セルビアンナイト
+  memo: ''
 - id: live088
   eventId: 88
   date: '2024-12-14'
