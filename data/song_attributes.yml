@@ -150,7 +150,7 @@
   tempo: mid
   ballad: false
 - songId: song036   # 二人
-  tempo: slow
+  tempo: up
   ballad: true
   tieup: エムティーアイ「music.jp」CMソング
   bpm: 162
@@ -215,7 +215,7 @@
   bpm: 97
 - songId: song051   # milk
   tempo: mid
-  ballad: true
+  ballad: false
   tieup: ブリヂストンサイクル「アルベルト」CMソング
 - songId: song052   # ずっと
   tempo: slow
@@ -368,12 +368,16 @@
 - songId: song112   # 夢のダンス
   bpm: 120
 - songId: song113   # Smooch!
+  tempo: mid
+  ballad: false
   bpm: 123
 - songId: song114   # ずっと近くに
   bpm: 94
 - songId: song115   # 愛のしぐさ
   bpm: 148
 - songId: song116   # 三国駅
+  tempo: slow
+  ballad: false
   bpm: 144
 - songId: song117   # 星物語
   bpm: 115
@@ -408,6 +412,8 @@
 - songId: song147   # 冷たい嘘
   bpm: 89
 - songId: song148   # 4月の雨
+  tempo: mid
+  ballad: false
   tieup: シード「シード ワンデーピュアうるおいプラス」CMソング
   bpm: 148
 - songId: song149   # あなたを連れて
@@ -439,6 +445,12 @@
   tieup: 東映配給映画『先輩と彼女』主題歌
 - songId: song165   # 信号
   tieup: SEIKO「セイコー ルキア」CMソング
+- songId: song168   # 夢見る隙間
+  tempo: up
+  ballad: false
+- songId: song169   # 冷凍便
+  tempo: up
+  ballad: false
 - songId: song181   # 恋をしたのは
   tieup: 松竹配給アニメ映画『聲の形』主題歌
 - songId: song195   # あかときリロード
@@ -464,12 +476,21 @@
   tieup: ホーユー「ビューティラボ ホイップヘアカラー」CMソング
 - songId: song233   # 恋人
   bpm: 97
+- songId: song244   # ふたつの頬花
+  tempo: up
+  ballad: false
+- songId: song246   # ポニーテール
+  tempo: mid
+  ballad: false
 - songId: song247   # 洗面所
   tieup: ゲームボーイアドバンス用ソフト「ファイアーエムブレム 聖魔の光石」CMソング
 - songId: song248   # 小鳥公園
   bpm: 146
 - songId: song249   # 蝶の羽飾り
   bpm: 133
+- songId: song250   # シーソーの海
+  tempo: up
+  ballad: false
 - songId: song252   # リップ
   tieup: NTT DoCoMo関西「家族いっしょ割」CMソング
 - songId: song256   # 水とシャンパン
@@ -477,6 +498,9 @@
 - songId: song257   # 線香花火
   tieup: 日本テレビ系『THE・サンデー』2008年8・9月度エンディングテーマ
   bpm: 108
+- songId: song275   # 夜の風邪
+  tempo: slow
+  ballad: false
 - songId: song277   # 愛した日
   tieup: テレビ朝日系金曜ナイトドラマ『私のおじさん〜WATAOJI〜』主題歌
 - songId: song280   # あたしたち
