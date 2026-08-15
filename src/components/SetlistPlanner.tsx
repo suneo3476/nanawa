@@ -149,9 +149,9 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       {/* 曲プール */}
-      <div>
+      <div className="min-w-0">
         <div className="sticky top-14 z-30 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
           <input
             value={query}
@@ -198,7 +198,7 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
       </div>
 
       {/* 候補リスト */}
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+      <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
         {urlList && (
           <div className="mb-3 rounded-xl border border-accent/40 bg-accent-soft p-3 text-sm">
             <p className="font-medium text-accent-strong">
