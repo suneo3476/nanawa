@@ -229,7 +229,7 @@ export function PoolPanel({
               </span>
             )}
           </p>
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
             {pool.slice(0, MAX_ROWS).map(({ song, matchedAlbum }) => (
               <SongRow
                 key={song.id}
@@ -338,7 +338,7 @@ function DiscographyBrowser({
           </Chip>
         ))}
       </div>
-      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+      <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
         {shown.map((album) => {
           const open = openAlbum === album.id;
           return (
