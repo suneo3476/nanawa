@@ -1726,3 +1726,39 @@
   releaseDate: '2025'
   trackNumber: 1
   isSingle: true
+- id: song289
+  title: カプセル
+  album: カプセル
+  releaseDate: '2025'
+  trackNumber: 1
+  isSingle: true
+- id: song290
+  title: 燃えた涙 月とライター
+  album: cinema/capsule
+  releaseDate: '2025'
+  trackNumber: 3
+  isSingle: false
+- id: song291
+  title: Cry High Fly
+  album: Cry High Fly
+  releaseDate: '2026'
+  trackNumber: 1
+  isSingle: true
+- id: song292
+  title: 大切だった人
+  album: Cry High Fly
+  releaseDate: '2026'
+  trackNumber: 2
+  isSingle: false
+- id: song293
+  title: 消しゴム
+  album: Cry High Fly
+  releaseDate: '2026'
+  trackNumber: 3
+  isSingle: false
+- id: song294
+  title: 名のないハート
+  album: 星の降る日に
+  releaseDate: '2023'
+  trackNumber: 3
+  isSingle: false
