@@ -7,9 +7,9 @@ import type {
   ArchiveSummary,
   Live,
   LiveDetail,
+  Season,
   SetlistEntry,
   SetlistItem,
-  MediaUse,
   Song,
   SongDetail,
   SongPerformance,
@@ -28,6 +28,12 @@ function loadYaml<T>(name: string): T[] {
   return parsed as T[];
 }
 
+/** 任意ファイル(まだ用意していなくてもビルドが通る) */
+function loadOptionalYaml<T>(name: string): T[] {
+  if (!fs.existsSync(path.join(DATA_DIR, `${name}.yml`))) return [];
+  return loadYaml<T>(name);
+}
+
 function fail(msg: string): never {
   throw new Error(`データ検証エラー: ${msg}`);
 }
@@ -35,12 +41,15 @@ function fail(msg: string): never {
 interface SongAttr {
   tempo: Tempo | null;
   ballad: boolean | null;
-  mediaUse: MediaUse | null;
+  kouhaku: boolean;
+  tieup: string | null;
+  bpm: number | null;
 }
 
 interface Dataset {
   songs: Song[];
   attrsBySong: Map<string, SongAttr>;
+  seasonsBySong: Map<string, Season[]>;
   lives: Live[];
   setlists: SetlistItem[];
   albums: Album[];
@@ -123,10 +132,20 @@ function loadDataset(): Dataset {
           ? (toStr(a.tempo) as Tempo)
           : null,
         ballad: a.ballad === true || a.ballad === "true",
-        mediaUse: ["kouhaku", "tieup"].includes(toStr(a.mediaUse))
-          ? (toStr(a.mediaUse) as MediaUse)
-          : null,
+        kouhaku: a.kouhaku === true || a.kouhaku === "true",
+        tieup: toStr(a.tieup) || null,
+        bpm: a.bpm != null && a.bpm !== "" ? Number(a.bpm) : null,
       },
+    ]),
+  );
+
+  const VALID_SEASONS = ["spring", "summer", "autumn", "winter"];
+  const seasonsBySong = new Map<string, Season[]>(
+    loadOptionalYaml<Record<string, unknown>>("song_seasons").map((s) => [
+      toStr(s.songId),
+      (Array.isArray(s.seasons) ? s.seasons : [])
+        .map(toStr)
+        .filter((v): v is Season => VALID_SEASONS.includes(v)),
     ]),
   );
 
@@ -155,6 +174,9 @@ function loadDataset(): Dataset {
   for (const songId of attrsBySong.keys()) {
     if (!songById.has(songId))
       fail(`song_attributes.yml: 不明な songId ${songId}`);
+  }
+  for (const songId of seasonsBySong.keys()) {
+    if (!songById.has(songId)) fail(`song_seasons.yml: 不明な songId ${songId}`);
   }
 
   const livesAsc = [...lives].sort(
@@ -191,6 +213,7 @@ function loadDataset(): Dataset {
   cache = {
     songs,
     attrsBySong,
+    seasonsBySong,
     lives,
     setlists,
     albums,
@@ -268,15 +291,19 @@ export function getAllSongs(): SongDetail[] {
   // カタログ取り込み時に先勝ちで false になっていることがあるため、
   // album_tracks からも導出する。
   const albumById = new Map(d.albums.map((a) => [a.id, a]));
+  const isSingleAlbum = (albumId: string) => {
+    const c = albumById.get(albumId)?.category;
+    return c === "シングル" || c === "EP";
+  };
   const singleATracks = new Set(
     d.albumTracks
-      .filter((t) => {
-        const album = albumById.get(t.albumId);
-        return (
-          (album?.category === "シングル" || album?.category === "EP") &&
-          t.trackNumber === 1
-        );
-      })
+      .filter((t) => isSingleAlbum(t.albumId) && t.trackNumber === 1)
+      .map((t) => t.songId),
+  );
+  // シングル/EPの2曲目以降に入っている曲(表題曲を除く) = カップリング
+  const couplingTracks = new Set(
+    d.albumTracks
+      .filter((t) => isSingleAlbum(t.albumId) && t.trackNumber > 1)
       .map((t) => t.songId),
   );
   return d.songs.map((song) => {
@@ -326,17 +353,26 @@ export function getAllSongs(): SongDetail[] {
       .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
 
     const attrs = d.attrsBySong.get(song.id);
-    const mediaUse = attrs?.mediaUse ?? null;
+    const kouhaku = attrs?.kouhaku ?? false;
+    const tieup = attrs?.tieup ?? null;
+    const isSingleA = song.isSingle || singleATracks.has(song.id);
+    // カップリング判定は表題曲を優先(両方に該当する曲は表題曲として扱う)
+    const isCoupling = !isSingleA && couplingTracks.has(song.id);
     return {
       ...song,
       tempo: attrs?.tempo ?? null,
       ballad: attrs?.ballad ?? null,
-      mediaUse,
+      kouhaku,
+      tieup,
+      bpm: attrs?.bpm ?? null,
+      isSingleA,
+      isCoupling,
+      seasons: d.seasonsBySong.get(song.id) ?? [],
       // 有名度: シングル表題曲 or 紅白歌唱 → 1 / タイアップあり → 2 / それ以外 → 3
       fameTier:
-        song.isSingle || singleATracks.has(song.id) || mediaUse === "kouhaku"
+        isSingleA || kouhaku
           ? (1 as const)
-          : mediaUse === "tieup"
+          : tieup
             ? (2 as const)
             : (3 as const),
       playCount: performances.length,
@@ -353,6 +389,28 @@ export function getAllSongs(): SongDetail[] {
 
 export function getSong(songId: string): SongDetail | null {
   return getAllSongs().find((s) => s.id === songId) ?? null;
+}
+
+export interface AlbumWithTracks extends Album {
+  tracks: { songId: string; trackNumber: number }[];
+}
+
+/** ディスコグラフィ(リリース順)。収録曲はトラック番号順。 */
+export function getAllAlbums(): AlbumWithTracks[] {
+  const d = loadDataset();
+  return [...d.albums]
+    .sort(
+      (a, b) =>
+        a.releaseDate.localeCompare(b.releaseDate) ||
+        a.title.localeCompare(b.title, "ja"),
+    )
+    .map((album) => ({
+      ...album,
+      tracks: d.albumTracks
+        .filter((t) => t.albumId === album.id)
+        .map((t) => ({ songId: t.songId, trackNumber: t.trackNumber }))
+        .sort((a, b) => a.trackNumber - b.trackNumber),
+    }));
 }
 
 export function getAllVenues(): Venue[] {

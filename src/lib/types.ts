@@ -82,16 +82,25 @@ export interface AlbumAppearance {
 }
 
 export type Tempo = "up" | "mid" | "slow";
-/** メディア使用歴: 紅白で歌唱 / ドラマ・アニメ・CM等のタイアップ */
-export type MediaUse = "kouhaku" | "tieup";
 /** 知名度: 1=有名(シングル表題 or 紅白) / 2=タイアップあり / 3=コア */
 export type FameTier = 1 | 2 | 3;
+/** 季節タグ(aiko公式Spotifyプレイリスト由来) */
+export type Season = "spring" | "summer" | "autumn" | "winter";
 
 export interface SongDetail extends Song {
   /** 演奏特性(data/song_attributes.yml)。未定義なら null */
   tempo: Tempo | null;
   ballad: boolean | null;
-  mediaUse: MediaUse | null;
+  /** 紅白で歌唱したことがあるか */
+  kouhaku: boolean;
+  /** タイアップの内容(ドラマ/CM名など)。無ければ null */
+  tieup: string | null;
+  bpm: number | null;
+  /** シングル/EPの表題曲(1曲目)か */
+  isSingleA: boolean;
+  /** シングル/EPのカップリング曲(2曲目以降)か */
+  isCoupling: boolean;
+  seasons: Season[];
   fameTier: FameTier;
   playCount: number;
   firstPerformance: SongPerformance | null;
