@@ -89,7 +89,21 @@ export function SongBadges({
         </span>
       )}
       {song.bpm != null && (
-        <span className={`${base} bg-surface-2 font-mono tabular-nums text-muted`}>
+        <span
+          className={`${base} font-mono tabular-nums ${
+            // テンポ区分と食い違う値は倍/半分で検出された可能性が高い
+            (song.tempo === "slow" && song.bpm >= 130) ||
+            (song.tempo === "up" && song.bpm <= 95)
+              ? "bg-[#fbe9e9] text-[#9b2b2b] dark:bg-[#3a1a1a] dark:text-[#e59a9a]"
+              : "bg-surface-2 text-muted"
+          }`}
+          title={
+            (song.tempo === "slow" && song.bpm >= 130) ||
+            (song.tempo === "up" && song.bpm <= 95)
+              ? "テンポ区分と食い違っています。倍/半分で取れているかもしれません"
+              : undefined
+          }
+        >
           BPM={song.bpm}
         </span>
       )}

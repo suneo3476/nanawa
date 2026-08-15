@@ -119,7 +119,11 @@ export function SongRow({
   onToggle: () => void;
   onToggleWish?: () => void;
   /** テンポ/バラードを直したとき */
-  onEditTempo?: (next: { tempo: import("@/lib/types").Tempo; ballad: boolean }) => void;
+  onEditTempo?: (next: {
+    tempo: import("@/lib/types").Tempo;
+    ballad: boolean;
+    bpm: number | null;
+  }) => void;
   /** 未保存の変更があるか */
   tempoEdited?: boolean;
 }) {
@@ -232,6 +236,7 @@ export function SongRow({
             <TempoEditor
               tempo={song.tempo}
               ballad={song.ballad}
+              bpm={song.bpm}
               edited={!!tempoEdited}
               onChange={onEditTempo}
             />
