@@ -139,6 +139,19 @@ const server = http.createServer((req, res) => {
   send(res, 404, { ok: false, errors: ["not found"] });
 });
 
+// ポートが既に使われている場合は、既存のAPIが動いているとみなして静かに終了する
+// (dev.mjs 側は Next.js を巻き込まずに続行する)
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.warn(
+      `データ書き込みAPI: ポート ${PORT} は使用中のため起動しません(既に動いている可能性があります)`,
+    );
+    process.exit(0);
+  }
+  console.error("データ書き込みAPI: 起動に失敗しました", err);
+  process.exit(1);
+});
+
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`データ書き込みAPI: http://127.0.0.1:${PORT} (ローカル専用)`);
 });
