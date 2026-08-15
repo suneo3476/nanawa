@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getAllLives, getAllSongs, getSong, getSummary } from "@/lib/data";
 import { formatDate, formatDateShort } from "@/lib/format";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
+import { SongBadges } from "@/components/SongBadges";
 
 export function generateStaticParams() {
   return getAllSongs()
@@ -48,12 +49,13 @@ export default async function SongPage({
 
       <header className="mt-3">
         <h1 className="text-2xl font-bold sm:text-3xl">{song.title}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <SongBadges song={song} />
+        </div>
+        {song.tieup && (
+          <p className="mt-1.5 text-xs text-muted">{song.tieup}</p>
+        )}
         <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-          {song.isSingle && (
-            <span className="rounded bg-surface-2 px-2 py-0.5 text-muted">
-              シングル曲
-            </span>
-          )}
           {song.appearsOn.length > 0
             ? song.appearsOn.map((a) => (
                 <span
