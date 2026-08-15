@@ -24,7 +24,9 @@ export type AttrFilter =
   | "tieup"
   | "ballad"
   | "performed"
-  | "unperformed";
+  | "unperformed"
+  | "wished"
+  | "unmetWish";
 
 const ATTR_FILTERS: { key: AttrFilter; label: string }[] = [
   { key: "single", label: "シングル" },
@@ -34,6 +36,11 @@ const ATTR_FILTERS: { key: AttrFilter; label: string }[] = [
   { key: "ballad", label: "バラード" },
   { key: "performed", label: "演奏済み" },
   { key: "unperformed", label: "未演奏" },
+];
+
+const WISH_FILTERS: { key: AttrFilter; label: string }[] = [
+  { key: "wished", label: "♥ 誰かの希望" },
+  { key: "unmetWish", label: "♥ まだ叶ってない希望" },
 ];
 
 const SEASONS: Season[] = ["spring", "summer", "autumn", "winter"];
@@ -49,6 +56,8 @@ export interface PoolPanelProps {
   /** 希望登録モードのメンバー(null なら通常モード) */
   wishMember: { id: string; name: string; wishes: string[] } | null;
   wishesBySong: Map<string, string[]>;
+  /** まだ希望が1曲も叶っていないメンバーが望んでいる曲 */
+  unmetWishes: Set<string>;
   onToggle: (songId: string) => void;
   onToggleWish: (songId: string) => void;
   autoFocus?: boolean;
@@ -63,6 +72,7 @@ export function PoolPanel({
   hasDirection,
   wishMember,
   wishesBySong,
+  unmetWishes,
   onToggle,
   onToggleWish,
   autoFocus = false,
@@ -115,22 +125,36 @@ export function PoolPanel({
       ballad: (s) => !!s.ballad,
       performed: (s) => s.performed,
       unperformed: (s) => !s.performed,
+      wished: (s) => (wishesBySong.get(s.id)?.length ?? 0) > 0,
+      unmetWish: (s) => unmetWishes.has(s.id),
     };
     return (s: PickerSong) => {
       // 楽曲属性(シングル/カップリング/紅白/タイアップ/バラード)は OR、
       // 演奏状況は AND。「シングルかカップリングで、かつ未演奏」を表現できる。
       const songAttrs = attrs.filter(
-        (a) => a !== "performed" && a !== "unperformed",
+        (a) =>
+          a !== "performed" &&
+          a !== "unperformed" &&
+          a !== "wished" &&
+          a !== "unmetWish",
       );
       if (songAttrs.length > 0 && !songAttrs.some((a) => test[a](s))) return false;
+      // 演奏状況と希望は AND(「未演奏かつ誰かの希望」を表現できる)
       for (const a of attrs) {
-        if ((a === "performed" || a === "unperformed") && !test[a](s)) return false;
+        if (
+          (a === "performed" ||
+            a === "unperformed" ||
+            a === "wished" ||
+            a === "unmetWish") &&
+          !test[a](s)
+        )
+          return false;
       }
       if (seasons.length > 0 && !seasons.some((x) => s.seasons.includes(x)))
         return false;
       return true;
     };
-  }, [attrs, seasons]);
+  }, [attrs, seasons, wishesBySong, unmetWishes]);
 
   const pool = useMemo(() => {
     const hit = searchable
@@ -198,6 +222,16 @@ export function PoolPanel({
             />
             <div className="no-scrollbar mt-2.5 flex items-center gap-1.5 overflow-x-auto">
               {ATTR_FILTERS.map((f) => (
+                <Chip
+                  key={f.key}
+                  active={attrs.includes(f.key)}
+                  onClick={() => toggleAttr(f.key)}
+                >
+                  {f.label}
+                </Chip>
+              ))}
+              <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+              {WISH_FILTERS.map((f) => (
                 <Chip
                   key={f.key}
                   active={attrs.includes(f.key)}

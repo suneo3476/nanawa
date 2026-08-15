@@ -20,6 +20,8 @@ import { Chip, PoolPanel } from "./PoolPanel";
 import { DirectionMatrix } from "./DirectionMatrix";
 import { MembersPanel } from "./MembersPanel";
 import { SetlistExport } from "./SetlistExport";
+import { SuggestPanel } from "./SuggestPanel";
+import { suggestSetlists, type Suggestion } from "@/lib/suggest";
 import type { Draft, PickerAlbum, PickerSong } from "./types";
 
 const STORAGE_KEY = "nanawa-picker-v2";
@@ -72,6 +74,8 @@ export function SetlistPlanner({
   const [poolModalOpen, setPoolModalOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [wishMemberId, setWishMemberId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
+  const [suggestSize, setSuggestSize] = useState(6);
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
   const draft =
@@ -346,6 +350,40 @@ export function SetlistPlanner({
 
   const wishMember = draft.members.find((m) => m.id === wishMemberId) ?? null;
 
+  const generateSuggestions = () => {
+    setSuggestions(
+      suggestSetlists({
+        songs: songs.map((s) => ({
+          id: s.id,
+          title: s.title,
+          tempo: s.tempo,
+          fameTier: s.fameTier,
+          playCount: s.playCount,
+          livesSinceLast: s.livesSinceLast,
+        })),
+        members: draft.members,
+        size: suggestSize,
+        tempoTarget,
+        fameTarget,
+        locked: draft.items.filter((i) => i.confirmed).map((i) => i.songId),
+      }),
+    );
+  };
+
+  const applySuggestion = (songIds: string[]) => {
+    updateDraft((d) => {
+      const confirmedMap = new Map(d.items.map((i) => [i.songId, i.confirmed]));
+      return {
+        ...d,
+        items: songIds.map((songId) => ({
+          songId,
+          confirmed: confirmedMap.get(songId) ?? false,
+        })),
+      };
+    });
+    setSuggestions(null);
+  };
+
   const poolProps = {
     songs,
     albums,
@@ -354,6 +392,7 @@ export function SetlistPlanner({
     hasDirection,
     wishMember,
     wishesBySong,
+    unmetWishes: unsatisfiedWishes,
     onToggle: toggleSong,
     onToggleWish: toggleWish,
   };
@@ -617,6 +656,20 @@ export function SetlistPlanner({
               }
             />
           </div>
+        </div>
+
+        {/* セトリ案の提案 */}
+        <div className="mt-3">
+          <SuggestPanel
+            suggestions={suggestions}
+            size={suggestSize}
+            onChangeSize={setSuggestSize}
+            onGenerate={generateSuggestions}
+            onApply={applySuggestion}
+            songTitle={(id) => songById.get(id)?.title ?? id}
+            lockedCount={draft.items.filter((i) => i.confirmed).length}
+            hasWishes={draft.members.some((m) => m.wishes.length > 0)}
+          />
         </div>
 
         {/* メンバー */}
