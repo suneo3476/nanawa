@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAllAlbums, getAllLives, getAllSongs } from "@/lib/data";
+import { getAllAlbums, getAllLives, getAllSongs, getMembers } from "@/lib/data";
 import { SetlistPlanner } from "@/components/picker/SetlistPlanner";
 import type { PickerAlbum, PickerSong } from "@/components/picker/types";
 import { InfoTip } from "@/components/InfoTip";
@@ -62,6 +62,7 @@ export default function PickerPage() {
       <SetlistPlanner
         songs={songs}
         albums={albums}
+        members={getMembers()}
         nextLiveNumber={nextLiveNumber}
         nextEventId={nextEventId}
       />
