@@ -12,6 +12,7 @@ export interface SuggestSong {
   id: string;
   title: string;
   tempo: Tempo | null;
+  bpm?: number | null;
   fameTier: 1 | 2 | 3;
   playCount: number;
   /** 最終演奏からのライブ本数。未演奏は null */
@@ -50,6 +51,7 @@ function compositionOf(songs: SuggestSong[]): Composition {
     if (s.tempo) comp.counts[s.tempo]++;
     else comp.tempoUnknown++;
     if (s.fameTier <= 2) comp.famous++;
+    if (s.bpm != null) comp.bpms.push(s.bpm);
     comp.total++;
   }
   return comp;
