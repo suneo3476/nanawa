@@ -376,6 +376,18 @@
   type: individual
   memo: ''
   youtubeUrl: https://youtu.be/T_HIap_b7rg?si=ywS4StaKSeTD6Blw
+- liveId: live074
+  songId: song021
+  order: 1
+  type: individual
+  memo: ''
+  youtubeUrl: ''
+- liveId: live074
+  songId: song020
+  order: 2
+  type: individual
+  memo: ''
+  youtubeUrl: ''
 - liveId: live073
   songId: song019
   order: 1
@@ -765,6 +777,30 @@
   order: 1
   type: medley
   memo: メドレー形式で演奏
+  youtubeUrl: ''
+- liveId: live060
+  songId: song038
+  order: 1
+  type: individual
+  memo: ''
+  youtubeUrl: ''
+- liveId: live060
+  songId: song082
+  order: 2
+  type: individual
+  memo: ''
+  youtubeUrl: ''
+- liveId: live060
+  songId: song069
+  order: 3
+  type: individual
+  memo: ''
+  youtubeUrl: ''
+- liveId: live060
+  songId: song011
+  order: 4
+  type: individual
+  memo: ''
   youtubeUrl: ''
 - liveId: live059
   songId: song031

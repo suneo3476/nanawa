@@ -82,6 +82,12 @@
   eventName: aikoバンド祭り
   venueName: 渋谷STAR LOUNGE
   memo: ''
+- id: live074
+  eventId: 74
+  date: '2019-01-13'
+  eventName: J-POP祭新年会2019
+  venueName: ''
+  memo: ''
 - id: live073
   eventId: 73
   date: '2018-09-15'
@@ -160,6 +166,12 @@
   eventName: 空港音楽祭オーディション2015
   venueName: 中部国際空港セントレアホール
   memo: ''
+- id: live060
+  eventId: 60
+  date: '2015-06-28'
+  eventName: メンバー3人の三/七輪によるアコバージョンライブ
+  venueName: 豊橋のジャズバーCoty
+  memo: アコースティック編成での出演
 - id: live059
   eventId: 59
   date: '2015-05-17'
