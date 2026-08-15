@@ -112,7 +112,7 @@ export function LivesBrowser({
           )}
         </div>
 
-        <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
+        <div className="no-scrollbar mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
           <FilterChip active={year === null} onClick={() => setYear(null)}>
             全期間
           </FilterChip>
