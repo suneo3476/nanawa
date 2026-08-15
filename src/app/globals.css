@@ -57,6 +57,14 @@ body {
   background: var(--accent-soft);
 }
 
+/* チップ列などの横スクロール領域でスクロールバーを出さない */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* 年見出しへのアンカージャンプ時にヘッダーで隠れないように */
 [id^="year-"] {
   scroll-margin-top: 5.5rem;

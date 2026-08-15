@@ -160,7 +160,7 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
             className="w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] shadow-sm outline-none transition-colors placeholder:text-muted/70 focus:border-accent"
             aria-label="曲を検索"
           />
-          <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto">
+          <div className="no-scrollbar mt-2.5 flex items-center gap-1.5 overflow-x-auto">
             {SORTS.map((s) => (
               <button
                 key={s.key}
