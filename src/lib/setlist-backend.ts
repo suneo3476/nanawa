@@ -192,7 +192,8 @@ export async function saveMembersViaLocal(
 
 export interface SongAttrEdit {
   songId: string;
-  tempo: "up" | "mid" | "slow";
+  /** null ならテンポ未設定のまま */
+  tempo: "up" | "mid" | "slow" | null;
   ballad: boolean;
   /** 未指定なら既存のBPMを保つ。空文字は削除 */
   bpm?: number | null;
@@ -426,7 +427,7 @@ export async function saveSongAttrsViaGithub(
       edit.songId,
       [
         `- songId: ${edit.songId}${title ? `   # ${title}` : ""}`,
-        `  tempo: ${edit.tempo}`,
+        ...(edit.tempo ? [`  tempo: ${edit.tempo}`] : []),
         `  ballad: ${edit.ballad}`,
         ...kept,
         ...(editsBpm && edit.bpm ? [`  bpm: ${edit.bpm}`] : []),

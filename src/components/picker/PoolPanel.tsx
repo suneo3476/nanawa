@@ -49,7 +49,7 @@ export interface PoolPanelProps {
   onEditTempo: (
     songId: string,
     next: {
-      tempo: import("@/lib/types").Tempo;
+      tempo: import("@/lib/types").Tempo | null;
       ballad: boolean;
       bpm: number | null;
     },
@@ -301,7 +301,7 @@ function DiscographyBrowser({
   onEditTempo: (
     songId: string,
     next: {
-      tempo: import("@/lib/types").Tempo;
+      tempo: import("@/lib/types").Tempo | null;
       ballad: boolean;
       bpm: number | null;
     },

@@ -55,11 +55,14 @@ export function SongBadges({
   song,
   showUnperformed = false,
   hideTempo = false,
+  hideBallad = false,
 }: {
   song: BadgeSong;
   showUnperformed?: boolean;
   /** テンポを別のUI(編集可能なバッジ)で出すとき */
   hideTempo?: boolean;
+  /** バラードを別のUI(編集可能なバッジ)で出すとき */
+  hideBallad?: boolean;
 }) {
   return (
     <>
@@ -80,7 +83,7 @@ export function SongBadges({
         </span>
       )}
       {song.tieup && <TieupBadge text={song.tieup} />}
-      {song.ballad && (
+      {song.ballad && !hideBallad && (
         <span className={`${base} bg-surface-2 text-muted`}>バラード</span>
       )}
       {song.tempo && !hideTempo && (
