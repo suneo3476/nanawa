@@ -1,265 +1,367 @@
-# 曲の演奏特性(選曲ノートのスコアリング用)
-# tempo: up(アップ) | mid(ミドル) | slow(スロー) / ballad: バラードかどうか
-# mediaUse: kouhaku(紅白で歌唱) | tieup(ドラマ/アニメ/CM等のタイアップ)
-#   → 知名度は シングル表題曲 or 紅白=有名 / タイアップ=準有名 / それ以外=コア と導出されます
-# ※ Claude による暫定値です(紅白の歌唱曲は特に要確認)。バンドの感覚でどんどん直してください。
-# 未記載の曲は tempo=不明 / メディア使用なし として扱われます。
-- songId: song001
+# 曲の演奏特性(選曲ノートのスコアリング・バッジ表示用)
+# tempo: up(アップ) | mid(ミドル) | slow(スロー)   ※Claudeによる暫定値。要レビュー
+# ballad: バラードかどうか                        ※同上
+# bpm: 数字(分かる曲だけ。表示は BPM=xxx)         ※信頼できる出典が無く現在は未記入
+# kouhaku: true = 紅白歌合戦で歌唱                 ※Wikipedia「aiko」出演履歴で確認済み
+# tieup: 'タイアップの内容'                        ※Wikipedia「aiko」タイアップ一覧で確認済み
+# シングル/カップリングのバッジは album_tracks から自動導出されます。
+# 季節タグは data/song_seasons.yml (aiko公式Spotifyプレイリスト由来) です。
+
+- songId: song001   # ボーイフレンド
   tempo: up
   ballad: false
-  mediaUse: kouhaku
-- songId: song002
+  kouhaku: true
+  tieup: ブリヂストンサイクル「アルベルト」CMソング
+- songId: song002   # どろぼう
   tempo: mid
   ballad: false
-- songId: song003
+  tieup: よみうりテレビ系アニメ『まっすぐにいこう。』オープニングテーマ
+- songId: song003   # ひまわりになったら
   tempo: up
   ballad: false
-- songId: song004
+- songId: song004   # 相思相愛
   tempo: slow
   ballad: true
-- songId: song005
+  kouhaku: true
+  tieup: 東宝配給アニメ映画『名探偵コナン 100万ドルの五稜星』主題歌
+- songId: song005   # あたしの向こう
   tempo: mid
   ballad: false
-- songId: song006
+  tieup: 関西テレビ・フジテレビ系ドラマ『素敵な選TAXI』主題歌
+- songId: song006   # ストロー
   tempo: up
   ballad: false
-- songId: song007
+  tieup: TBS系『王様のブランチ』テーマソング
+- songId: song007   # 蝶々結び
   tempo: slow
   ballad: true
-- songId: song008
+  tieup: グリコ乳業「カフェオーレ」CMソング(九州限定版)
+- songId: song008   # 恋愛ジャンキー
   tempo: up
   ballad: false
-- songId: song009
+- songId: song009   # すべての夜
   tempo: mid
   ballad: false
-- songId: song010
+- songId: song010   # 青空
   tempo: slow
   ballad: true
-- songId: song011
+  tieup: メルカリ「誕生たのメル便」篇CMソング
+- songId: song011   # 花火
   tempo: up
   ballad: false
-  mediaUse: kouhaku
-- songId: song012
+  kouhaku: true
+  tieup: よみうりテレビ系アニメ『まっすぐにいこう。』エンディングテーマ
+- songId: song012   # カブトムシ
   tempo: slow
   ballad: true
-- songId: song013
+  kouhaku: true
+  tieup: TBS系『COUNT DOWN TV』1999年12月度エンディングテーマ
+- songId: song013   # 雲は白リンゴは赤
   tempo: mid
   ballad: false
-  mediaUse: kouhaku
-- songId: song014
+  tieup: スバル「ステラ・R2」CMソング
+- songId: song014   # 向かいあわせ
   tempo: mid
   ballad: true
-- songId: song015
+  kouhaku: true
+  tieup: 東宝配給映画『ダーリンは外国人』主題歌
+- songId: song015   # 17の月
   tempo: mid
   ballad: false
-- songId: song016
+- songId: song016   # キラキラ
   tempo: up
   ballad: false
-- songId: song017
+  tieup: 関西テレビ・フジテレビ系ドラマ『がんばっていきまっしょい』主題歌
+- songId: song017   # ロージー
   tempo: mid
   ballad: false
-- songId: song018
+- songId: song018   # Power of Love
   tempo: up
   ballad: false
-- songId: song019
+- songId: song019   # 愛の病
   tempo: up
   ballad: false
-- songId: song020
+- songId: song020   # 運命
   tempo: up
   ballad: false
-- songId: song021
+- songId: song021   # キスする前に
   tempo: mid
   ballad: false
-- songId: song022
+  tieup: NTT DoCoMo「aiko-だから私はドコモです」篇CMソング
+- songId: song022   # おやすみなさい
   tempo: mid
   ballad: false
-- songId: song023
+  tieup: フジテレビ系火9ドラマ『さよなら、小津先生』主題歌
+- songId: song023   # 星電話
   tempo: slow
   ballad: true
-- songId: song024
+- songId: song024   # 赤いランプ
   tempo: slow
   ballad: false
-- songId: song025
+- songId: song025   # more&more
   tempo: up
   ballad: false
-- songId: song026
+- songId: song026   # アスパラ
   tempo: up
   ballad: false
-- songId: song027
+- songId: song027   # Loveletter
   tempo: mid
   ballad: false
-  mediaUse: kouhaku
-- songId: song028
+  kouhaku: true
+- songId: song028   # ビードロの夜
   tempo: mid
   ballad: false
-- songId: song029
+- songId: song029   # 初恋
   tempo: slow
   ballad: true
-- songId: song030
+- songId: song030   # 海の終わり
   tempo: slow
   ballad: true
-- songId: song031
+- songId: song031   # 明日の歌
   tempo: mid
   ballad: false
-- songId: song032
+- songId: song032   # あした
   tempo: slow
   ballad: true
-  mediaUse: kouhaku
-- songId: song033
+  tieup: 映画『新生トイレの花子さん』主題歌
+- songId: song033   # もっと
   tempo: mid
   ballad: true
-- songId: song034
+  tieup: TBS系火曜ドラマ『ダメな私に恋してください』主題歌
+- songId: song034   # ウミウサギ
   tempo: mid
   ballad: false
-- songId: song035
+- songId: song035   # リズム
   tempo: mid
   ballad: false
-- songId: song036
+- songId: song036   # 二人
   tempo: slow
   ballad: true
-- songId: song037
+  tieup: エムティーアイ「music.jp」CMソング
+- songId: song037   # beat
   tempo: up
   ballad: false
-- songId: song038
+- songId: song038   # シャッター
   tempo: up
   ballad: false
-- songId: song039
+- songId: song039   # あなたと握手
   tempo: mid
   ballad: false
-- songId: song040
+  tieup: 森永乳業「ラクトフェリンヨーグルト」CMソング
+- songId: song040   # くちびる
   tempo: mid
   ballad: false
-- songId: song041
+  kouhaku: true
+  tieup: 伊藤園「2つの働き カテキンジャスミン茶」CMソング
+- songId: song041   # Aka
   tempo: mid
   ballad: false
-- songId: song042
+- songId: song042   # 桜の時
   tempo: mid
   ballad: false
-  mediaUse: kouhaku
-- songId: song043
+  tieup: カルピス「カルピスウォーター」CMソング
+- songId: song043   # be master of life
   tempo: up
   ballad: false
-- songId: song044
+  tieup: 江崎グリコ「3C」CMソング
+- songId: song044   # マント
   tempo: mid
   ballad: false
-- songId: song045
+- songId: song045   # 相合傘
   tempo: slow
   ballad: true
-- songId: song046
+- songId: song046   # アンドロメダ
   tempo: slow
   ballad: true
-- songId: song047
+  tieup: グリコ乳業「カフェオーレ」CMソング
+- songId: song047   # 飛行機
   tempo: mid
   ballad: false
-- songId: song048
+- songId: song048   # 風招き
   tempo: mid
   ballad: false
-- songId: song049
+- songId: song049   # ホーム
   tempo: slow
   ballad: true
-- songId: song050
+  tieup: 東宝配給映画『阪急電車 片道15分の奇跡』主題歌
+- songId: song050   # シアワセ
   tempo: mid
   ballad: false
-- songId: song051
+  kouhaku: true
+  tieup: テレビ朝日系ミニドラマ『家族レッスン』主題歌
+- songId: song051   # milk
   tempo: slow
   ballad: true
-- songId: song052
+  tieup: ブリヂストンサイクル「アルベルト」CMソング
+- songId: song052   # ずっと
   tempo: slow
   ballad: true
-- songId: song053
+  tieup: フジテレビ系木曜劇場『蜜の味〜A Taste Of Honey〜』主題歌
+- songId: song053   # 天の川
   tempo: mid
   ballad: false
-- songId: song054
+- songId: song054   # 夏が帰る
   tempo: mid
   ballad: false
-- songId: song055
+  tieup: ブリヂストンサイクル「アルベルト」CMソング
+- songId: song055   # 陽と陰
   tempo: mid
   ballad: false
-- songId: song056
+- songId: song056   # ヒカリ
   tempo: up
   ballad: false
-- songId: song057
+- songId: song057   # なんて一日
   tempo: mid
   ballad: false
-- songId: song058
+- songId: song058   # 嘆きのキス
   tempo: slow
   ballad: true
-- songId: song059
+  tieup: ゲームソフト「ファイナルファンタジー・クリスタルクロニクル エコーズ・オブ・タイム」イメージソング
+- songId: song059   # イジワルな天使よ 世界を笑え！
   tempo: up
   ballad: false
-- songId: song060
+- songId: song060   # 恋のスーパーボール
   tempo: up
   ballad: false
-  mediaUse: kouhaku
-- songId: song061
+  kouhaku: true
+  tieup: カルピス「カルピスウォーター」CMソング
+- songId: song061   # スター
   tempo: up
   ballad: false
-  mediaUse: kouhaku
-- songId: song062
+  kouhaku: true
+  tieup: 東宝配給アニメ映画『あらしのよるに』主題歌
+- songId: song062   # あの子の夢
   tempo: mid
   ballad: false
-- songId: song063
+  kouhaku: true
+  tieup: NHK連続テレビ小説『ウェルかめ』主題歌
+- songId: song063   # ナキ・ムシ
   tempo: slow
   ballad: true
-- songId: song064
+  tieup: ロッテ「シナモンガム」CMソング
+- songId: song064   # エナジー
   tempo: up
   ballad: false
-- songId: song065
+- songId: song065   # ジェット
   tempo: up
   ballad: false
-- songId: song066
+  tieup: ヒューマンアカデミーTV-CMソング
+- songId: song066   # KissHug
   tempo: slow
   ballad: true
-  mediaUse: kouhaku
-- songId: song067
+  kouhaku: true
+  tieup: 東宝配給映画『花より男子F』挿入歌
+- songId: song067   # 帽子と水着と水平線
   tempo: mid
   ballad: false
-- songId: song068
+- songId: song068   # ライン
   tempo: mid
   ballad: false
-- songId: song069
+- songId: song069   # それだけ
   tempo: slow
   ballad: true
-- songId: song070
+  tieup: テレビ朝日系木曜ミステリー『科捜研の女(第4シリーズ)』主題歌
+- songId: song070   # 横顔
   tempo: slow
   ballad: true
-- songId: song071
+  tieup: 日本テレビ系水曜ドラマ『ホタルノヒカリ』主題歌
+- songId: song071   # 傷跡
   tempo: slow
   ballad: true
-- songId: song072
+- songId: song072   # オレンジな満月
   tempo: mid
   ballad: false
-- songId: song073
+  tieup: テレビ朝日系『ウィークエンドライブ 週刊地球TV』オープニングテーマ
+- songId: song073   # その目に映して
   tempo: mid
   ballad: false
-- songId: song074
+- songId: song074   # えりあし
   tempo: mid
   ballad: false
-  mediaUse: kouhaku
-- songId: song075
+  kouhaku: true
+- songId: song075   # ある日のひまわり
   tempo: mid
   ballad: false
-- songId: song076
+- songId: song076   # 相合傘（汗かきmix）
   tempo: up
   ballad: false
-- songId: song077
+- songId: song077   # 花風
   tempo: mid
   ballad: false
-- songId: song078
+  kouhaku: true
+  tieup: 日本テレビ系『1球の緊張感 THE LIVE2004』イメージソング
+- songId: song078   # かばん
   tempo: slow
   ballad: true
-- songId: song079
+- songId: song079   # 彼の落書き
   tempo: mid
   ballad: false
-- songId: song080
+- songId: song080   # 心に乙女
   tempo: mid
   ballad: false
-- songId: song081
+- songId: song081   # 赤い靴
   tempo: mid
   ballad: false
-- songId: song082
+  tieup: テレビ朝日系『速報!スポーツCUBE』テーマソング
+- songId: song082   # 悪口
   tempo: slow
   ballad: false
-- songId: song160
+- songId: song094   # 私生活
+  tieup: フジテレビ系オムニバスドラマ『らぶ・ちゃっと』エンディングテーマ
+- songId: song096   # お薬
+  tieup: フジテレビ系『晴れたらイイねッ!』オープニングテーマ
+- songId: song097   # 桃色
+  tieup: 毎日放送『水野真紀の魔法のレストラン』エンディングテーマ
+- songId: song118   # 青い光
+  tieup: 花王「ハミング1/3」CMソング
+- songId: song126   # 瞳
+  kouhaku: true
+  tieup: 花王「ハミング」CMソング
+- songId: song132   # 星のない世界
+  tieup: ニンテンドーDSソフト「FINAL FANTASY CRYSTAL CHRONICLES Ring of Fates」イメージソング
+- songId: song141   # 戻れない明日
+  tieup: 日本テレビ系水曜ドラマ『曲げられない女』主題歌
+- songId: song148   # 4月の雨
+  tieup: シード「シード ワンデーピュアうるおいプラス」CMソング
+- songId: song153   # 君の隣
+  tieup: ロッテ「ガーナミルクチョコレート」CMソング
+- songId: song160   # プラマイ
   tempo: up
   ballad: false
+  tieup: NHK BSプレミアム プレミアムよるドラマ『仮カレ♡』主題歌
+- songId: song164   # 合図
+  tieup: 東映配給映画『先輩と彼女』主題歌
+- songId: song165   # 信号
+  tieup: SEIKO「セイコー ルキア」CMソング
+- songId: song181   # 恋をしたのは
+  tieup: 松竹配給アニメ映画『聲の形』主題歌
+- songId: song195   # あかときリロード
+  tieup: フジテレビ系木曜劇場『忍者に結婚は難しい』主題歌
+- songId: song202   # 夏恋のライフ
+  tieup: カルビー「ポテトチップス うすしお味」CMソング
+- songId: song203   # 果てしない二人
+  tieup: 映画『もっと超越した所へ。』主題歌
+- songId: song206   # 食べた愛
+  tieup: カルビー「ポテトチップス うすしお味」CMソング
+- songId: song208   # skirt
+  tieup: テレビアニメ『アポカリプスホテル』オープニングテーマ
+- songId: song212   # いつ逢えたら
+  tieup: テレビ東京系アニメ『君は放課後インソムニア』オープニングテーマ
+- songId: song219   # れんげ畑
+  tieup: よみうりテレビ系アニメ『まっすぐにいこう。』エンディングテーマ
+- songId: song231   # 未来を拾いに
+  tieup: ホーユー「ビューティラボ ホイップヘアカラー」CMソング
+- songId: song247   # 洗面所
+  tieup: ゲームボーイアドバンス用ソフト「ファイアーエムブレム 聖魔の光石」CMソング
+- songId: song252   # リップ
+  tieup: NTT DoCoMo関西「家族いっしょ割」CMソング
+- songId: song257   # 線香花火
+  tieup: 日本テレビ系『THE・サンデー』2008年8・9月度エンディングテーマ
+- songId: song277   # 愛した日
+  tieup: テレビ朝日系金曜ナイトドラマ『私のおじさん〜WATAOJI〜』主題歌
+- songId: song280   # あたしたち
+  tieup: NHK総合よるドラ『古見さんは、コミュ症です。』主題歌
+- songId: song288   # シネマ
+  tieup: 日本テレビ系土ドラ10『アンサンブル』主題歌
+- songId: song289   # カプセル
+  tieup: テレビアニメ『アポカリプスホテル』エンディングテーマ
