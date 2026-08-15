@@ -106,22 +106,22 @@ export default function StatsPage() {
         <p className="mb-3 text-xs text-muted">
           全{songs.length}曲の年ごとの演奏回数。濃いほど多く演奏。曲名クリックで演奏履歴へ。
         </p>
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <div className="max-h-[75vh] overflow-auto rounded-xl border border-border bg-surface">
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 min-w-36 border-b border-border bg-surface px-3 py-2 text-left font-medium text-muted">
+                <th className="sticky top-0 left-0 z-20 min-w-36 border-b border-border bg-surface px-3 py-2 text-left font-medium text-muted">
                   曲名
                 </th>
                 {summary.years.map((y) => (
                   <th
                     key={y}
-                    className="min-w-8 border-b border-border px-1 py-2 text-center font-normal tabular-nums text-muted"
+                    className="sticky top-0 z-10 min-w-8 border-b border-border bg-surface px-1 py-2 text-center font-normal tabular-nums text-muted"
                   >
                     {String(y).slice(2)}
                   </th>
                 ))}
-                <th className="min-w-10 border-b border-border px-2 py-2 text-right font-medium text-muted">
+                <th className="sticky top-0 z-10 min-w-10 border-b border-border bg-surface px-2 py-2 text-right font-medium text-muted">
                   計
                 </th>
               </tr>
