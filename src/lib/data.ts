@@ -264,6 +264,21 @@ function toPerformance(
 
 export function getAllSongs(): SongDetail[] {
   const d = loadDataset();
+  // シングル/EPの1曲目(=表題曲)に入っている曲。songs.yml の isSingle は
+  // カタログ取り込み時に先勝ちで false になっていることがあるため、
+  // album_tracks からも導出する。
+  const albumById = new Map(d.albums.map((a) => [a.id, a]));
+  const singleATracks = new Set(
+    d.albumTracks
+      .filter((t) => {
+        const album = albumById.get(t.albumId);
+        return (
+          (album?.category === "シングル" || album?.category === "EP") &&
+          t.trackNumber === 1
+        );
+      })
+      .map((t) => t.songId),
+  );
   return d.songs.map((song) => {
     const perfsAsc = d.performancesBySong.get(song.id) ?? [];
     const performances = perfsAsc
@@ -319,7 +334,7 @@ export function getAllSongs(): SongDetail[] {
       mediaUse,
       // 有名度: シングル表題曲 or 紅白歌唱 → 1 / タイアップあり → 2 / それ以外 → 3
       fameTier:
-        song.isSingle || mediaUse === "kouhaku"
+        song.isSingle || singleATracks.has(song.id) || mediaUse === "kouhaku"
           ? (1 as const)
           : mediaUse === "tieup"
             ? (2 as const)

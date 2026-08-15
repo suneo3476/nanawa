@@ -73,6 +73,12 @@ const TEMPO_CLASS: Record<Tempo, string> = {
   mid: "bg-surface-2 text-foreground/70",
   slow: "bg-[#dce8f5] text-[#33628f] dark:bg-[#1d2e40] dark:text-[#8fb8dd]",
 };
+/** 候補リストの行の左端の色(=テンポ)。構成バーと同じ色 */
+const TEMPO_BORDER: Record<Tempo, string> = {
+  up: "border-l-[var(--accent)]",
+  mid: "border-l-[#b3a89d]",
+  slow: "border-l-[#6d9fca]",
+};
 
 const STORAGE_KEY = "nanawa-picker-v1";
 
@@ -206,6 +212,14 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
   const fameTarget = FAME_DIRS.find((d) => d.key === fameDir)?.target ?? null;
   const hasDirection = tempoTarget !== null || fameTarget !== null;
   const currentFit = combinedFit(composition, tempoTarget, fameTarget);
+  // スコアの内訳(軸ごとの点数)
+  const fitParts = {
+    tempo: tempoTarget ? tempoFit(composition.counts, tempoTarget) : null,
+    fame:
+      fameTarget !== null
+        ? fameFit(composition.famous, composition.total, fameTarget)
+        : null,
+  };
 
   /** この曲を足したら適合度がどう変わるか */
   const fitDelta = useMemo(() => {
@@ -327,7 +341,15 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
       `🎵 七輪 選曲候補 ${picked.length}曲`,
       ...lines,
       comp,
-      ...(currentFit !== null ? [`適合度: ${currentFit}点`] : []),
+      ...(currentFit !== null
+        ? [
+            `適合度: ${currentFit}点${
+              fitParts.tempo !== null && fitParts.fame !== null
+                ? ` (テンポ${Math.round(fitParts.tempo)} / 知名度${Math.round(fitParts.fame)})`
+                : ""
+            }`,
+          ]
+        : []),
       "",
       shareUrl(),
     ].join("\n");
@@ -397,7 +419,7 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
           </h2>
 
           {picked.length > 0 && (
-            <CompositionBar comp={composition} fit={currentFit} />
+            <CompositionBar comp={composition} fit={currentFit} parts={fitParts} />
           )}
 
           {picked.length === 0 && (
@@ -413,7 +435,9 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
                 return (
                   <li
                     key={id}
-                    className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-2 py-1.5"
+                    className={`flex items-center gap-1.5 rounded-lg border-l-4 bg-surface-2 px-2 py-1.5 ${
+                      s.tempo ? TEMPO_BORDER[s.tempo] : "border-l-border"
+                    }`}
                   >
                     <span className="w-5 shrink-0 text-right font-mono text-xs tabular-nums text-muted">
                       {i + 1}
@@ -432,6 +456,33 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
                         <span className="ml-1 text-[10px] text-accent-strong">未</span>
                       )}
                     </span>
+                    {s.fameTier === 1 && (
+                      <span
+                        title="有名曲(シングル表題/紅白)"
+                        aria-label="有名曲"
+                        className="shrink-0 text-[13px] leading-none text-[#c9a227]"
+                      >
+                        ★
+                      </span>
+                    )}
+                    {s.fameTier === 2 && (
+                      <span
+                        title="タイアップ曲"
+                        aria-label="タイアップ曲"
+                        className="shrink-0 text-[13px] leading-none text-[#c9a227]"
+                      >
+                        ☆
+                      </span>
+                    )}
+                    {s.ballad && (
+                      <span
+                        title="バラード"
+                        aria-label="バラード"
+                        className="shrink-0 text-[12px] leading-none text-muted"
+                      >
+                        ♪
+                      </span>
+                    )}
                     <span className="flex shrink-0 items-center">
                       <IconButton label={`${s.title}を上へ`} onClick={() => move(i, -1)} disabled={i === 0}>
                         ↑
@@ -451,6 +502,13 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
                 );
               })}
             </ol>
+          )}
+
+          {picked.length > 0 && (
+            <p className="mt-2 text-[10px] leading-relaxed text-muted">
+              左端の色=テンポ ・ ★ 有名(シングル/紅白) ・ ☆ タイアップ ・ ♪
+              バラード ・ 未 = 未演奏
+            </p>
           )}
 
           <button
@@ -710,7 +768,15 @@ function Chip({
   );
 }
 
-function CompositionBar({ comp, fit }: { comp: Composition; fit: number | null }) {
+function CompositionBar({
+  comp,
+  fit,
+  parts,
+}: {
+  comp: Composition;
+  fit: number | null;
+  parts: { tempo: number | null; fame: number | null };
+}) {
   const { counts, tempoUnknown, ballads, famous, total } = comp;
   if (total === 0) return null;
   const seg = (n: number) => `${(n / total) * 100}%`;
@@ -718,22 +784,49 @@ function CompositionBar({ comp, fit }: { comp: Composition; fit: number | null }
     <div className="mt-3">
       <div className="flex h-2.5 overflow-hidden rounded-full bg-surface-2">
         <span className="bg-accent" style={{ width: seg(counts.up) }} title={`アップ ${counts.up}`} />
-        <span className="bg-accent/45" style={{ width: seg(counts.mid) }} title={`ミドル ${counts.mid}`} />
+        <span className="bg-[#b3a89d]" style={{ width: seg(counts.mid) }} title={`ミドル ${counts.mid}`} />
         <span className="bg-[#6d9fca]" style={{ width: seg(counts.slow) }} title={`スロー ${counts.slow}`} />
         <span className="bg-border" style={{ width: seg(tempoUnknown) }} title={`不明 ${tempoUnknown}`} />
       </div>
-      <p className="mt-1.5 flex flex-wrap gap-x-2 text-[11px] text-muted">
-        <span>アップ {counts.up}</span>
-        <span>ミドル {counts.mid}</span>
-        <span>スロー {counts.slow}</span>
-        {tempoUnknown > 0 && <span>不明 {tempoUnknown}</span>}
-        <span>/ 有名 {famous}</span>
-        {ballads > 0 && <span>/ バラード {ballads}</span>}
-        {fit !== null && (
-          <span className="ml-auto font-semibold text-accent-strong">適合度 {fit}点</span>
+      <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted">
+        <span className="inline-flex items-center gap-1">
+          <Dot className="bg-accent" />
+          アップ {counts.up}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Dot className="bg-[#b3a89d]" />
+          ミドル {counts.mid}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Dot className="bg-[#6d9fca]" />
+          スロー {counts.slow}
+        </span>
+        {tempoUnknown > 0 && (
+          <span className="inline-flex items-center gap-1">
+            <Dot className="bg-border" />
+            不明 {tempoUnknown}
+          </span>
         )}
+        <span>★ {famous}</span>
+        {ballads > 0 && <span>♪ {ballads}</span>}
       </p>
+      {fit !== null && (
+        <p className="mt-1.5 text-right text-[11px]">
+          <span className="font-semibold text-accent-strong">適合度 {fit}点</span>
+          {parts.tempo !== null && parts.fame !== null && (
+            <span className="ml-1 text-muted">
+              (テンポ {Math.round(parts.tempo)} + 知名度 {Math.round(parts.fame)} の平均)
+            </span>
+          )}
+        </p>
+      )}
     </div>
+  );
+}
+
+function Dot({ className }: { className: string }) {
+  return (
+    <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${className}`} />
   );
 }
 
