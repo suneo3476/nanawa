@@ -102,6 +102,34 @@ export function combinedFit(
   return Math.round(parts.reduce((a, b) => a + b, 0) / parts.length);
 }
 
+/**
+ * 曲そのものが「選んだ方向性らしいか」(0〜100)。
+ *
+ * 適合度の差分(距離がどれだけ縮むか)だけで並べると、いまの構成が目標から
+ * 大きく外れているときに、どの方向性を選んでも同じ曲が上位に来てしまう。
+ * (例: 有名曲だけの候補なら、目標が「一般ウケ」でも「コア掘り」でも
+ *  コア曲を足すのが同じだけ距離を縮めるため区別がつかない)
+ * そこで「目標比率そのもの」を曲の好ましさとして加える。
+ */
+export function directionAffinity(
+  song: { tempo: Tempo | null; fameTier: 1 | 2 | 3 },
+  tempoTarget: Record<Tempo, number> | null,
+  fameTarget: number | null,
+): number | null {
+  const parts: number[] = [];
+  if (tempoTarget && song.tempo) {
+    // 目標比率が高いテンポほど好ましい(最大値で正規化して 0〜1 に)
+    const max = Math.max(tempoTarget.up, tempoTarget.mid, tempoTarget.slow);
+    parts.push(max > 0 ? tempoTarget[song.tempo] / max : 0);
+  }
+  if (fameTarget !== null) {
+    const famous = song.fameTier <= 2;
+    parts.push(famous ? fameTarget : 1 - fameTarget);
+  }
+  if (parts.length === 0) return null;
+  return (parts.reduce((a, b) => a + b, 0) / parts.length) * 100;
+}
+
 /** 希望曲が候補に1曲以上入っているメンバーの割合(0〜100) */
 export function wishFit(
   members: { wishes: string[] }[],
