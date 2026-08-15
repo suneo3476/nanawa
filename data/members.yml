@@ -1,0 +1,67 @@
+# バンドメンバーと、その人がやりたい曲(選曲ノートの希望曲)。
+# 選曲ノートで「メンバーと希望曲を保存」を押すとこのファイルが更新されます。
+# 手で編集しても構いません(songId は data/songs.yml のID)。
+- id: m1
+  name: はじめ
+  wishes:
+    - song094 # 私生活
+    - song093 # 歌姫
+    - song092 # 夏にマフラー
+    - song032 # あした
+    - song047 # 飛行機
+    - song073 # その目に映して
+    - song036 # 二人
+    - song050 # シアワセ
+    - song051 # milk
+    - song041 # Aka
+    - song040 # くちびる
+    - song160 # プラマイ
+    - song153 # 君の隣
+    - song203 # 果てしない二人
+    - song196 # アップルパイ
+    - song252 # リップ
+    - song261 # 瞬き
+    - song265 # ハレーション
+    - song067 # 帽子と水着と水平線
+- id: m2
+  name: たてべ
+  wishes:
+    - song291 # Cry High Fly
+    - song160 # プラマイ
+    - song168 # 夢見る隙間
+    - song042 # 桜の時
+- id: m3
+  name: トミー
+  wishes:
+    - song014 # 向かいあわせ
+    - song116 # 三国駅
+    - song057 # なんて一日
+    - song246 # ポニーテール
+    - song244 # ふたつの頬花
+    - song023 # 星電話
+    - song275 # 夜の風邪
+- id: m4
+  name: サク
+  wishes:
+    - song113 # Smooch!
+    - song169 # 冷凍便
+    - song250 # シーソーの海
+- id: m5
+  name: はせがわ
+  wishes:
+    - song215 # 星の降る日に
+    - song037 # beat
+    - song050 # シアワセ
+    - song169 # 冷凍便
+    - song066 # KissHug
+- id: m6
+  name: 大ちゃん
+  wishes:
+    - song036 # 二人
+    - song014 # 向かいあわせ
+    - song148 # 4月の雨
+    - song168 # 夢見る隙間
+    - song024 # 赤いランプ
+- id: m7
+  name: ガッキー
+  wishes: []
