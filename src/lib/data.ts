@@ -12,6 +12,7 @@ import type {
   Song,
   SongDetail,
   SongPerformance,
+  Tempo,
   Venue,
 } from "./types";
 
@@ -30,8 +31,14 @@ function fail(msg: string): never {
   throw new Error(`データ検証エラー: ${msg}`);
 }
 
+interface SongAttr {
+  tempo: Tempo | null;
+  ballad: boolean | null;
+}
+
 interface Dataset {
   songs: Song[];
+  attrsBySong: Map<string, SongAttr>;
   lives: Live[];
   setlists: SetlistItem[];
   albums: Album[];
@@ -106,6 +113,18 @@ function loadDataset(): Dataset {
     trackNumber: Number(t.trackNumber),
   }));
 
+  const attrsBySong = new Map<string, SongAttr>(
+    loadYaml<Record<string, unknown>>("song_attributes").map((a) => [
+      toStr(a.songId),
+      {
+        tempo: ["up", "mid", "slow"].includes(toStr(a.tempo))
+          ? (toStr(a.tempo) as Tempo)
+          : null,
+        ballad: a.ballad === true || a.ballad === "true",
+      },
+    ]),
+  );
+
   // ---- 検証 ----
   const songById = new Map(songs.map((s) => [s.id, s]));
   const liveById = new Map(lives.map((l) => [l.id, l]));
@@ -127,6 +146,10 @@ function loadDataset(): Dataset {
       fail(`album_tracks.yml: 不明な albumId ${t.albumId}`);
     if (!songById.has(t.songId))
       fail(`album_tracks.yml: 不明な songId ${t.songId}`);
+  }
+  for (const songId of attrsBySong.keys()) {
+    if (!songById.has(songId))
+      fail(`song_attributes.yml: 不明な songId ${songId}`);
   }
 
   const livesAsc = [...lives].sort(
@@ -162,6 +185,7 @@ function loadDataset(): Dataset {
 
   cache = {
     songs,
+    attrsBySong,
     lives,
     setlists,
     albums,
@@ -281,8 +305,11 @@ export function getAllSongs(): SongDetail[] {
       })
       .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
 
+    const attrs = d.attrsBySong.get(song.id);
     return {
       ...song,
+      tempo: attrs?.tempo ?? null,
+      ballad: attrs?.ballad ?? null,
       playCount: performances.length,
       firstPerformance: performances.at(-1) ?? null,
       lastPerformance: performances[0] ?? null,

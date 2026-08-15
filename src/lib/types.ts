@@ -81,7 +81,12 @@ export interface AlbumAppearance {
   trackNumber: number;
 }
 
+export type Tempo = "up" | "mid" | "slow";
+
 export interface SongDetail extends Song {
+  /** 演奏特性(data/song_attributes.yml)。未定義なら null */
+  tempo: Tempo | null;
+  ballad: boolean | null;
   playCount: number;
   firstPerformance: SongPerformance | null;
   lastPerformance: SongPerformance | null;
