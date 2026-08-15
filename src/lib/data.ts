@@ -66,13 +66,43 @@ interface Dataset {
 }
 
 let cache: Dataset | null = null;
+/** キャッシュを作ったときの data/*.yml の更新時刻。変わっていたら読み直す。 */
+let cacheSignature = "";
+
+const DATA_FILES = [
+  "songs",
+  "lives",
+  "setlists",
+  "albums",
+  "album_tracks",
+  "song_attributes",
+  "song_seasons",
+];
+
+/**
+ * data/*.yml の更新時刻をまとめた文字列。
+ * 書き込みAPIやエディタでYAMLを更新したとき、開発サーバーが
+ * 古いキャッシュを返し続けないようにするために使う。
+ */
+function dataSignature(): string {
+  return DATA_FILES.map((name) => {
+    const file = path.join(DATA_DIR, `${name}.yml`);
+    try {
+      return `${name}:${fs.statSync(file).mtimeMs}`;
+    } catch {
+      return `${name}:none`;
+    }
+  }).join("|");
+}
 
 function toStr(v: unknown): string {
   return v == null ? "" : String(v);
 }
 
 function loadDataset(): Dataset {
-  if (cache) return cache;
+  const signature = dataSignature();
+  if (cache && signature === cacheSignature) return cache;
+  cacheSignature = signature;
 
   const songs: Song[] = loadYaml<Record<string, unknown>>("songs").map((s) => ({
     id: toStr(s.id),
