@@ -25,6 +25,7 @@ import {
 } from "./filter";
 import { DirectionMatrix } from "./DirectionMatrix";
 import { MembersPanel } from "./MembersPanel";
+import { LiveInfoCard } from "./LiveInfoCard";
 import { SetlistExport } from "./SetlistExport";
 import { SuggestPanel } from "./SuggestPanel";
 import { suggestSetlists, type Suggestion } from "@/lib/suggest";
@@ -101,6 +102,9 @@ export function SetlistPlanner({
   const [suggestSize, setSuggestSize] = useState(6);
   // 曲の絞り込みは曲プールと提案で共有する(モバイルのモーダルとPCで同じ状態になる)
   const [filter, setFilter] = useState<FilterState>(emptyFilter);
+  const [tool, setTool] = useState<"direction" | "suggest" | "members">(
+    "direction",
+  );
   const [sort, setSort] = useState<SortKey>("gap");
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
@@ -506,10 +510,10 @@ export function SetlistPlanner({
         <PoolPanel {...poolProps} sticky />
       </div>
 
-      {/* 右カラム: セトリ / 方向性 / メンバー */}
-      <aside className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pb-4">
+      {/* 右カラム: セトリ本体は常に見え、道具はタブで切り替える */}
+      <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start">
         {urlList && (
-          <div className="mb-3 rounded-xl border border-accent/40 bg-accent-soft p-3 text-sm">
+          <div className="rounded-xl border border-accent/40 bg-accent-soft p-3 text-sm">
             <p className="font-medium text-accent-strong">
               共有されたリスト({urlList.length}曲)が届いています
             </p>
@@ -539,7 +543,7 @@ export function SetlistPlanner({
         )}
 
         {/* セトリ切り替え */}
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {store.drafts.map((d) => (
             <Chip
               key={d.id}
@@ -559,290 +563,303 @@ export function SetlistPlanner({
                 return { drafts: [...s.drafts, d], currentId: d.id, seq };
               })
             }
-            className="rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-muted hover:border-accent hover:text-accent-strong"
+            className="shrink-0 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-muted hover:border-accent hover:text-accent-strong"
           >
             + 新しいセトリ
           </button>
         </div>
 
-        {/* ライブ情報 */}
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <h2 className="text-sm font-bold">どのライブのセトリ?</h2>
-          <div className="mt-2 space-y-1.5">
-            <input
-              value={draft.eventName}
-              onChange={(e) =>
-                updateDraft((d) => ({ ...d, eventName: e.target.value }))
-              }
-              placeholder="イベント名 (例: 第62回J-POP祭)"
-              aria-label="イベント名"
-              className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-            />
-            <div className="flex gap-1.5">
-              <input
-                type="date"
-                value={draft.date}
-                onChange={(e) => updateDraft((d) => ({ ...d, date: e.target.value }))}
-                aria-label="開催日"
-                className="w-[45%] rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+        {/* セトリ本体 */}
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-surface lg:flex-[1_1_auto]">
+          <LiveInfoCard
+            draft={draft}
+            onChange={(patch) => updateDraft((d) => ({ ...d, ...patch }))}
+          />
+
+          <div className="px-4 pt-2.5">
+            <h2 className="flex items-baseline justify-between text-sm font-bold">
+              セトリ候補
+              <span className="text-xs font-normal text-muted">
+                {draft.items.length}曲
+                {draft.items.some((i) => i.confirmed) &&
+                  ` (確定 ${draft.items.filter((i) => i.confirmed).length})`}
+              </span>
+            </h2>
+            {draft.items.length > 0 && (
+              <CompositionBar
+                comp={composition}
+                fit={currentFit}
+                parts={fitParts}
+                wishScore={wishScore}
               />
-              <input
-                value={draft.venueName}
-                onChange={(e) =>
-                  updateDraft((d) => ({ ...d, venueName: e.target.value }))
-                }
-                placeholder="会場名"
-                aria-label="会場名"
-                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-              />
-            </div>
+            )}
           </div>
-        </div>
 
-        {/* セトリ */}
-        <div className="mt-3 rounded-xl border border-border bg-surface p-4">
-          <h2 className="flex items-baseline justify-between font-bold">
-            セトリ候補
-            <span className="text-xs font-normal text-muted">
-              {draft.items.length}曲
-              {draft.items.some((i) => i.confirmed) &&
-                ` (確定 ${draft.items.filter((i) => i.confirmed).length})`}
-            </span>
-          </h2>
-
-          {draft.items.length > 0 && (
-            <CompositionBar
-              comp={composition}
-              fit={currentFit}
-              parts={fitParts}
-              wishScore={wishScore}
-            />
-          )}
-
-          {draft.items.length === 0 ? (
-            <p className="mt-3 text-sm text-muted">
-              まだ曲がありません。「曲を追加」から履歴を見ながら選べます。
-            </p>
-          ) : (
-            <ol className="mt-3 space-y-1.5">
-              {draft.items.map((item, i) => {
-                const s = songById.get(item.songId);
-                if (!s) return null;
-                const wishers = wishesBySong.get(item.songId);
-                return (
-                  <li
-                    key={item.songId}
-                    className={`rounded-lg border-l-4 bg-surface-2 px-2 py-1.5 ${
-                      s.tempo ? TEMPO_BORDER[s.tempo] : "border-l-border"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-5 shrink-0 text-right font-mono text-xs tabular-nums text-muted">
-                        {i + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleConfirmed(item.songId)}
-                        aria-pressed={item.confirmed}
-                        aria-label={`${s.title}を${item.confirmed ? "仮候補に戻す" : "確定にする"}`}
-                        title={item.confirmed ? "確定 — 押すと仮候補に戻ります" : "仮候補 — 押すと確定します"}
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] transition-colors ${
-                          item.confirmed
-                            ? "border-accent bg-accent text-white"
-                            : "border-border text-muted hover:border-accent"
-                        }`}
-                      >
-                        ✓
-                      </button>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {s.title}
-                      </span>
-                      <span className="flex shrink-0 items-center">
-                        <IconButton
-                          label={`${s.title}を上へ`}
-                          onClick={() => move(i, -1)}
-                          disabled={i === 0}
-                        >
-                          ↑
-                        </IconButton>
-                        <IconButton
-                          label={`${s.title}を下へ`}
-                          onClick={() => move(i, 1)}
-                          disabled={i === draft.items.length - 1}
-                        >
-                          ↓
-                        </IconButton>
-                        <IconButton
-                          label={`${s.title}を外す`}
-                          onClick={() => toggleSong(item.songId)}
-                        >
-                          ×
-                        </IconButton>
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1 pl-6">
-                      <SongBadgeRow song={s} />
-                      {wishers?.map((n) => (
-                        <span
-                          key={n}
-                          className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] leading-none text-accent-strong"
-                        >
-                          ♥ {n}
+          {/* 曲が増えてもここだけスクロールする */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2.5">
+            {draft.items.length === 0 ? (
+              <p className="text-sm text-muted">
+                まだ曲がありません。「曲を追加」から履歴を見ながら選べます。
+              </p>
+            ) : (
+              <ol className="space-y-1.5">
+                {draft.items.map((item, i) => {
+                  const s = songById.get(item.songId);
+                  if (!s) return null;
+                  const wishers = wishesBySong.get(item.songId);
+                  return (
+                    <li
+                      key={item.songId}
+                      className={`rounded-lg border-l-4 bg-surface-2 px-2 py-1.5 ${
+                        s.tempo ? TEMPO_BORDER[s.tempo] : "border-l-border"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-5 shrink-0 text-right font-mono text-xs tabular-nums text-muted">
+                          {i + 1}
                         </span>
-                      ))}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
+                        <button
+                          type="button"
+                          onClick={() => toggleConfirmed(item.songId)}
+                          aria-pressed={item.confirmed}
+                          aria-label={`${s.title}を${item.confirmed ? "仮候補に戻す" : "確定にする"}`}
+                          title={
+                            item.confirmed
+                              ? "確定 — 押すと仮候補に戻ります"
+                              : "仮候補 — 押すと確定します"
+                          }
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] transition-colors ${
+                            item.confirmed
+                              ? "border-accent bg-accent text-white"
+                              : "border-border text-muted hover:border-accent"
+                          }`}
+                        >
+                          ✓
+                        </button>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                          {s.title}
+                        </span>
+                        <span className="flex shrink-0 items-center">
+                          <IconButton
+                            label={`${s.title}を上へ`}
+                            onClick={() => move(i, -1)}
+                            disabled={i === 0}
+                          >
+                            ↑
+                          </IconButton>
+                          <IconButton
+                            label={`${s.title}を下へ`}
+                            onClick={() => move(i, 1)}
+                            disabled={i === draft.items.length - 1}
+                          >
+                            ↓
+                          </IconButton>
+                          <IconButton
+                            label={`${s.title}を外す`}
+                            onClick={() => toggleSong(item.songId)}
+                          >
+                            ×
+                          </IconButton>
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1 pl-6">
+                        <SongBadgeRow song={s} />
+                        {wishers?.map((n) => (
+                          <span
+                            key={n}
+                            className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] leading-none text-accent-strong"
+                          >
+                            ♥ {n}
+                          </span>
+                        ))}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
 
-          <button
-            type="button"
-            onClick={openPool}
-            className="mt-3 w-full rounded-lg border-2 border-dashed border-accent/50 bg-accent-soft/40 px-3 py-2.5 text-sm font-semibold text-accent-strong transition-colors hover:border-accent hover:bg-accent-soft"
-          >
-            + 曲を追加
-          </button>
-
-          {draft.items.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <button
-                type="button"
-                onClick={() => setExportOpen(true)}
-                className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-strong"
-              >
-                ライブ記録用に書き出す
-              </button>
-              <div className="flex gap-2">
+          {/* 操作は下端に固定 */}
+          <div className="border-t border-border p-3">
+            <button
+              type="button"
+              onClick={openPool}
+              className="w-full rounded-lg border-2 border-dashed border-accent/50 bg-accent-soft/40 px-3 py-2 text-sm font-semibold text-accent-strong transition-colors hover:border-accent hover:bg-accent-soft"
+            >
+              + 曲を追加
+            </button>
+            {draft.items.length > 0 && (
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExportOpen(true)}
+                  className="flex-1 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-strong"
+                >
+                  ライブ記録に登録
+                </button>
                 <button
                   type="button"
                   onClick={copyText}
-                  className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground"
+                  title="LINEなどに貼れるテキストでコピー"
+                  className="rounded-lg border border-border bg-surface px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground"
                 >
-                  {copied === "text" ? "コピー ✓" : "テキストでコピー"}
+                  {copied === "text" ? "✓" : "テキスト"}
                 </button>
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground"
+                  title="この候補を共有するリンクをコピー"
+                  className="rounded-lg border border-border bg-surface px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-foreground"
                 >
-                  {copied === "link" ? "コピー ✓" : "共有リンク"}
+                  {copied === "link" ? "✓" : "リンク"}
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm("このセトリの曲をすべて削除しますか?")) {
-                    updateDraft((d) => ({ ...d, items: [] }));
-                  }
-                }}
-                className="w-full rounded-lg px-3 py-1.5 text-xs text-muted hover:text-foreground"
-              >
-                曲を全部消す
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 方向性 */}
-        <div className="mt-3 rounded-xl border border-border bg-surface p-4">
-          <h2 className="text-sm font-bold">セトリの方向性</h2>
-          <div className="mt-2">
-            <DirectionMatrix
-              comp={composition}
-              tempoDir={tempoDir}
-              fameDir={fameDir}
-              onSelect={(t, f) =>
-                updateDraft((d) => ({ ...d, tempoDir: t, fameDir: f }))
-              }
-            />
+            )}
           </div>
         </div>
 
-        {/* セトリ案の提案 */}
-        <div className="mt-3">
-          <SuggestPanel
-            suggestions={suggestions}
-            size={suggestSize}
-            onChangeSize={setSuggestSize}
-            onGenerate={generateSuggestions}
-            onApply={applySuggestion}
-            songTitle={(id) => songById.get(id)?.title ?? id}
-            lockedIds={draft.items.filter((i) => i.confirmed).map((i) => i.songId)}
-            hasWishes={draft.members.some((m) => m.wishes.length > 0)}
-            directionLabel={
-              hasDirection
-                ? [
-                    tempoTarget
-                      ? TEMPO_DIRS.find((d) => d.key === tempoDir)?.label
-                      : null,
-                    fameTarget !== null
-                      ? FAME_DIRS.find((d) => d.key === fameDir)?.label
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" × ")
-                : null
-            }
-            poolCount={filteredSongs.length}
-            filtered={isFilterActive(filter)}
-          />
-        </div>
-
-        {/* メンバー */}
-        <div className="mt-3">
-          <MembersPanel
-            members={draft.members}
-            pickedIds={pickedIds}
-            songTitle={(id) => songById.get(id)?.title ?? id}
-            wishMemberId={wishMemberId}
-            onSetWishMember={(id) => {
-              setWishMemberId(id);
-              if (id && !window.matchMedia("(min-width: 1024px)").matches) {
-                setPoolModalOpen(true);
-              }
-            }}
-            onRename={(id, name) =>
-              updateDraft((d) => ({
-                ...d,
-                members: d.members.map((m) => (m.id === id ? { ...m, name } : m)),
-              }))
-            }
-            onAdd={() =>
-              updateDraft((d) => ({
-                ...d,
-                members: [
-                  ...d.members,
-                  {
-                    id: `m${Date.now()}`,
-                    name: `メンバー${d.members.length + 1}`,
-                    wishes: [],
-                  },
+        {/* 道具箱: 方向性 / セトリ案 / メンバー */}
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-surface lg:flex-[1_1_auto]">
+          <div
+            role="tablist"
+            aria-label="選曲の道具"
+            className="flex shrink-0 gap-1 border-b border-border px-2 pt-2"
+          >
+            {(
+              [
+                ["direction", "方向性", hasDirection ? "●" : ""],
+                ["suggest", "セトリ案", suggestions ? "●" : ""],
+                [
+                  "members",
+                  "メンバー",
+                  wishScore !== null && wishScore < 100 ? "●" : "",
                 ],
-              }))
-            }
-            onRemove={(id) => {
-              if (wishMemberId === id) setWishMemberId(null);
-              updateDraft((d) => ({
-                ...d,
-                members: d.members.filter((m) => m.id !== id),
-              }));
-            }}
-            onSave={saveMembers}
-            onReload={reloadMembers}
-            saveState={memberSaveState}
-            onRemoveWish={(memberId, songId) =>
-              updateDraft((d) => ({
-                ...d,
-                members: d.members.map((m) =>
-                  m.id === memberId
-                    ? { ...m, wishes: m.wishes.filter((w) => w !== songId) }
-                    : m,
-                ),
-              }))
-            }
-          />
+              ] as const
+            ).map(([key, label, dot]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tool === key}
+                onClick={() => setTool(key)}
+                className={`flex items-center gap-1 rounded-t-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  tool === key
+                    ? "bg-accent-soft text-accent-strong"
+                    : "text-muted hover:bg-surface-2 hover:text-foreground"
+                }`}
+              >
+                {label}
+                {dot && (
+                  <span aria-hidden className="text-[8px] text-accent">
+                    {dot}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {tool === "direction" && (
+              <div className="p-4">
+                <DirectionMatrix
+                  comp={composition}
+                  tempoDir={tempoDir}
+                  fameDir={fameDir}
+                  onSelect={(t, f) =>
+                    updateDraft((d) => ({ ...d, tempoDir: t, fameDir: f }))
+                  }
+                />
+              </div>
+            )}
+
+            {tool === "suggest" && (
+              <SuggestPanel
+                suggestions={suggestions}
+                size={suggestSize}
+                onChangeSize={setSuggestSize}
+                onGenerate={generateSuggestions}
+                onApply={applySuggestion}
+                songTitle={(id) => songById.get(id)?.title ?? id}
+                lockedIds={draft.items
+                  .filter((i) => i.confirmed)
+                  .map((i) => i.songId)}
+                hasWishes={draft.members.some((m) => m.wishes.length > 0)}
+                directionLabel={
+                  hasDirection
+                    ? [
+                        tempoTarget
+                          ? TEMPO_DIRS.find((d) => d.key === tempoDir)?.label
+                          : null,
+                        fameTarget !== null
+                          ? FAME_DIRS.find((d) => d.key === fameDir)?.label
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" × ")
+                    : null
+                }
+                poolCount={filteredSongs.length}
+                filtered={isFilterActive(filter)}
+              />
+            )}
+
+            {tool === "members" && (
+              <MembersPanel
+                members={draft.members}
+                pickedIds={pickedIds}
+                songTitle={(id) => songById.get(id)?.title ?? id}
+                wishMemberId={wishMemberId}
+                onSetWishMember={(id) => {
+                  setWishMemberId(id);
+                  if (id && !window.matchMedia("(min-width: 1024px)").matches) {
+                    setPoolModalOpen(true);
+                  }
+                }}
+                onRename={(id, name) =>
+                  updateDraft((d) => ({
+                    ...d,
+                    members: d.members.map((m) =>
+                      m.id === id ? { ...m, name } : m,
+                    ),
+                  }))
+                }
+                onAdd={() =>
+                  updateDraft((d) => ({
+                    ...d,
+                    members: [
+                      ...d.members,
+                      {
+                        id: `m${Date.now()}`,
+                        name: `メンバー${d.members.length + 1}`,
+                        wishes: [],
+                      },
+                    ],
+                  }))
+                }
+                onRemove={(id) => {
+                  if (wishMemberId === id) setWishMemberId(null);
+                  updateDraft((d) => ({
+                    ...d,
+                    members: d.members.filter((m) => m.id !== id),
+                  }));
+                }}
+                onSave={saveMembers}
+                onReload={reloadMembers}
+                saveState={memberSaveState}
+                onRemoveWish={(memberId, songId) =>
+                  updateDraft((d) => ({
+                    ...d,
+                    members: d.members.map((m) =>
+                      m.id === memberId
+                        ? { ...m, wishes: m.wishes.filter((w) => w !== songId) }
+                        : m,
+                    ),
+                  }))
+                }
+              />
+            )}
+          </div>
         </div>
 
         {store.drafts.length > 1 && (
@@ -855,7 +872,7 @@ export function SetlistPlanner({
                 return { ...s, drafts, currentId: drafts[0].id };
               });
             }}
-            className="mt-3 w-full rounded-lg px-3 py-1.5 text-xs text-muted hover:text-foreground"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-xs text-muted hover:text-foreground"
           >
             このセトリを削除
           </button>
