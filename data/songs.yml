@@ -484,3 +484,9 @@
   releaseDate: '1999'
   trackNumber: 5
   isSingle: false
+- id: song082
+  title: 悪口
+  album: 桜の木の下
+  releaseDate: '2000'
+  trackNumber: 7
+  isSingle: false
