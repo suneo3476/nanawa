@@ -188,6 +188,31 @@ export async function saveMembersViaLocal(
   return json.count ?? members.length;
 }
 
+// ---- 曲の属性(テンポ/バラード) ----
+
+export interface SongAttrEdit {
+  songId: string;
+  tempo: "up" | "mid" | "slow";
+  ballad: boolean;
+}
+
+export async function saveSongAttrsViaLocal(
+  edits: SongAttrEdit[],
+): Promise<number> {
+  const res = await fetch(`${LOCAL_API_BASE}/api/song-attributes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ edits }),
+  });
+  const json = (await res.json()) as {
+    ok: boolean;
+    count?: number;
+    errors?: string[];
+  };
+  if (!json.ok) throw new Error((json.errors ?? ["保存に失敗しました"]).join("\n"));
+  return json.count ?? edits.length;
+}
+
 // ---- github ----
 // 静的ホスティングにデプロイした状態でも、ブラウザから GitHub の API を叩けば
 // リポジトリのYAMLを更新できる。更新をトリガーにホスティング側が再ビルドすれば
@@ -366,6 +391,49 @@ export async function saveMembersViaGithub(
     "add: メンバーの希望曲を更新した",
   );
   return members.length;
+}
+
+/**
+ * 曲のテンポ/バラードを GitHub 上の song_attributes.yml に反映する。
+ * 他の項目(紅白・タイアップ)は保ったまま該当行だけ差し替える。
+ */
+export async function saveSongAttrsViaGithub(
+  cfg: GithubConfig,
+  edits: SongAttrEdit[],
+  songTitle?: (songId: string) => string | undefined,
+): Promise<number> {
+  const file = await getFile(cfg, "data/song_attributes.yml");
+  const blocks = file.content.split(/\n(?=- songId: )/);
+  const head = blocks[0].startsWith("- songId:") ? "" : blocks.shift()!;
+  const byId = new Map(
+    blocks.map((b) => [b.match(/^- songId: (song\d+)/)![1], b.trimEnd()]),
+  );
+  for (const edit of edits) {
+    const kept = (byId.get(edit.songId) ?? "")
+      .split("\n")
+      .filter((l) => l && !/^ {2}(tempo|ballad):/.test(l) && !/^- songId:/.test(l));
+    const title = songTitle?.(edit.songId);
+    byId.set(
+      edit.songId,
+      [
+        `- songId: ${edit.songId}${title ? `   # ${title}` : ""}`,
+        `  tempo: ${edit.tempo}`,
+        `  ballad: ${edit.ballad}`,
+        ...kept,
+      ].join("\n"),
+    );
+  }
+  const sorted = [...byId.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  // split で失われるヘッダー直後の改行を戻す
+  const header = head ? head.replace(/\n*$/, "\n\n") : "";
+  await putFile(
+    cfg,
+    "data/song_attributes.yml",
+    `${header}${sorted.map(([, b]) => b).join("\n")}\n`,
+    file.sha,
+    "fix: 曲のテンポ/バラードを修正した",
+  );
+  return edits.length;
 }
 
 /** 設定したリポジトリ/ブランチ/トークンで読み書きできるかを確認する */

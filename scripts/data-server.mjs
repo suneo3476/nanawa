@@ -148,6 +148,59 @@ function writeMembers(members) {
   return { count: members.length };
 }
 
+const ATTRS = path.join(DATA_DIR, "song_attributes.yml");
+
+/**
+ * 曲のテンポ/バラードだけを差分更新する。
+ * kouhaku や tieup など他の項目には触らない。
+ */
+function patchSongAttributes(edits) {
+  const songIds = collectIds(readText(path.join(DATA_DIR, "songs.yml")), "id");
+  const errors = [];
+  if (!Array.isArray(edits) || edits.length === 0) errors.push("変更がありません");
+  for (const e of edits ?? []) {
+    if (!songIds.has(e.songId)) errors.push(`不明な songId: ${e.songId}`);
+    if (e.tempo != null && !["up", "mid", "slow"].includes(e.tempo))
+      errors.push(`不正な tempo: ${e.tempo}`);
+  }
+  if (errors.length) return { errors };
+
+  const text = readText(ATTRS);
+  const blocks = text.split(/\n(?=- songId: )/);
+  const head = blocks[0].startsWith("- songId:") ? "" : blocks.shift();
+  const byId = new Map(
+    blocks.map((b) => [b.match(/^- songId: (song\d+)/)[1], b.trimEnd()]),
+  );
+  const titles = new Map(
+    [
+      ...readText(path.join(DATA_DIR, "songs.yml")).matchAll(
+        /^- id: (song\d+)\n {2}title: (.*)$/gm,
+      ),
+    ].map((m) => [m[1], m[2].replace(/^'|'$/g, "")]),
+  );
+
+  for (const edit of edits) {
+    const existing = byId.get(edit.songId) ?? "";
+    // 既存の行から tempo / ballad を抜き、残りは保持する
+    const kept = existing
+      .split("\n")
+      .filter((l) => l && !/^ {2}(tempo|ballad):/.test(l) && !/^- songId:/.test(l));
+    const lines = [
+      `- songId: ${edit.songId}${titles.has(edit.songId) ? `   # ${titles.get(edit.songId)}` : ""}`,
+    ];
+    if (edit.tempo) lines.push(`  tempo: ${edit.tempo}`);
+    if (edit.ballad != null) lines.push(`  ballad: ${edit.ballad === true}`);
+    lines.push(...kept);
+    byId.set(edit.songId, lines.join("\n"));
+  }
+
+  const sorted = [...byId.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  // split で失われるヘッダー直後の改行を戻す
+  const header = head ? head.replace(/\n*$/, "\n\n") : "";
+  fs.writeFileSync(ATTRS, `${header}${sorted.map(([, b]) => b).join("\n")}\n`);
+  return { count: edits.length };
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
 
@@ -155,6 +208,26 @@ const server = http.createServer((req, res) => {
 
   if (req.method === "GET" && url.pathname === "/api/health") {
     return send(res, 200, { ok: true, ...nextIds() });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/song-attributes") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1_000_000) req.destroy();
+    });
+    req.on("end", () => {
+      try {
+        const { edits } = JSON.parse(body);
+        const result = patchSongAttributes(edits);
+        if (result.errors) return send(res, 400, { ok: false, errors: result.errors });
+        console.log(`✓ 曲の属性を${result.count}件更新しました`);
+        return send(res, 200, { ok: true, count: result.count });
+      } catch (e) {
+        return send(res, 400, { ok: false, errors: [String(e)] });
+      }
+    });
+    return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/members") {
