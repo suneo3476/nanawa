@@ -9,6 +9,7 @@ import type {
   LiveDetail,
   SetlistEntry,
   SetlistItem,
+  MediaUse,
   Song,
   SongDetail,
   SongPerformance,
@@ -34,6 +35,7 @@ function fail(msg: string): never {
 interface SongAttr {
   tempo: Tempo | null;
   ballad: boolean | null;
+  mediaUse: MediaUse | null;
 }
 
 interface Dataset {
@@ -121,6 +123,9 @@ function loadDataset(): Dataset {
           ? (toStr(a.tempo) as Tempo)
           : null,
         ballad: a.ballad === true || a.ballad === "true",
+        mediaUse: ["kouhaku", "tieup"].includes(toStr(a.mediaUse))
+          ? (toStr(a.mediaUse) as MediaUse)
+          : null,
       },
     ]),
   );
@@ -306,10 +311,19 @@ export function getAllSongs(): SongDetail[] {
       .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
 
     const attrs = d.attrsBySong.get(song.id);
+    const mediaUse = attrs?.mediaUse ?? null;
     return {
       ...song,
       tempo: attrs?.tempo ?? null,
       ballad: attrs?.ballad ?? null,
+      mediaUse,
+      // 有名度: シングル表題曲 or 紅白歌唱 → 1 / タイアップあり → 2 / それ以外 → 3
+      fameTier:
+        song.isSingle || mediaUse === "kouhaku"
+          ? (1 as const)
+          : mediaUse === "tieup"
+            ? (2 as const)
+            : (3 as const),
       playCount: performances.length,
       firstPerformance: performances.at(-1) ?? null,
       lastPerformance: performances[0] ?? null,

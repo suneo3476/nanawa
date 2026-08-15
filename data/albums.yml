@@ -393,3 +393,18 @@
   category: アルバム
   subCategory: ベスト
   releaseDate: '2019'
+- id: album080
+  title: カプセル
+  category: シングル
+  subCategory: 配信
+  releaseDate: '2025'
+- id: album081
+  title: cinema/capsule
+  category: EP
+  subCategory: メジャー
+  releaseDate: '2025'
+- id: album082
+  title: Cry High Fly
+  category: EP
+  subCategory: メジャー
+  releaseDate: '2026'

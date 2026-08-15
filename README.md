@@ -33,8 +33,9 @@ npm run lint
 1. `data/lives.yml` にライブを追加(`id` は `liveXXX` 連番、`date` は `YYYY-MM-DD`)
 2. `data/setlists.yml` に演奏曲を追加(`liveId` / `songId` / `order` / `type: individual|medley` / `youtubeUrl`)
 3. 新曲は `data/songs.yml` に追加(aikoの全ディスコグラフィは取り込み済み。原盤データは `data/raw/`、再取り込みは `node scripts/import-catalog.mjs`)
-4. 曲のテンポ/バラード属性は `data/song_attributes.yml` で編集(現状はClaudeによる暫定値)
-5. `npm run build` — データ不整合(存在しないID参照など)はここでエラーとして検出されます
+4. 曲のテンポ/バラード/メディア使用歴(紅白・タイアップ)は `data/song_attributes.yml` で編集(現状はClaudeによる暫定値。知名度は シングル表題 or 紅白=有名、タイアップ=準有名、他=コア と導出)
+5. 新譜チェックは `node scripts/check-itunes-catalog.mjs`(iTunes Search APIと突き合わせて取りこぼしを報告)
+6. `npm run build` — データ不整合(存在しないID参照など)はここでエラーとして検出されます
 
 ## 経緯
 

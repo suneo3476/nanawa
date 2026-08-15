@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllLives, getAllSongs, getSummary } from "@/lib/data";
+import { InfoTip } from "@/components/InfoTip";
 
 export const metadata: Metadata = {
   title: "統計",
@@ -27,12 +28,13 @@ export default function StatsPage() {
 
   return (
     <div className="pt-8">
-      <section className="pb-6">
+      <header className="flex items-center gap-2.5 pb-6">
         <h1 className="text-2xl font-bold sm:text-3xl">統計</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          {summary.years[0]}年からの活動を数字で振り返ります。
-        </p>
-      </section>
+        <InfoTip>
+          {summary.years[0]}
+          年からの活動を数字で振り返るページです。ヒートマップは濃いほどその年によく演奏した曲で、曲名クリックで演奏履歴に飛べます。
+        </InfoTip>
+      </header>
 
       {/* サマリー */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -82,11 +82,17 @@ export interface AlbumAppearance {
 }
 
 export type Tempo = "up" | "mid" | "slow";
+/** メディア使用歴: 紅白で歌唱 / ドラマ・アニメ・CM等のタイアップ */
+export type MediaUse = "kouhaku" | "tieup";
+/** 知名度: 1=有名(シングル表題 or 紅白) / 2=タイアップあり / 3=コア */
+export type FameTier = 1 | 2 | 3;
 
 export interface SongDetail extends Song {
   /** 演奏特性(data/song_attributes.yml)。未定義なら null */
   tempo: Tempo | null;
   ballad: boolean | null;
+  mediaUse: MediaUse | null;
+  fameTier: FameTier;
   playCount: number;
   firstPerformance: SongPerformance | null;
   lastPerformance: SongPerformance | null;

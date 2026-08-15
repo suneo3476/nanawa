@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Tempo } from "@/lib/types";
+import type { FameTier, MediaUse, Tempo } from "@/lib/types";
 import { matchesQuery, normalizeForSearch } from "@/lib/normalize";
 import { formatDateShort } from "@/lib/format";
 
@@ -19,11 +19,15 @@ export interface PickerSong {
   youtubeCount: number;
   tempo: Tempo | null;
   ballad: boolean | null;
+  fameTier: FameTier;
+  mediaUse: MediaUse | null;
 }
 
 type SortKey = "gap" | "count" | "rare" | "title" | "fit";
 type PoolFilter = "all" | "performed" | "unperformed";
-type Direction = "none" | "balance" | "attack" | "mellow";
+type FameFilter = "all" | "famous" | "core";
+type TempoDir = "none" | "balance" | "attack" | "mellow";
+type FameDir = "none" | "mass" | "half" | "core";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "gap", label: "ごぶさた順" },
@@ -38,15 +42,28 @@ const FILTERS: { key: PoolFilter; label: string }[] = [
   { key: "unperformed", label: "未演奏" },
 ];
 
-const DIRECTIONS: {
-  key: Direction;
+const FAME_FILTERS: { key: FameFilter; label: string }[] = [
+  { key: "all", label: "知名度: 全部" },
+  { key: "famous", label: "有名寄り" },
+  { key: "core", label: "コア曲" },
+];
+
+const TEMPO_DIRS: {
+  key: TempoDir;
   label: string;
   target: Record<Tempo, number> | null;
 }[] = [
-  { key: "none", label: "方向性なし", target: null },
+  { key: "none", label: "指定なし", target: null },
   { key: "balance", label: "バランス型", target: { up: 0.4, mid: 0.35, slow: 0.25 } },
   { key: "attack", label: "フェス攻め型", target: { up: 0.6, mid: 0.3, slow: 0.1 } },
   { key: "mellow", label: "しっとり型", target: { up: 0.15, mid: 0.35, slow: 0.5 } },
+];
+
+const FAME_DIRS: { key: FameDir; label: string; target: number | null }[] = [
+  { key: "none", label: "指定なし", target: null },
+  { key: "mass", label: "一般ウケ重視", target: 0.75 },
+  { key: "half", label: "半々", target: 0.5 },
+  { key: "core", label: "コア掘り", target: 0.25 },
 ];
 
 const TEMPO_LABEL: Record<Tempo, string> = { up: "アップ", mid: "ミドル", slow: "スロー" };
@@ -59,8 +76,16 @@ const TEMPO_CLASS: Record<Tempo, string> = {
 
 const STORAGE_KEY = "nanawa-picker-v1";
 
-/** テンポ構成が目標比率にどれだけ近いか(0〜100) */
-function fitScore(
+interface Composition {
+  counts: Record<Tempo, number>;
+  tempoUnknown: number;
+  ballads: number;
+  famous: number; // fameTier 1-2
+  total: number;
+}
+
+/** テンポ構成が目標比率にどれだけ近いか(0〜100)。判定対象ゼロなら null */
+function tempoFit(
   counts: Record<Tempo, number>,
   target: Record<Tempo, number>,
 ): number | null {
@@ -70,18 +95,46 @@ function fitScore(
   for (const k of ["up", "mid", "slow"] as const) {
     diff += Math.abs(counts[k] / total - target[k]);
   }
-  return Math.round(100 * (1 - diff / 2));
+  return 100 * (1 - diff / 2);
+}
+
+/** 有名曲比率の近さ(0〜100) */
+function fameFit(famous: number, total: number, target: number): number | null {
+  if (total === 0) return null;
+  return 100 * (1 - Math.abs(famous / total - target));
+}
+
+function combinedFit(
+  comp: Composition,
+  tempoTarget: Record<Tempo, number> | null,
+  fameTarget: number | null,
+): number | null {
+  const parts: number[] = [];
+  if (tempoTarget) {
+    const t = tempoFit(comp.counts, tempoTarget);
+    if (t !== null) parts.push(t);
+  }
+  if (fameTarget !== null) {
+    const f = fameFit(comp.famous, comp.total, fameTarget);
+    if (f !== null) parts.push(f);
+  }
+  if (parts.length === 0) return null;
+  return Math.round(parts.reduce((a, b) => a + b, 0) / parts.length);
 }
 
 export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("gap");
   const [poolFilter, setPoolFilter] = useState<PoolFilter>("all");
-  const [direction, setDirection] = useState<Direction>("none");
+  const [fameFilter, setFameFilter] = useState<FameFilter>("all");
+  const [tempoDir, setTempoDir] = useState<TempoDir>("none");
+  const [fameDir, setFameDir] = useState<FameDir>("none");
   const [picked, setPicked] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [urlList, setUrlList] = useState<string[] | null>(null);
   const [copied, setCopied] = useState<"" | "link" | "text">("");
+  const [poolModalOpen, setPoolModalOpen] = useState(false);
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
 
@@ -117,37 +170,60 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
     }
   }, [picked, loaded]);
 
+  // モーダル表示中は Esc で閉じ、背面スクロールを止める
+  useEffect(() => {
+    if (!poolModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPoolModalOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [poolModalOpen]);
+
   const pickedSet = useMemo(() => new Set(picked), [picked]);
 
-  // 候補リストのテンポ構成
-  const composition = useMemo(() => {
+  const composition = useMemo<Composition>(() => {
     const counts: Record<Tempo, number> = { up: 0, mid: 0, slow: 0 };
-    let unknown = 0;
+    let tempoUnknown = 0;
     let ballads = 0;
+    let famous = 0;
     for (const id of picked) {
       const s = songById.get(id);
       if (!s) continue;
       if (s.tempo) counts[s.tempo]++;
-      else unknown++;
+      else tempoUnknown++;
       if (s.ballad) ballads++;
+      if (s.fameTier <= 2) famous++;
     }
-    return { counts, unknown, ballads };
+    return { counts, tempoUnknown, ballads, famous, total: picked.length };
   }, [picked, songById]);
 
-  const target = DIRECTIONS.find((d) => d.key === direction)?.target ?? null;
-  const currentFit = target ? fitScore(composition.counts, target) : null;
+  const tempoTarget = TEMPO_DIRS.find((d) => d.key === tempoDir)?.target ?? null;
+  const fameTarget = FAME_DIRS.find((d) => d.key === fameDir)?.target ?? null;
+  const hasDirection = tempoTarget !== null || fameTarget !== null;
+  const currentFit = combinedFit(composition, tempoTarget, fameTarget);
 
   /** この曲を足したら適合度がどう変わるか */
   const fitDelta = useMemo(() => {
-    if (!target) return null;
-    const base = fitScore(composition.counts, target) ?? 0;
+    if (!hasDirection) return null;
+    const base = combinedFit(composition, tempoTarget, fameTarget) ?? 0;
     return (song: PickerSong) => {
-      if (!song.tempo) return 0;
-      const next = { ...composition.counts };
-      next[song.tempo]++;
-      return (fitScore(next, target) ?? 0) - base;
+      const next: Composition = {
+        counts: { ...composition.counts },
+        tempoUnknown: composition.tempoUnknown,
+        ballads: composition.ballads,
+        famous: composition.famous + (song.fameTier <= 2 ? 1 : 0),
+        total: composition.total + 1,
+      };
+      if (song.tempo) next.counts[song.tempo]++;
+      else next.tempoUnknown++;
+      return Math.round((combinedFit(next, tempoTarget, fameTarget) ?? 0) - base);
     };
-  }, [composition, target]);
+  }, [composition, tempoTarget, fameTarget, hasDirection]);
 
   const searchable = useMemo(
     () =>
@@ -167,6 +243,8 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
       .filter(({ song }) => {
         if (poolFilter === "performed" && !song.performed) return false;
         if (poolFilter === "unperformed" && song.performed) return false;
+        if (fameFilter === "famous" && song.fameTier === 3) return false;
+        if (fameFilter === "core" && song.fameTier !== 3) return false;
         return true;
       })
       .map(({ song, normTitle, normAlbums }) => {
@@ -180,10 +258,7 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
       })
       .filter((x) => x.hit);
 
-    const bySort: Record<
-      SortKey,
-      (a: PickerSong, b: PickerSong) => number
-    > = {
+    const bySort: Record<SortKey, (a: PickerSong, b: PickerSong) => number> = {
       // 未演奏(null)は「一度もやっていない」= 最ごぶさたとして先頭
       gap: (a, b) =>
         (b.livesSinceLast ?? Number.POSITIVE_INFINITY) -
@@ -199,7 +274,7 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
         b.song.playCount - a.song.playCount ||
         a.song.title.localeCompare(b.song.title, "ja"),
     );
-  }, [searchable, query, sort, poolFilter, fitDelta]);
+  }, [searchable, query, sort, poolFilter, fameFilter, fitDelta]);
 
   const add = (id: string) => setPicked((p) => (p.includes(id) ? p : [...p, id]));
   const remove = (id: string) => setPicked((p) => p.filter((x) => x !== id));
@@ -211,6 +286,15 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
       [next[index], next[j]] = [next[j], next[index]];
       return next;
     });
+
+  const openPool = () => {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      desktopSearchRef.current?.scrollIntoView({ block: "center" });
+      desktopSearchRef.current?.focus();
+    } else {
+      setPoolModalOpen(true);
+    }
+  };
 
   const shareUrl = () => {
     const url = new URL(window.location.href);
@@ -235,15 +319,15 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
     });
     const c = composition.counts;
     const comp = `構成: アップ${c.up} / ミドル${c.mid} / スロー${c.slow}${
-      composition.unknown ? ` / 不明${composition.unknown}` : ""
-    }${composition.ballads ? ` (バラード${composition.ballads})` : ""}`;
+      composition.tempoUnknown ? ` / 不明${composition.tempoUnknown}` : ""
+    } ・ 有名曲${composition.famous}/${composition.total}${
+      composition.ballads ? ` ・ バラード${composition.ballads}` : ""
+    }`;
     const text = [
       `🎵 七輪 選曲候補 ${picked.length}曲`,
       ...lines,
       comp,
-      ...(currentFit !== null
-        ? [`${DIRECTIONS.find((d) => d.key === direction)!.label}適合度: ${currentFit}点`]
-        : []),
+      ...(currentFit !== null ? [`適合度: ${currentFit}点`] : []),
       "",
       shareUrl(),
     ].join("\n");
@@ -252,74 +336,31 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
     setTimeout(() => setCopied(""), 2000);
   };
 
+  const poolPanelProps = {
+    query,
+    setQuery,
+    sort,
+    setSort,
+    poolFilter,
+    setPoolFilter,
+    fameFilter,
+    setFameFilter,
+    pool,
+    pickedSet,
+    fitDelta: sort === "fit" ? fitDelta : null,
+    hasDirection,
+    add,
+    remove,
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      {/* 曲プール */}
-      <div className="min-w-0">
-        <div className="sticky top-14 z-30 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="曲名・収録CD名で絞り込み"
-            className="w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] shadow-sm outline-none transition-colors placeholder:text-muted/70 focus:border-accent"
-            aria-label="曲を検索"
-          />
-          <div className="no-scrollbar mt-2.5 flex items-center gap-1.5 overflow-x-auto">
-            {FILTERS.map((f) => (
-              <Chip
-                key={f.key}
-                active={poolFilter === f.key}
-                onClick={() => setPoolFilter(f.key)}
-              >
-                {f.label}
-              </Chip>
-            ))}
-            <span className="mx-1 h-4 w-px shrink-0 bg-border" />
-            {SORTS.map((s) => (
-              <Chip key={s.key} active={sort === s.key} onClick={() => setSort(s.key)}>
-                {s.label}
-              </Chip>
-            ))}
-            {target && (
-              <Chip active={sort === "fit"} onClick={() => setSort("fit")}>
-                おすすめ順 ✨
-              </Chip>
-            )}
-          </div>
-        </div>
-
-        <p className="pt-3 pb-1 text-xs text-muted" role="status">
-          {pool.length}曲
-          {poolFilter === "all" &&
-            ` (演奏済み ${pool.filter((x) => x.song.performed).length} / 未演奏 ${pool.filter((x) => !x.song.performed).length})`}
-        </p>
-
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-          {pool.slice(0, 120).map(({ song, matchedAlbum }) => (
-            <PoolRow
-              key={song.id}
-              song={song}
-              matchedAlbum={matchedAlbum}
-              picked={pickedSet.has(song.id)}
-              fitDelta={sort === "fit" && fitDelta ? fitDelta(song) : null}
-              onAdd={() => add(song.id)}
-              onRemove={() => remove(song.id)}
-            />
-          ))}
-          {pool.length === 0 && (
-            <li className="px-4 py-8 text-center text-sm text-muted">
-              条件に一致する曲がありません。
-            </li>
-          )}
-          {pool.length > 120 && (
-            <li className="bg-surface-2/50 px-4 py-2 text-center text-xs text-muted">
-              他 {pool.length - 120} 曲 — 検索で絞り込んでください
-            </li>
-          )}
-        </ul>
+      {/* 曲プール (PCのみインライン表示。モバイルはモーダル) */}
+      <div className="hidden min-w-0 lg:block">
+        <PoolPanel {...poolPanelProps} searchRef={desktopSearchRef} sticky />
       </div>
 
-      {/* 候補リスト */}
+      {/* 方向性 + 候補リスト (モバイルでは先頭) */}
       <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
         {urlList && (
           <div className="mb-3 rounded-xl border border-accent/40 bg-accent-soft p-3 text-sm">
@@ -348,33 +389,7 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
           </div>
         )}
 
-        {/* 方向性 */}
-        <div className="mb-3 rounded-xl border border-border bg-surface p-4">
-          <h2 className="text-sm font-bold">セトリの方向性</h2>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {DIRECTIONS.map((d) => (
-              <Chip
-                key={d.key}
-                active={direction === d.key}
-                onClick={() => {
-                  setDirection(d.key);
-                  if (d.key === "none" && sort === "fit") setSort("gap");
-                }}
-              >
-                {d.label}
-              </Chip>
-            ))}
-          </div>
-          {target && (
-            <p className="mt-2 text-[11px] text-muted">
-              目標: アップ{Math.round(target.up * 100)}% / ミドル
-              {Math.round(target.mid * 100)}% / スロー
-              {Math.round(target.slow * 100)}% —
-              「おすすめ順 ✨」で適合度が上がる曲から並びます
-            </p>
-          )}
-        </div>
-
+        {/* 候補リスト */}
         <div className="rounded-xl border border-border bg-surface p-4">
           <h2 className="flex items-baseline justify-between font-bold">
             候補リスト
@@ -382,19 +397,16 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
           </h2>
 
           {picked.length > 0 && (
-            <CompositionBar
-              counts={composition.counts}
-              unknown={composition.unknown}
-              ballads={composition.ballads}
-              fit={currentFit}
-            />
+            <CompositionBar comp={composition} fit={currentFit} />
           )}
 
-          {picked.length === 0 ? (
+          {picked.length === 0 && (
             <p className="mt-3 text-sm text-muted">
-              左の一覧から「+」で曲を追加してください。並び順もここで調整できます。
+              まだ曲がありません。「曲を追加」から履歴を見ながら選べます。
             </p>
-          ) : (
+          )}
+
+          {picked.length > 0 && (
             <ol className="mt-3 space-y-1.5">
               {picked.map((id, i) => {
                 const s = songById.get(id)!;
@@ -441,8 +453,16 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
             </ol>
           )}
 
+          <button
+            type="button"
+            onClick={openPool}
+            className="mt-3 w-full rounded-lg border-2 border-dashed border-accent/50 bg-accent-soft/40 px-3 py-2.5 text-sm font-semibold text-accent-strong transition-colors hover:border-accent hover:bg-accent-soft"
+          >
+            + 曲を追加
+          </button>
+
           {picked.length > 0 && (
-            <div className="mt-4 space-y-2">
+            <div className="mt-3 space-y-2">
               <button
                 type="button"
                 onClick={copyText}
@@ -467,7 +487,200 @@ export function SetlistPlanner({ songs }: { songs: PickerSong[] }) {
             </div>
           )}
         </div>
+
+        {/* セトリの方向性 */}
+        <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <h2 className="text-sm font-bold">セトリの方向性</h2>
+          <p className="mt-1.5 text-[11px] text-muted">テンポ</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {TEMPO_DIRS.map((d) => (
+              <Chip
+                key={d.key}
+                active={tempoDir === d.key}
+                onClick={() => setTempoDir(d.key)}
+              >
+                {d.label}
+              </Chip>
+            ))}
+          </div>
+          <p className="mt-2.5 text-[11px] text-muted">知名度(客層)</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {FAME_DIRS.map((d) => (
+              <Chip
+                key={d.key}
+                active={fameDir === d.key}
+                onClick={() => setFameDir(d.key)}
+              >
+                {d.label}
+              </Chip>
+            ))}
+          </div>
+          {hasDirection ? (
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              {tempoTarget &&
+                `目標テンポ: アップ${Math.round(tempoTarget.up * 100)}% / ミドル${Math.round(tempoTarget.mid * 100)}% / スロー${Math.round(tempoTarget.slow * 100)}%。`}
+              {fameTarget !== null && `有名曲の目標比率: ${Math.round(fameTarget * 100)}%。`}
+              曲一覧の「おすすめ順 ✨」で適合度が上がる曲から並びます。
+            </p>
+          ) : (
+            <p className="mt-2 text-[11px] text-muted">
+              方向性を選ぶと候補リストの適合度と「次に足すといい曲」が分かります。
+            </p>
+          )}
+        </div>
       </aside>
+
+      {/* モバイル: 曲追加モーダル */}
+      {poolModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-[2px] lg:hidden"
+          onClick={() => setPoolModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="曲を追加"
+        >
+          <div
+            className="mt-10 flex min-h-0 flex-1 flex-col rounded-t-2xl border-t border-border bg-background"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 pt-3 pb-1">
+              <h2 className="text-sm font-bold">
+                曲を追加
+                <span className="ml-2 font-normal text-muted">
+                  候補 {picked.length}曲
+                </span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setPoolModalOpen(false)}
+                className="rounded-lg bg-accent px-4 py-1.5 text-sm font-semibold text-white"
+              >
+                完了
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+              <PoolPanel {...poolPanelProps} autoFocus />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- 曲プール(検索 + フィルタ + 一覧) ----
+
+function PoolPanel({
+  query,
+  setQuery,
+  sort,
+  setSort,
+  poolFilter,
+  setPoolFilter,
+  fameFilter,
+  setFameFilter,
+  pool,
+  pickedSet,
+  fitDelta,
+  hasDirection,
+  add,
+  remove,
+  searchRef,
+  sticky = false,
+  autoFocus = false,
+}: {
+  query: string;
+  setQuery: (v: string) => void;
+  sort: SortKey;
+  setSort: (v: SortKey) => void;
+  poolFilter: PoolFilter;
+  setPoolFilter: (v: PoolFilter) => void;
+  fameFilter: FameFilter;
+  setFameFilter: (v: FameFilter) => void;
+  pool: { song: PickerSong; matchedAlbum: string | null }[];
+  pickedSet: Set<string>;
+  fitDelta: ((s: PickerSong) => number) | null;
+  hasDirection: boolean;
+  add: (id: string) => void;
+  remove: (id: string) => void;
+  searchRef?: React.RefObject<HTMLInputElement | null>;
+  sticky?: boolean;
+  autoFocus?: boolean;
+}) {
+  return (
+    <div>
+      <div
+        className={
+          sticky
+            ? "sticky top-14 z-30 bg-background/95 py-3 backdrop-blur"
+            : "sticky top-0 z-10 -mx-1 bg-background px-1 py-2"
+        }
+      >
+        <input
+          ref={searchRef}
+          autoFocus={autoFocus}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="曲名・収録CD名で絞り込み"
+          className="w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] shadow-sm outline-none transition-colors placeholder:text-muted/70 focus:border-accent"
+          aria-label="曲を検索"
+        />
+        <div className="no-scrollbar mt-2.5 flex items-center gap-1.5 overflow-x-auto">
+          {FILTERS.map((f) => (
+            <Chip key={f.key} active={poolFilter === f.key} onClick={() => setPoolFilter(f.key)}>
+              {f.label}
+            </Chip>
+          ))}
+          <span className="mx-1 h-4 w-px shrink-0 bg-border" />
+          {FAME_FILTERS.map((f) => (
+            <Chip key={f.key} active={fameFilter === f.key} onClick={() => setFameFilter(f.key)}>
+              {f.label}
+            </Chip>
+          ))}
+          <span className="mx-1 h-4 w-px shrink-0 bg-border" />
+          {SORTS.map((s) => (
+            <Chip key={s.key} active={sort === s.key} onClick={() => setSort(s.key)}>
+              {s.label}
+            </Chip>
+          ))}
+          {hasDirection && (
+            <Chip active={sort === "fit"} onClick={() => setSort("fit")}>
+              おすすめ順 ✨
+            </Chip>
+          )}
+        </div>
+      </div>
+
+      <p className="pt-2 pb-1 text-xs text-muted" role="status">
+        {pool.length}曲
+        {poolFilter === "all" &&
+          fameFilter === "all" &&
+          ` (演奏済み ${pool.filter((x) => x.song.performed).length} / 未演奏 ${pool.filter((x) => !x.song.performed).length})`}
+      </p>
+
+      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        {pool.slice(0, 120).map(({ song, matchedAlbum }) => (
+          <PoolRow
+            key={song.id}
+            song={song}
+            matchedAlbum={matchedAlbum}
+            picked={pickedSet.has(song.id)}
+            fitDelta={fitDelta ? fitDelta(song) : null}
+            onAdd={() => add(song.id)}
+            onRemove={() => remove(song.id)}
+          />
+        ))}
+        {pool.length === 0 && (
+          <li className="px-4 py-8 text-center text-sm text-muted">
+            条件に一致する曲がありません。
+          </li>
+        )}
+        {pool.length > 120 && (
+          <li className="bg-surface-2/50 px-4 py-2 text-center text-xs text-muted">
+            他 {pool.length - 120} 曲 — 検索で絞り込んでください
+          </li>
+        )}
+      </ul>
     </div>
   );
 }
@@ -497,18 +710,8 @@ function Chip({
   );
 }
 
-function CompositionBar({
-  counts,
-  unknown,
-  ballads,
-  fit,
-}: {
-  counts: Record<Tempo, number>;
-  unknown: number;
-  ballads: number;
-  fit: number | null;
-}) {
-  const total = counts.up + counts.mid + counts.slow + unknown;
+function CompositionBar({ comp, fit }: { comp: Composition; fit: number | null }) {
+  const { counts, tempoUnknown, ballads, famous, total } = comp;
   if (total === 0) return null;
   const seg = (n: number) => `${(n / total) * 100}%`;
   return (
@@ -517,13 +720,14 @@ function CompositionBar({
         <span className="bg-accent" style={{ width: seg(counts.up) }} title={`アップ ${counts.up}`} />
         <span className="bg-accent/45" style={{ width: seg(counts.mid) }} title={`ミドル ${counts.mid}`} />
         <span className="bg-[#6d9fca]" style={{ width: seg(counts.slow) }} title={`スロー ${counts.slow}`} />
-        <span className="bg-border" style={{ width: seg(unknown) }} title={`不明 ${unknown}`} />
+        <span className="bg-border" style={{ width: seg(tempoUnknown) }} title={`不明 ${tempoUnknown}`} />
       </div>
       <p className="mt-1.5 flex flex-wrap gap-x-2 text-[11px] text-muted">
         <span>アップ {counts.up}</span>
         <span>ミドル {counts.mid}</span>
         <span>スロー {counts.slow}</span>
-        {unknown > 0 && <span>不明 {unknown}</span>}
+        {tempoUnknown > 0 && <span>不明 {tempoUnknown}</span>}
+        <span>/ 有名 {famous}</span>
         {ballads > 0 && <span>/ バラード {ballads}</span>}
         {fit !== null && (
           <span className="ml-auto font-semibold text-accent-strong">適合度 {fit}点</span>
@@ -566,10 +770,44 @@ interface PreviewInfo {
 
 // iTunes Search API (キー不要・CORS可) で aiko 本人音源の30秒プレビューを引く。
 // 曲名の完全一致(正規化後)のみ採用し、別の曲を流さない。
+// レートリミット対策として結果は localStorage に30日キャッシュする。
 const previewCache = new Map<string, PreviewInfo | null>();
+const PREVIEW_STORE_KEY = "nanawa-itunes-cache-v1";
+const PREVIEW_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+type PreviewStore = Record<string, { t: number; v: PreviewInfo | null }>;
+
+function readPreviewStore(): PreviewStore {
+  try {
+    return JSON.parse(localStorage.getItem(PREVIEW_STORE_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function readCachedPreview(title: string): PreviewInfo | null | undefined {
+  const entry = readPreviewStore()[title];
+  if (!entry || Date.now() - entry.t > PREVIEW_TTL_MS) return undefined;
+  return entry.v;
+}
+
+function writeCachedPreview(title: string, v: PreviewInfo | null) {
+  try {
+    const store = readPreviewStore();
+    store[title] = { t: Date.now(), v };
+    localStorage.setItem(PREVIEW_STORE_KEY, JSON.stringify(store));
+  } catch {
+    // 容量超過などで保存できなくても動作には影響しない
+  }
+}
 
 async function fetchPreview(title: string): Promise<PreviewInfo | null> {
   if (previewCache.has(title)) return previewCache.get(title)!;
+  const cached = readCachedPreview(title);
+  if (cached !== undefined) {
+    previewCache.set(title, cached);
+    return cached;
+  }
   try {
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
       title,
@@ -598,8 +836,10 @@ async function fetchPreview(title: string): Promise<PreviewInfo | null> {
       ? { previewUrl: hit.previewUrl!, artworkUrl: hit.artworkUrl100 ?? "" }
       : null;
     previewCache.set(title, info);
+    writeCachedPreview(title, info);
     return info;
   } catch {
+    // ネットワークエラーは永続キャッシュせず、次回また試す
     previewCache.set(title, null);
     return null;
   }
@@ -664,12 +904,12 @@ function PoolRow({
   const searchQuery = encodeURIComponent(`aiko ${song.title}`);
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
+    <li className="flex items-center gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-4">
       <button
         type="button"
         onClick={picked ? onRemove : onAdd}
         aria-label={picked ? `${song.title}を候補から外す` : `${song.title}を候補に追加`}
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-base font-bold transition-colors ${
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-base font-bold transition-colors ${
           picked
             ? "border-accent bg-accent text-white"
             : "border-border bg-surface text-muted hover:border-accent hover:text-accent-strong"
@@ -694,6 +934,16 @@ function PoolRow({
             </Link>
           ) : (
             <span className="truncate text-sm font-medium">{song.title}</span>
+          )}
+          {song.fameTier === 1 && (
+            <span className="shrink-0 rounded bg-[#f5ecd4] px-1 py-0.5 text-[10px] font-medium text-[#8a6d1a] dark:bg-[#3a300f] dark:text-[#d9b44a]">
+              有名
+            </span>
+          )}
+          {song.fameTier === 2 && (
+            <span className="shrink-0 rounded bg-surface-2 px-1 py-0.5 text-[10px] text-muted">
+              タイアップ
+            </span>
           )}
           {song.tempo && (
             <span
@@ -772,7 +1022,7 @@ function PoolRow({
           rel="noopener noreferrer"
           title="Spotifyで開く(ログイン済みならフル再生)"
           aria-label={`${song.title}をSpotifyで開く`}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-[#1DB954] hover:text-[#1DB954]"
+          className="hidden h-7 w-7 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-[#1DB954] hover:text-[#1DB954] sm:flex"
         >
           <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.5a.6.6 0 0 1-.86.2c-2.35-1.44-5.3-1.76-8.8-.96a.63.63 0 1 1-.28-1.22c3.8-.87 7.07-.5 9.7 1.11.3.18.4.57.24.87zm1.23-2.75a.78.78 0 0 1-1.07.26c-2.7-1.66-6.8-2.14-9.98-1.17a.78.78 0 1 1-.46-1.5c3.65-1.1 8.15-.56 11.25 1.34.37.22.48.7.26 1.07zm.1-2.85C14.7 9 9.35 8.82 6.27 9.76a.94.94 0 1 1-.55-1.8c3.55-1.07 9.4-.86 13.1 1.33a.94.94 0 0 1-.96 1.61z" />
@@ -784,7 +1034,7 @@ function PoolRow({
           rel="noopener noreferrer"
           title="YouTube Musicで開く(ログイン済みならフル再生)"
           aria-label={`${song.title}をYouTube Musicで開く`}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-[#f00] hover:text-[#f00]"
+          className="hidden h-7 w-7 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-[#f00] hover:text-[#f00] sm:flex"
         >
           <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm-1.8-7.2 4.8 2.7-4.8 2.7v-5.4z" />

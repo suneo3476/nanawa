@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllSongs, getSummary } from "@/lib/data";
 import { SongsBrowser, type SongSummary } from "@/components/SongsBrowser";
+import { InfoTip } from "@/components/InfoTip";
 
 export const metadata: Metadata = {
   title: "楽曲",
@@ -27,13 +28,13 @@ export default function SongsPage() {
 
   return (
     <div className="pt-8">
-      <section className="pb-6">
+      <header className="flex items-center gap-2.5 pb-6">
         <h1 className="text-2xl font-bold sm:text-3xl">楽曲</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          これまでにライブで演奏した{songs.length}
-          曲。曲名で検索、演奏回数や「最後にやった日」で並べ替えできます。
-        </p>
-      </section>
+        <span className="text-sm text-muted">演奏歴あり {songs.length}曲</span>
+        <InfoTip>
+          これまでにライブで演奏した曲の一覧です。曲名・アルバム名で検索でき、演奏回数・最近やった順・ごぶさた順で並べ替えられます。棒グラフは年ごとの演奏回数です。
+        </InfoTip>
+      </header>
       <SongsBrowser songs={songs} years={summary.years} />
     </div>
   );

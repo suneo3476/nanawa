@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllLives, getAllSongs } from "@/lib/data";
 import { SetlistPlanner, type PickerSong } from "@/components/SetlistPlanner";
+import { InfoTip } from "@/components/InfoTip";
 
 export const metadata: Metadata = {
   title: "選曲ノート",
@@ -24,20 +25,21 @@ export default function PickerPage() {
     youtubeCount: s.youtubeCount,
     tempo: s.tempo,
     ballad: s.ballad,
+    fameTier: s.fameTier,
+    mediaUse: s.mediaUse,
   }));
 
   return (
     <div className="pt-8">
-      <section className="pb-6">
+      <header className="flex items-center gap-2.5 pb-6">
         <h1 className="text-2xl font-bold sm:text-3xl">選曲ノート</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          「今まで何やったっけ?」を見ながら次のライブの候補を組むたたき台。
-          <strong className="font-semibold">
-            未演奏曲も含む全ディスコグラフィ{songs.length}曲
-          </strong>
-          から選べます。セトリの方向性を決めると、構成の適合度と「次に足すといい曲」が分かります。候補リストはこの端末に自動保存され、リンクやテキストでメンバーへ共有できます。
-        </p>
-      </section>
+        <InfoTip>
+          次のライブの候補を組むたたき台です。未演奏曲も含む全ディスコグラフィ
+          {songs.length}
+          曲から「曲を追加」で選べます。セトリの方向性(テンポ・知名度)を決めると、構成の適合度と「次に足すといい曲」(おすすめ順)が分かります。候補リストはこの端末に自動保存され、リンクやテキストでメンバーへ共有できます。試聴はiTunesの30秒プレビュー、SpotifyやYouTube
+          Musicはログイン済みならフル再生できます。
+        </InfoTip>
+      </header>
       <SetlistPlanner songs={songs} />
     </div>
   );
