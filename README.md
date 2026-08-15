@@ -1,38 +1,41 @@
-<!-- README.md -->
+# 七輪ライブラリー v3
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+aikoコピーバンド「七輪」のライブ出演記録とセットリストのアーカイブサイト。
+「この曲やった? いつ? どこで?」に最短で答えることを最大の価値に据えた第3版です。
 
-## Getting Started
+## 主な機能
 
-First, run the development server:
+- **ライブ履歴ブラウザ** (`/`) — 曲名・イベント名・会場名・年でのインクリメンタル検索。年別グルーピング、動画ありフィルタ
+- **ライブ詳細** (`/lives/[id]`) — セットリスト、初披露バッジ、曲ごとのYouTube演奏動画(タイムスタンプ対応)、前後ライブへのナビ
+- **楽曲** (`/songs`, `/songs/[id]`) — 演奏回数・最近やった順・ごぶさた順の並べ替え、年別スパークライン、全演奏履歴、よく一緒に演奏された曲
+- **会場** (`/venues`) — 出演会場の一覧と会場ごとの出演履歴
+- **統計** (`/stats`) — 年別ライブ回数、演奏回数Top10、曲×年ヒートマップ
+- **選曲ノート** (`/picker`) — 選曲会議のたたき台。候補リスト作成(この端末に自動保存)、リンク/テキストでの共有、iTunes 30秒試聴、Spotify / YouTube Music へのリンク
+- **⌘K 検索パレット** — 全ページから曲・ライブ・会場を横断検索(ひらがな/カタカナ正規化対応)
+
+## 技術構成
+
+- Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- `output: "export"` による完全静的出力 — `out/` をそのまま静的ホスティングへ
+- データは `data/*.yml` をビルド時に読み込み・検証(参照整合性エラーはビルド失敗になる)
+
+## 開発
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev    # 開発サーバー http://localhost:3000
+npm run build  # 静的ビルド (out/ に出力)
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## データの更新(ライブを追加する)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. `data/lives.yml` にライブを追加(`id` は `liveXXX` 連番、`date` は `YYYY-MM-DD`)
+2. `data/setlists.yml` に演奏曲を追加(`liveId` / `songId` / `order` / `type: individual|medley` / `youtubeUrl`)
+3. 新曲は `data/songs.yml` に追加
+4. `npm run build` — データ不整合(存在しないID参照など)はここでエラーとして検出されます
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 経緯
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- v1 (`study/nanawa`) → v2 (`study/nanawa-plus`, [LTスライド](https://speakerdeck.com/suneo3476/qi-lun-raiburari-claude-ai-dezuo-ru-next-dot-js-apuri)) → v3 (本リポジトリ)
+- v2からの主な改善: ライブ一覧ページの新設(v2には存在しなかった)、検索フィルタの完全実装(v2ではキーワード/会場/年が未実装)、楽曲ページの演奏履歴リスト実装、選曲ノートの追加
