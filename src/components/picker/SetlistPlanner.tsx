@@ -16,7 +16,13 @@ import {
 } from "@/lib/scoring";
 import { formatDateShort } from "@/lib/format";
 import { TEMPO_BORDER, TEMPO_LABEL } from "@/components/SongBadges";
-import { Chip, PoolPanel } from "./PoolPanel";
+import { Chip, PoolPanel, type SortKey } from "./PoolPanel";
+import {
+  emptyFilter,
+  filterSongs,
+  isFilterActive,
+  type FilterState,
+} from "./filter";
 import { DirectionMatrix } from "./DirectionMatrix";
 import { MembersPanel } from "./MembersPanel";
 import { SetlistExport } from "./SetlistExport";
@@ -93,6 +99,9 @@ export function SetlistPlanner({
   const [wishMemberId, setWishMemberId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
   const [suggestSize, setSuggestSize] = useState(6);
+  // 曲の絞り込みは曲プールと提案で共有する(モバイルのモーダルとPCで同じ状態になる)
+  const [filter, setFilter] = useState<FilterState>(emptyFilter);
+  const [sort, setSort] = useState<SortKey>("gap");
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
   const draft =
@@ -290,6 +299,16 @@ export function SetlistPlanner({
     return map;
   }, [draft.members]);
 
+  /** 絞り込み後の曲。曲プールの表示とセトリ案の母集団の両方に使う */
+  const filteredSongs = useMemo(
+    () =>
+      filterSongs(songs, filter, {
+        wishesBySong,
+        unmetWishes: unsatisfiedWishes,
+      }),
+    [songs, filter, wishesBySong, unsatisfiedWishes],
+  );
+
   /** この曲を足したら適合度がどう変わるか(希望未充足の曲にはボーナス) */
   const fitDelta = useMemo(() => {
     if (!hasDirection && unsatisfiedWishes.size === 0) return null;
@@ -421,9 +440,17 @@ export function SetlistPlanner({
   };
 
   const generateSuggestions = () => {
+    const lockedIds = draft.items.filter((i) => i.confirmed).map((i) => i.songId);
+    // 提案の母集団は「いま絞り込んでいる曲」。ただし確定済みの曲は
+    // 絞り込みから外れていても必ず対象に含める。
+    const pool = new Map(filteredSongs.map(({ song }) => [song.id, song]));
+    for (const id of lockedIds) {
+      const song = songById.get(id);
+      if (song) pool.set(id, song);
+    }
     setSuggestions(
       suggestSetlists({
-        songs: songs.map((s) => ({
+        songs: [...pool.values()].map((s) => ({
           id: s.id,
           title: s.title,
           tempo: s.tempo,
@@ -435,7 +462,7 @@ export function SetlistPlanner({
         size: suggestSize,
         tempoTarget,
         fameTarget,
-        locked: draft.items.filter((i) => i.confirmed).map((i) => i.songId),
+        locked: lockedIds,
       }),
     );
   };
@@ -457,6 +484,11 @@ export function SetlistPlanner({
   const poolProps = {
     songs,
     albums,
+    filtered: filteredSongs,
+    filter,
+    onFilterChange: setFilter,
+    sort,
+    onSortChange: setSort,
     pickedIds,
     fitDelta,
     hasDirection,
@@ -737,8 +769,24 @@ export function SetlistPlanner({
             onGenerate={generateSuggestions}
             onApply={applySuggestion}
             songTitle={(id) => songById.get(id)?.title ?? id}
-            lockedCount={draft.items.filter((i) => i.confirmed).length}
+            lockedIds={draft.items.filter((i) => i.confirmed).map((i) => i.songId)}
             hasWishes={draft.members.some((m) => m.wishes.length > 0)}
+            directionLabel={
+              hasDirection
+                ? [
+                    tempoTarget
+                      ? TEMPO_DIRS.find((d) => d.key === tempoDir)?.label
+                      : null,
+                    fameTarget !== null
+                      ? FAME_DIRS.find((d) => d.key === fameDir)?.label
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" × ")
+                : null
+            }
+            poolCount={filteredSongs.length}
+            filtered={isFilterActive(filter)}
           />
         </div>
 

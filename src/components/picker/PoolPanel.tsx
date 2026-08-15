@@ -2,9 +2,17 @@
 
 import { useMemo, useState } from "react";
 import type { Season } from "@/lib/types";
-import { matchesQuery, normalizeForSearch } from "@/lib/normalize";
 import { SEASON_LABEL } from "@/components/SongBadges";
 import { SongRow } from "./SongRow";
+import {
+  ATTR_FILTERS,
+  SEASONS,
+  WISH_FILTERS,
+  isFilterActive,
+  type AttrFilter,
+  type FilterState,
+  type FilteredSong,
+} from "./filter";
 import type { PickerAlbum, PickerSong } from "./types";
 
 export type SortKey = "gap" | "count" | "rare" | "title" | "fit";
@@ -16,48 +24,23 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "title", label: "曲名順" },
 ];
 
-/** 曲の属性による絞り込み(複数選択・AND) */
-export type AttrFilter =
-  | "single"
-  | "coupling"
-  | "kouhaku"
-  | "tieup"
-  | "ballad"
-  | "performed"
-  | "unperformed"
-  | "wished"
-  | "unmetWish";
-
-const ATTR_FILTERS: { key: AttrFilter; label: string }[] = [
-  { key: "single", label: "シングル" },
-  { key: "coupling", label: "カップリング" },
-  { key: "kouhaku", label: "紅白" },
-  { key: "tieup", label: "タイアップ" },
-  { key: "ballad", label: "バラード" },
-  { key: "performed", label: "演奏済み" },
-  { key: "unperformed", label: "未演奏" },
-];
-
-const WISH_FILTERS: { key: AttrFilter; label: string }[] = [
-  { key: "wished", label: "♥ 誰かの希望" },
-  { key: "unmetWish", label: "♥ まだ叶ってない希望" },
-];
-
-const SEASONS: Season[] = ["spring", "summer", "autumn", "winter"];
-
 const MAX_ROWS = 120;
 
 export interface PoolPanelProps {
   songs: PickerSong[];
   albums: PickerAlbum[];
+  /** 絞り込み済みの曲(セトリ案の提案と同じ条件) */
+  filtered: FilteredSong[];
+  filter: FilterState;
+  onFilterChange: (next: FilterState) => void;
+  sort: SortKey;
+  onSortChange: (next: SortKey) => void;
   pickedIds: Set<string>;
   fitDelta: ((s: PickerSong) => number) | null;
   hasDirection: boolean;
   /** 希望登録モードのメンバー(null なら通常モード) */
   wishMember: { id: string; name: string; wishes: string[] } | null;
   wishesBySong: Map<string, string[]>;
-  /** まだ希望が1曲も叶っていないメンバーが望んでいる曲 */
-  unmetWishes: Set<string>;
   onToggle: (songId: string) => void;
   onToggleWish: (songId: string) => void;
   autoFocus?: boolean;
@@ -67,107 +50,47 @@ export interface PoolPanelProps {
 export function PoolPanel({
   songs,
   albums,
+  filtered,
+  filter,
+  onFilterChange,
+  sort,
+  onSortChange,
   pickedIds,
   fitDelta,
   hasDirection,
   wishMember,
   wishesBySong,
-  unmetWishes,
   onToggle,
   onToggleWish,
   autoFocus = false,
   sticky = false,
 }: PoolPanelProps) {
   const [mode, setMode] = useState<"search" | "discography">("search");
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("gap");
-  const [attrs, setAttrs] = useState<AttrFilter[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
 
-  const toggleAttr = (key: AttrFilter) =>
-    setAttrs((prev) => {
-      // 演奏済み/未演奏は排他(同時に選ぶと結果がゼロになるため)
-      const exclusive: Partial<Record<AttrFilter, AttrFilter>> = {
-        performed: "unperformed",
-        unperformed: "performed",
-      };
-      const opposite = exclusive[key];
-      const next = prev.includes(key)
-        ? prev.filter((a) => a !== key)
-        : [...prev.filter((a) => a !== opposite), key];
-      return next;
-    });
+  const toggleAttr = (key: AttrFilter) => {
+    // 演奏済み/未演奏は排他(同時に選ぶと結果がゼロになるため)
+    const exclusive: Partial<Record<AttrFilter, AttrFilter>> = {
+      performed: "unperformed",
+      unperformed: "performed",
+    };
+    const opposite = exclusive[key];
+    const attrs = filter.attrs.includes(key)
+      ? filter.attrs.filter((a) => a !== key)
+      : [...filter.attrs.filter((a) => a !== opposite), key];
+    onFilterChange({ ...filter, attrs });
+  };
 
   const toggleSeason = (s: Season) =>
-    setSeasons((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
-
-  const searchable = useMemo(
-    () =>
-      songs.map((song) => ({
-        song,
-        normTitle: normalizeForSearch(song.title),
-        normAlbums: song.albums.map((a) => ({
-          title: a,
-          norm: normalizeForSearch(a),
-        })),
-      })),
-    [songs],
-  );
-
-  const matchesAttrs = useMemo(() => {
-    const test: Record<AttrFilter, (s: PickerSong) => boolean> = {
-      single: (s) => s.isSingleA,
-      coupling: (s) => s.isCoupling,
-      kouhaku: (s) => s.kouhaku,
-      tieup: (s) => !!s.tieup,
-      ballad: (s) => !!s.ballad,
-      performed: (s) => s.performed,
-      unperformed: (s) => !s.performed,
-      wished: (s) => (wishesBySong.get(s.id)?.length ?? 0) > 0,
-      unmetWish: (s) => unmetWishes.has(s.id),
-    };
-    return (s: PickerSong) => {
-      // 楽曲属性(シングル/カップリング/紅白/タイアップ/バラード)は OR、
-      // 演奏状況は AND。「シングルかカップリングで、かつ未演奏」を表現できる。
-      const songAttrs = attrs.filter(
-        (a) =>
-          a !== "performed" &&
-          a !== "unperformed" &&
-          a !== "wished" &&
-          a !== "unmetWish",
-      );
-      if (songAttrs.length > 0 && !songAttrs.some((a) => test[a](s))) return false;
-      // 演奏状況と希望は AND(「未演奏かつ誰かの希望」を表現できる)
-      for (const a of attrs) {
-        if (
-          (a === "performed" ||
-            a === "unperformed" ||
-            a === "wished" ||
-            a === "unmetWish") &&
-          !test[a](s)
-        )
-          return false;
-      }
-      if (seasons.length > 0 && !seasons.some((x) => s.seasons.includes(x)))
-        return false;
-      return true;
-    };
-  }, [attrs, seasons, wishesBySong, unmetWishes]);
+    onFilterChange({
+      ...filter,
+      seasons: filter.seasons.includes(s)
+        ? filter.seasons.filter((x) => x !== s)
+        : [...filter.seasons, s],
+    });
 
   const pool = useMemo(() => {
-    const hit = searchable
-      .filter(({ song }) => matchesAttrs(song))
-      .map(({ song, normTitle, normAlbums }) => {
-        const q = query.trim();
-        if (!q) return { song, matchedAlbum: null as string | null, hit: true };
-        if (matchesQuery(normTitle, q)) return { song, matchedAlbum: null, hit: true };
-        const album = normAlbums.find((a) => matchesQuery(a.norm, q));
-        return { song, matchedAlbum: album?.title ?? null, hit: !!album };
-      })
-      .filter((x) => x.hit);
-
     const bySort: Record<SortKey, (a: PickerSong, b: PickerSong) => number> = {
       // 未演奏(null)は「一度もやっていない」= 最ごぶさたとして先頭
       gap: (a, b) =>
@@ -178,15 +101,13 @@ export function PoolPanel({
       title: (a, b) => a.title.localeCompare(b.title, "ja"),
       fit: (a, b) => (fitDelta?.(b) ?? 0) - (fitDelta?.(a) ?? 0),
     };
-    return [...hit].sort(
+    return [...filtered].sort(
       (a, b) =>
         bySort[sort](a.song, b.song) ||
         b.song.playCount - a.song.playCount ||
         a.song.title.localeCompare(b.song.title, "ja"),
     );
-  }, [searchable, query, sort, matchesAttrs, fitDelta]);
-
-  const filterCount = attrs.length + seasons.length;
+  }, [filtered, sort, fitDelta]);
 
   return (
     <div>
@@ -214,8 +135,8 @@ export function PoolPanel({
             <input
                
               autoFocus={autoFocus}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={filter.query}
+              onChange={(e) => onFilterChange({ ...filter, query: e.target.value })}
               placeholder="曲名・収録CD名で絞り込み"
               className="w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] shadow-sm outline-none transition-colors placeholder:text-muted/70 focus:border-accent"
               aria-label="曲を検索"
@@ -224,7 +145,7 @@ export function PoolPanel({
               {ATTR_FILTERS.map((f) => (
                 <Chip
                   key={f.key}
-                  active={attrs.includes(f.key)}
+                  active={filter.attrs.includes(f.key)}
                   onClick={() => toggleAttr(f.key)}
                 >
                   {f.label}
@@ -234,7 +155,7 @@ export function PoolPanel({
               {WISH_FILTERS.map((f) => (
                 <Chip
                   key={f.key}
-                  active={attrs.includes(f.key)}
+                  active={filter.attrs.includes(f.key)}
                   onClick={() => toggleAttr(f.key)}
                 >
                   {f.label}
@@ -244,19 +165,18 @@ export function PoolPanel({
               {SEASONS.map((s) => (
                 <Chip
                   key={s}
-                  active={seasons.includes(s)}
+                  active={filter.seasons.includes(s)}
                   onClick={() => toggleSeason(s)}
                 >
                   {SEASON_LABEL[s]}
                 </Chip>
               ))}
-              {filterCount > 0 && (
+              {isFilterActive(filter) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setAttrs([]);
-                    setSeasons([]);
-                  }}
+                  onClick={() =>
+                    onFilterChange({ query: "", attrs: [], seasons: [] })
+                  }
                   className="shrink-0 rounded-full px-2 py-1 text-xs text-muted underline underline-offset-2 hover:text-foreground"
                 >
                   解除
@@ -265,12 +185,16 @@ export function PoolPanel({
             </div>
             <div className="no-scrollbar mt-1.5 flex items-center gap-1.5 overflow-x-auto">
               {SORTS.map((s) => (
-                <Chip key={s.key} active={sort === s.key} onClick={() => setSort(s.key)}>
+                <Chip
+                  key={s.key}
+                  active={sort === s.key}
+                  onClick={() => onSortChange(s.key)}
+                >
                   {s.label}
                 </Chip>
               ))}
               {hasDirection && (
-                <Chip active={sort === "fit"} onClick={() => setSort("fit")}>
+                <Chip active={sort === "fit"} onClick={() => onSortChange("fit")}>
                   おすすめ順 ✨
                 </Chip>
               )}
@@ -283,10 +207,9 @@ export function PoolPanel({
         <>
           <p className="pt-2 pb-1 text-xs text-muted" role="status">
             {pool.length}曲
-            {seasons.length > 0 && (
-              <span className="ml-1">
-                ({seasons.map((s) => SEASON_LABEL[s]).join("・")}
-                のプレイリスト由来)
+            {isFilterActive(filter) && (
+              <span className="ml-1 text-accent-strong">
+                (絞り込み中 — セトリ案もこの範囲から作ります)
               </span>
             )}
           </p>

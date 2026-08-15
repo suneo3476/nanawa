@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import type { Suggestion } from "@/lib/suggest";
 import { TEMPO_LABEL } from "@/components/SongBadges";
 
 /**
- * セトリ候補の提案(3パターン)。
- * 曲数を決めて「提案する」を押すと、確定済みの曲を残したまま案を作る。
+ * セトリ案の提案(3パターン)。
+ * 確定済みの曲は必ず残し、絞り込み中ならその範囲から、
+ * 方向性を選んでいればその適合度が上がるように選ぶ。
  */
 export function SuggestPanel({
   suggestions,
@@ -15,8 +15,11 @@ export function SuggestPanel({
   onGenerate,
   onApply,
   songTitle,
-  lockedCount,
+  lockedIds,
   hasWishes,
+  directionLabel,
+  poolCount,
+  filtered,
 }: {
   suggestions: Suggestion[] | null;
   size: number;
@@ -24,20 +27,44 @@ export function SuggestPanel({
   onGenerate: () => void;
   onApply: (songIds: string[]) => void;
   songTitle: (songId: string) => string;
-  lockedCount: number;
+  /** 確定済み(必ず残す)曲 */
+  lockedIds: string[];
   hasWishes: boolean;
+  /** 選んでいる方向性の説明。未選択なら null */
+  directionLabel: string | null;
+  /** 提案の母集団になる曲数 */
+  poolCount: number;
+  /** 絞り込み中かどうか */
+  filtered: boolean;
 }) {
-  const [open, setOpen] = useState<string | null>(null);
+  const lockedSet = new Set(lockedIds);
+  const remaining = Math.max(0, size - lockedIds.length);
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <h2 className="text-sm font-bold">セトリ案を作ってもらう</h2>
-      <p className="mt-1 text-[11px] leading-relaxed text-muted">
-        {hasWishes
-          ? "メンバーの希望と方向性をもとに3パターン提案します。"
-          : "メンバーの希望曲を登録しておくと、全員の希望を満たす案も出せます。"}
-        {lockedCount > 0 && `確定済みの${lockedCount}曲は必ず残します。`}
-      </p>
+      <ul className="mt-1.5 space-y-0.5 text-[11px] leading-relaxed text-muted">
+        <li>
+          対象: {poolCount}曲
+          {filtered && (
+            <span className="text-accent-strong">(いまの絞り込みの範囲)</span>
+          )}
+        </li>
+        <li>
+          方向性:{" "}
+          {directionLabel ? (
+            <span className="text-accent-strong">{directionLabel}</span>
+          ) : (
+            "未選択(上の表からマスを選ぶと反映されます)"
+          )}
+        </li>
+        <li>
+          {lockedIds.length > 0
+            ? `確定 ${lockedIds.length}曲はそのまま残し、残り ${remaining}曲を提案します`
+            : "確定した曲(セトリ候補の✓)があれば、それは必ず残します"}
+        </li>
+        {!hasWishes && <li>メンバーの希望曲を登録すると希望も考慮します</li>}
+      </ul>
 
       <div className="mt-2.5 flex items-center gap-2">
         <label className="flex items-center gap-1.5 text-xs text-muted">
@@ -63,10 +90,12 @@ export function SuggestPanel({
       {suggestions && (
         <ul className="mt-3 space-y-2">
           {suggestions.map((s) => {
-            const expanded = open === s.key;
             const c = s.composition.counts;
             return (
-              <li key={s.key} className="rounded-lg border border-border bg-surface-2 p-2.5">
+              <li
+                key={s.key}
+                className="rounded-lg border border-border bg-surface-2 p-2.5"
+              >
                 <div className="flex items-baseline justify-between gap-2">
                   <h3 className="text-xs font-bold">{s.label}</h3>
                   <span className="shrink-0 text-[11px] tabular-nums">
@@ -77,7 +106,11 @@ export function SuggestPanel({
                     )}
                     {s.wish !== null && (
                       <span
-                        className={`ml-1.5 ${s.wish === 100 ? "font-semibold text-accent-strong" : "text-muted"}`}
+                        className={`ml-1.5 ${
+                          s.wish === 100
+                            ? "font-semibold text-accent-strong"
+                            : "text-muted"
+                        }`}
                       >
                         希望 {s.wish}%
                       </span>
@@ -87,34 +120,30 @@ export function SuggestPanel({
                 <p className="mt-0.5 text-[10px] leading-relaxed text-muted">
                   {s.description}
                 </p>
-                <p className="mt-1 text-[10px] text-muted">
+
+                <ol className="mt-1.5 space-y-0.5">
+                  {s.songIds.map((id, i) => (
+                    <li key={id} className="flex items-center gap-1.5 text-[11px]">
+                      <span className="w-4 shrink-0 text-right font-mono tabular-nums text-muted">
+                        {i + 1}
+                      </span>
+                      <span className="truncate">{songTitle(id)}</span>
+                      {lockedSet.has(id) && (
+                        <span className="shrink-0 rounded bg-accent px-1 py-px text-[9px] leading-none text-white">
+                          確定
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+
+                <p className="mt-1.5 text-[10px] text-muted">
                   {TEMPO_LABEL.up} {c.up} / {TEMPO_LABEL.mid} {c.mid} /{" "}
                   {TEMPO_LABEL.slow} {c.slow}
                   {s.composition.tempoUnknown > 0 &&
                     ` / 不明 ${s.composition.tempoUnknown}`}
                   {` ・ 有名 ${s.composition.famous}/${s.composition.total}`}
                 </p>
-
-                <button
-                  type="button"
-                  onClick={() => setOpen(expanded ? null : s.key)}
-                  aria-expanded={expanded}
-                  className="mt-1.5 text-[11px] text-muted underline underline-offset-2 hover:text-foreground"
-                >
-                  {expanded ? "曲を隠す" : `曲を見る (${s.songIds.length}曲)`}
-                </button>
-                {expanded && (
-                  <ol className="mt-1.5 space-y-0.5">
-                    {s.songIds.map((id, i) => (
-                      <li key={id} className="flex gap-1.5 text-[11px]">
-                        <span className="w-4 shrink-0 text-right font-mono tabular-nums text-muted">
-                          {i + 1}
-                        </span>
-                        <span className="truncate">{songTitle(id)}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
 
                 <button
                   type="button"

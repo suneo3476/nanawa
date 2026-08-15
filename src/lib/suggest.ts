@@ -171,21 +171,21 @@ export function suggestSetlists(opts: SuggestOptions): Suggestion[] {
 
   const wishPlan = greedyPick(
     options,
-    { fit: 1, wish: 30, popularity: 0.5, gap: 0.3 },
+    { fit: 2, wish: 30, popularity: 0.5, gap: 0.3 },
     wishSeed,
   );
 
   // --- 2. バランス: 方向性重視、希望はほどほどに ---
   const balancedPlan = greedyPick(
     options,
-    { fit: 3, wish: 12, popularity: 0.4, gap: 0.6 },
+    { fit: 5, wish: 12, popularity: 0.4, gap: 0.6 },
     locked,
   );
 
   // --- 3. 定番+希望: よく演奏している曲を軸に ---
   const standardPlan = greedyPick(
     options,
-    { fit: 1, wish: 10, popularity: 3, gap: 0 },
+    { fit: 2, wish: 10, popularity: 3, gap: 0 },
     locked,
   );
 
