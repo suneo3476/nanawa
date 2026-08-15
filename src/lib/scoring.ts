@@ -49,6 +49,31 @@ export interface Composition {
   /** fameTier 1-2 の曲数 */
   famous: number;
   total: number;
+  /** BPMが分かっている曲の値(昇順) */
+  bpms: number[];
+}
+
+export interface BpmStats {
+  count: number;
+  min: number;
+  max: number;
+  median: number;
+  /** 最小と最大の差。小さすぎると単調、大きいと緩急がある */
+  spread: number;
+}
+
+/** セトリのBPMのばらつき。分かっている曲が2曲未満なら null */
+export function bpmStats(bpms: number[]): BpmStats | null {
+  if (bpms.length < 2) return null;
+  const sorted = [...bpms].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  return {
+    count: sorted.length,
+    min: sorted[0],
+    max: sorted.at(-1)!,
+    median,
+    spread: sorted.at(-1)! - sorted[0],
+  };
 }
 
 export const emptyComposition = (): Composition => ({
@@ -57,6 +82,7 @@ export const emptyComposition = (): Composition => ({
   ballads: 0,
   famous: 0,
   total: 0,
+  bpms: [],
 });
 
 /** テンポ構成が目標比率にどれだけ近いか(0〜100)。判定対象ゼロなら null */

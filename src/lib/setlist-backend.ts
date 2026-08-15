@@ -194,6 +194,8 @@ export interface SongAttrEdit {
   songId: string;
   tempo: "up" | "mid" | "slow";
   ballad: boolean;
+  /** 未指定なら既存のBPMを保つ。空文字は削除 */
+  bpm?: number | null;
 }
 
 export async function saveSongAttrsViaLocal(
@@ -409,9 +411,16 @@ export async function saveSongAttrsViaGithub(
     blocks.map((b) => [b.match(/^- songId: (song\d+)/)![1], b.trimEnd()]),
   );
   for (const edit of edits) {
+    const editsBpm = edit.bpm !== undefined;
     const kept = (byId.get(edit.songId) ?? "")
       .split("\n")
-      .filter((l) => l && !/^ {2}(tempo|ballad):/.test(l) && !/^- songId:/.test(l));
+      .filter(
+        (l) =>
+          l &&
+          !/^ {2}(tempo|ballad):/.test(l) &&
+          !(editsBpm && /^ {2}bpm:/.test(l)) &&
+          !/^- songId:/.test(l),
+      );
     const title = songTitle?.(edit.songId);
     byId.set(
       edit.songId,
@@ -420,6 +429,7 @@ export async function saveSongAttrsViaGithub(
         `  tempo: ${edit.tempo}`,
         `  ballad: ${edit.ballad}`,
         ...kept,
+        ...(editsBpm && edit.bpm ? [`  bpm: ${edit.bpm}`] : []),
       ].join("\n"),
     );
   }

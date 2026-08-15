@@ -162,6 +162,8 @@ function patchSongAttributes(edits) {
     if (!songIds.has(e.songId)) errors.push(`不明な songId: ${e.songId}`);
     if (e.tempo != null && !["up", "mid", "slow"].includes(e.tempo))
       errors.push(`不正な tempo: ${e.tempo}`);
+    if (e.bpm != null && e.bpm !== "" && !(Number(e.bpm) >= 30 && Number(e.bpm) <= 300))
+      errors.push(`不正な bpm: ${e.bpm}`);
   }
   if (errors.length) return { errors };
 
@@ -182,15 +184,23 @@ function patchSongAttributes(edits) {
   for (const edit of edits) {
     const existing = byId.get(edit.songId) ?? "";
     // 既存の行から tempo / ballad を抜き、残りは保持する
+    const editsBpm = Object.prototype.hasOwnProperty.call(edit, "bpm");
     const kept = existing
       .split("\n")
-      .filter((l) => l && !/^ {2}(tempo|ballad):/.test(l) && !/^- songId:/.test(l));
+      .filter(
+        (l) =>
+          l &&
+          !/^ {2}(tempo|ballad):/.test(l) &&
+          !(editsBpm && /^ {2}bpm:/.test(l)) &&
+          !/^- songId:/.test(l),
+      );
     const lines = [
       `- songId: ${edit.songId}${titles.has(edit.songId) ? `   # ${titles.get(edit.songId)}` : ""}`,
     ];
     if (edit.tempo) lines.push(`  tempo: ${edit.tempo}`);
     if (edit.ballad != null) lines.push(`  ballad: ${edit.ballad === true}`);
     lines.push(...kept);
+    if (editsBpm && edit.bpm) lines.push(`  bpm: ${Number(edit.bpm)}`);
     byId.set(edit.songId, lines.join("\n"));
   }
 

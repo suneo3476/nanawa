@@ -10,6 +10,7 @@ import {
   fameFit,
   TEMPO_DIRS,
   tempoFit,
+  bpmStats,
   wishFit,
   type Composition,
   type FameDirKey,
@@ -123,7 +124,9 @@ export function SetlistPlanner({
     if (tempoEdits.size === 0) return rawSongs;
     return rawSongs.map((s) => {
       const edit = tempoEdits.get(s.id);
-      return edit ? { ...s, tempo: edit.tempo, ballad: edit.ballad } : s;
+      return edit
+        ? { ...s, tempo: edit.tempo, ballad: edit.ballad, bpm: edit.bpm ?? null }
+        : s;
     });
   }, [rawSongs, tempoEdits]);
 
@@ -282,6 +285,7 @@ export function SetlistPlanner({
       else comp.tempoUnknown++;
       if (s.ballad) comp.ballads++;
       if (s.fameTier <= 2) comp.famous++;
+      if (s.bpm != null) comp.bpms.push(s.bpm);
       comp.total++;
     }
     return comp;
@@ -344,6 +348,7 @@ export function SetlistPlanner({
         ballads: composition.ballads,
         famous: composition.famous + (song.fameTier <= 2 ? 1 : 0),
         total: composition.total + 1,
+        bpms: composition.bpms,
       };
       if (song.tempo) next.counts[song.tempo]++;
       else next.tempoUnknown++;
@@ -369,6 +374,7 @@ export function SetlistPlanner({
           ballads: composition.ballads,
           famous: composition.famous + (song.fameTier <= 2 ? 1 : 0),
           total: composition.total + 1,
+          bpms: composition.bpms,
         };
         if (song.tempo) next.counts[song.tempo]++;
         else next.tempoUnknown++;
@@ -489,7 +495,7 @@ export function SetlistPlanner({
 
   const editTempo = (
     songId: string,
-    next: { tempo: SongAttrEdit["tempo"]; ballad: boolean },
+    next: { tempo: SongAttrEdit["tempo"]; ballad: boolean; bpm: number | null },
   ) => {
     setTempoEdits((prev) => {
       const nextMap = new Map(prev);
@@ -539,6 +545,7 @@ export function SetlistPlanner({
           id: s.id,
           title: s.title,
           tempo: s.tempo,
+          bpm: s.bpm,
           fameTier: s.fameTier,
           playCount: s.playCount,
           livesSinceLast: s.livesSinceLast,
@@ -1120,6 +1127,57 @@ function SongBadgeRow({ song }: { song: PickerSong }) {
   );
 }
 
+/**
+ * セトリのBPMのばらつき。緩急があるか(一本調子でないか)の目安。
+ * BPMが分かっている曲だけで出す。
+ */
+function BpmSummary({ comp }: { comp: Composition }) {
+  const stats = bpmStats(comp.bpms);
+  if (!stats) return null;
+  const unknown = comp.total - stats.count;
+  // 帯の描画範囲。だいたいのポップスが収まる 60〜200 に合わせる
+  const LO = 60;
+  const HI = 200;
+  const pos = (v: number) =>
+    `${Math.min(100, Math.max(0, ((v - LO) / (HI - LO)) * 100))}%`;
+  const verdict =
+    stats.spread < 25
+      ? { text: "一本調子ぎみ", tone: "text-muted" }
+      : stats.spread > 90
+        ? { text: "緩急large", tone: "text-muted" }
+        : { text: "緩急よし", tone: "text-accent-strong font-semibold" };
+
+  return (
+    <div className="mt-2">
+      <div className="relative h-4">
+        <div className="absolute top-1.5 h-1 w-full rounded-full bg-surface-2" />
+        <div
+          className="absolute top-1.5 h-1 rounded-full bg-accent/40"
+          style={{ left: pos(stats.min), right: `${100 - parseFloat(pos(stats.max))}%` }}
+        />
+        {comp.bpms.map((b, i) => (
+          <span
+            key={`${b}-${i}`}
+            className="absolute top-0.5 -ml-1 h-3 w-2 rounded-full bg-accent"
+            style={{ left: pos(b) }}
+            title={`${b} BPM`}
+          />
+        ))}
+      </div>
+      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-muted">
+        <span>
+          BPM {stats.min}〜{stats.max}
+        </span>
+        <span>中央 {stats.median}</span>
+        <span className={verdict.tone}>
+          {verdict.text === "緩急large" ? "緩急が大きい" : verdict.text}
+        </span>
+        {unknown > 0 && <span className="ml-auto">未取得 {unknown}曲</span>}
+      </p>
+    </div>
+  );
+}
+
 function CompositionBar({
   comp,
   fit,
@@ -1170,6 +1228,7 @@ function CompositionBar({
           </span>
         )}
       </p>
+      <BpmSummary comp={comp} />
       {(fit !== null || wishScore !== null) && (
         <p className="mt-1.5 flex flex-wrap items-center justify-end gap-x-2 text-[11px]">
           {fit !== null && (

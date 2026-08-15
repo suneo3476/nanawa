@@ -10,17 +10,30 @@ const TEMPOS: Tempo[] = ["up", "mid", "slow"];
  * テンポ/バラードのその場編集。
  * 初期値は曲を聴かずに付けた推測なので、気づいた人がすぐ直せるようにする。
  */
+/**
+ * BPMがテンポ区分と食い違っていないか。
+ * AcousticBrainz の解析値は倍/半分で出ることがあるので、その手掛かりにする。
+ */
+export function bpmLooksOff(tempo: Tempo | null, bpm: number | null): boolean {
+  if (!tempo || bpm == null) return false;
+  if (tempo === "slow" && bpm >= 130) return true;
+  if (tempo === "up" && bpm <= 95) return true;
+  return false;
+}
+
 export function TempoEditor({
   tempo,
   ballad,
+  bpm,
   edited,
   onChange,
 }: {
   tempo: Tempo | null;
   ballad: boolean | null;
+  bpm: number | null;
   /** 未保存の変更があるか */
   edited: boolean;
-  onChange: (next: { tempo: Tempo; ballad: boolean }) => void;
+  onChange: (next: { tempo: Tempo; ballad: boolean; bpm: number | null }) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
@@ -85,8 +98,7 @@ export function TempoEditor({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onChange({ tempo: t, ballad: ballad ?? false });
-                    setOpen(false);
+                    onChange({ tempo: t, ballad: ballad ?? false, bpm });
                   }}
                   className={`flex-1 rounded px-1 py-1 text-[11px] font-medium transition-colors ${
                     tempo === t
@@ -104,13 +116,42 @@ export function TempoEditor({
                 checked={ballad === true}
                 onChange={(e) => {
                   if (!tempo) return;
-                  onChange({ tempo, ballad: e.target.checked });
+                  onChange({ tempo, ballad: e.target.checked, bpm });
                 }}
                 disabled={!tempo}
                 className="h-3 w-3 accent-[var(--accent)]"
               />
               バラード
             </label>
+            <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted">
+              BPM
+              <input
+                type="number"
+                min={30}
+                max={300}
+                value={bpm ?? ""}
+                placeholder="—"
+                onChange={(e) => {
+                  if (!tempo) return;
+                  const v = e.target.value;
+                  onChange({
+                    tempo,
+                    ballad: ballad ?? false,
+                    bpm: v === "" ? null : Number(v),
+                  });
+                }}
+                disabled={!tempo}
+                className="w-16 rounded border border-border bg-background px-1.5 py-0.5 tabular-nums outline-none focus:border-accent"
+              />
+              {bpm != null && bpmLooksOff(tempo, bpm) && (
+                <span className="text-[10px] text-[#9b2b2b] dark:text-[#e59a9a]">
+                  倍/半分かも
+                </span>
+              )}
+            </label>
+            <p className="mt-1 text-[10px] leading-snug text-muted">
+              BPMは自動取得した解析値です。ずれていたら直してください。
+            </p>
           </span>
         </>
       )}

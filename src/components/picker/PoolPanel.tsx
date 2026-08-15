@@ -48,7 +48,11 @@ export interface PoolPanelProps {
   /** テンポ/バラードの修正 */
   onEditTempo: (
     songId: string,
-    next: { tempo: import("@/lib/types").Tempo; ballad: boolean },
+    next: {
+      tempo: import("@/lib/types").Tempo;
+      ballad: boolean;
+      bpm: number | null;
+    },
   ) => void;
   /** 未保存の修正がある曲 */
   tempoEdits: Set<string>;
@@ -296,7 +300,11 @@ function DiscographyBrowser({
   onToggleWish: (songId: string) => void;
   onEditTempo: (
     songId: string,
-    next: { tempo: import("@/lib/types").Tempo; ballad: boolean },
+    next: {
+      tempo: import("@/lib/types").Tempo;
+      ballad: boolean;
+      bpm: number | null;
+    },
   ) => void;
   tempoEdits: Set<string>;
 }) {
