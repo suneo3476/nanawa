@@ -120,7 +120,7 @@ export function SongRow({
   onToggleWish?: () => void;
   /** テンポ/バラードを直したとき */
   onEditTempo?: (next: {
-    tempo: import("@/lib/types").Tempo;
+    tempo: import("@/lib/types").Tempo | null;
     ballad: boolean;
     bpm: number | null;
   }) => void;
@@ -231,7 +231,22 @@ export function SongRow({
               確定
             </span>
           )}
-          <SongBadges song={song} showUnperformed hideTempo={!!onEditTempo} />
+          <SongBadges
+            song={song}
+            showUnperformed
+            hideTempo={!!onEditTempo}
+            hideBallad={!!onEditTempo}
+          />
+          {onEditTempo && song.ballad && (
+            <TempoEditor
+              tempo={song.tempo}
+              ballad={song.ballad}
+              bpm={song.bpm}
+              edited={!!tempoEdited}
+              variant="ballad"
+              onChange={onEditTempo}
+            />
+          )}
           {onEditTempo && (
             <TempoEditor
               tempo={song.tempo}

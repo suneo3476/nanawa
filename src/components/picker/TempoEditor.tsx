@@ -7,10 +7,6 @@ import { TEMPO_CLASS, TEMPO_LABEL } from "@/components/SongBadges";
 const TEMPOS: Tempo[] = ["up", "mid", "slow"];
 
 /**
- * テンポ/バラードのその場編集。
- * 初期値は曲を聴かずに付けた推測なので、気づいた人がすぐ直せるようにする。
- */
-/**
  * BPMがテンポ区分と食い違っていないか。
  * AcousticBrainz の解析値は倍/半分で出ることがあるので、その手掛かりにする。
  */
@@ -21,11 +17,18 @@ export function bpmLooksOff(tempo: Tempo | null, bpm: number | null): boolean {
   return false;
 }
 
+/**
+ * テンポ/バラード/BPM のその場編集。
+ * 初期値は曲を聴かずに付けた推測なので、気づいた人がすぐ直せるようにする。
+ *
+ * variant で「どのバッジを押したときに開くか」を変える。中身は同じ。
+ */
 export function TempoEditor({
   tempo,
   ballad,
   bpm,
   edited,
+  variant = "tempo",
   onChange,
 }: {
   tempo: Tempo | null;
@@ -33,7 +36,12 @@ export function TempoEditor({
   bpm: number | null;
   /** 未保存の変更があるか */
   edited: boolean;
-  onChange: (next: { tempo: Tempo; ballad: boolean; bpm: number | null }) => void;
+  variant?: "tempo" | "ballad";
+  onChange: (next: {
+    tempo: Tempo | null;
+    ballad: boolean;
+    bpm: number | null;
+  }) => void;
 }) {
   const [open, setOpen] = useState(false);
   // 下に余白が無いときは上向きに開く(一覧の最下段で見切れないように)
@@ -70,18 +78,32 @@ export function TempoEditor({
         }}
         aria-expanded={open}
         aria-label={
-          tempo
-            ? `テンポ: ${TEMPO_LABEL[tempo]} (押すと直せます)`
-            : "テンポ未設定 (押すと設定できます)"
+          variant === "ballad"
+            ? "バラード (押すと外せます)"
+            : tempo
+              ? `テンポ: ${TEMPO_LABEL[tempo]} (押すと直せます)`
+              : "テンポ未設定 (押すと設定できます)"
         }
-        title={tempo ? "テンポを直す" : "テンポを設定する"}
+        title={
+          variant === "ballad"
+            ? "曲の特徴を直す"
+            : tempo
+              ? "テンポを直す"
+              : "テンポを設定する"
+        }
         className={
-          tempo
-            ? `${base} ${TEMPO_CLASS[tempo]} ${edited ? "ring-1 ring-accent" : ""}`
-            : `${base} text-muted/70 hover:text-accent-strong`
+          variant === "ballad"
+            ? `${base} bg-surface-2 text-muted hover:text-accent-strong ${edited ? "ring-1 ring-accent" : ""}`
+            : tempo
+              ? `${base} ${TEMPO_CLASS[tempo]} ${edited ? "ring-1 ring-accent" : ""}`
+              : `${base} text-muted/70 hover:text-accent-strong`
         }
       >
-        {tempo ? TEMPO_LABEL[tempo] : "テンポ不明"}
+        {variant === "ballad"
+          ? "バラード"
+          : tempo
+            ? TEMPO_LABEL[tempo]
+            : "テンポ不明"}
         {edited && <span className="ml-0.5 text-accent">*</span>}
       </button>
 
@@ -127,11 +149,9 @@ export function TempoEditor({
               <input
                 type="checkbox"
                 checked={ballad === true}
-                onChange={(e) => {
-                  if (!tempo) return;
-                  onChange({ tempo, ballad: e.target.checked, bpm });
-                }}
-                disabled={!tempo}
+                onChange={(e) =>
+                  onChange({ tempo, ballad: e.target.checked, bpm })
+                }
                 className="h-3 w-3 accent-[var(--accent)]"
               />
               バラード
@@ -145,7 +165,6 @@ export function TempoEditor({
                 value={bpm ?? ""}
                 placeholder="—"
                 onChange={(e) => {
-                  if (!tempo) return;
                   const v = e.target.value;
                   onChange({
                     tempo,
@@ -153,7 +172,6 @@ export function TempoEditor({
                     bpm: v === "" ? null : Number(v),
                   });
                 }}
-                disabled={!tempo}
                 className="w-16 rounded border border-border bg-background px-1.5 py-0.5 tabular-nums outline-none focus:border-accent"
               />
               {bpm != null && bpmLooksOff(tempo, bpm) && (
