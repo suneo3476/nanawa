@@ -96,7 +96,7 @@
   tempo: slow
   ballad: true
 - songId: song024   # 赤いランプ
-  tempo: slow
+  tempo: up
   ballad: false
 - songId: song025   # more&more
   tempo: up

@@ -45,6 +45,13 @@ export interface PoolPanelProps {
   wishesBySong: Map<string, string[]>;
   onToggle: (songId: string) => void;
   onToggleWish: (songId: string) => void;
+  /** テンポ/バラードの修正 */
+  onEditTempo: (
+    songId: string,
+    next: { tempo: import("@/lib/types").Tempo; ballad: boolean },
+  ) => void;
+  /** 未保存の修正がある曲 */
+  tempoEdits: Set<string>;
   autoFocus?: boolean;
   sticky?: boolean;
 }
@@ -65,6 +72,8 @@ export function PoolPanel({
   wishesBySong,
   onToggle,
   onToggleWish,
+  onEditTempo,
+  tempoEdits,
   autoFocus = false,
   sticky = false,
 }: PoolPanelProps) {
@@ -229,6 +238,8 @@ export function PoolPanel({
                 wishedByCurrent={wishMember?.wishes.includes(song.id)}
                 onToggle={() => onToggle(song.id)}
                 onToggleWish={() => onToggleWish(song.id)}
+                onEditTempo={(next) => onEditTempo(song.id, next)}
+                tempoEdited={tempoEdits.has(song.id)}
               />
             ))}
             {pool.length === 0 && (
@@ -253,6 +264,8 @@ export function PoolPanel({
           wishMember={wishMember}
           onToggle={onToggle}
           onToggleWish={onToggleWish}
+          onEditTempo={onEditTempo}
+          tempoEdits={tempoEdits}
         />
       )}
     </div>
@@ -270,6 +283,8 @@ function DiscographyBrowser({
   wishMember,
   onToggle,
   onToggleWish,
+  onEditTempo,
+  tempoEdits,
 }: {
   albums: PickerAlbum[];
   songById: Map<string, PickerSong>;
@@ -279,6 +294,11 @@ function DiscographyBrowser({
   wishMember: { id: string; name: string; wishes: string[] } | null;
   onToggle: (songId: string) => void;
   onToggleWish: (songId: string) => void;
+  onEditTempo: (
+    songId: string,
+    next: { tempo: import("@/lib/types").Tempo; ballad: boolean },
+  ) => void;
+  tempoEdits: Set<string>;
 }) {
   const categories = useMemo(() => {
     const set = [...new Set(albums.map((a) => a.category))];
@@ -347,6 +367,8 @@ function DiscographyBrowser({
                         wishedByCurrent={wishMember?.wishes.includes(songId)}
                         onToggle={() => onToggle(songId)}
                         onToggleWish={() => onToggleWish(songId)}
+                        onEditTempo={(next) => onEditTempo(songId, next)}
+                        tempoEdited={tempoEdits.has(songId)}
                       />
                     );
                   })}

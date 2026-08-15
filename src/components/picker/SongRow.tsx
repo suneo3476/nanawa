@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatDateShort } from "@/lib/format";
 import { normalizeForSearch } from "@/lib/normalize";
 import { SongBadges } from "@/components/SongBadges";
+import { TempoEditor } from "./TempoEditor";
 import type { PickerSong } from "./types";
 
 interface PreviewInfo {
@@ -102,6 +103,8 @@ export function SongRow({
   wishedByCurrent,
   onToggle,
   onToggleWish,
+  onEditTempo,
+  tempoEdited,
 }: {
   song: PickerSong;
   matchedAlbum?: string | null;
@@ -115,6 +118,10 @@ export function SongRow({
   wishedByCurrent?: boolean;
   onToggle: () => void;
   onToggleWish?: () => void;
+  /** テンポ/バラードを直したとき */
+  onEditTempo?: (next: { tempo: import("@/lib/types").Tempo; ballad: boolean }) => void;
+  /** 未保存の変更があるか */
+  tempoEdited?: boolean;
 }) {
   const [state, setState] = useState<"idle" | "loading" | "playing" | "none">("idle");
   const [artwork, setArtwork] = useState("");
@@ -220,7 +227,15 @@ export function SongRow({
               確定
             </span>
           )}
-          <SongBadges song={song} showUnperformed />
+          <SongBadges song={song} showUnperformed hideTempo={!!onEditTempo} />
+          {onEditTempo && (
+            <TempoEditor
+              tempo={song.tempo}
+              ballad={song.ballad}
+              edited={!!tempoEdited}
+              onChange={onEditTempo}
+            />
+          )}
           {fitDelta != null && fitDelta !== 0 && (
             <span
               className={`shrink-0 font-mono text-[10px] tabular-nums ${

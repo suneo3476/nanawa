@@ -54,9 +54,12 @@ const base = "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-non
 export function SongBadges({
   song,
   showUnperformed = false,
+  hideTempo = false,
 }: {
   song: BadgeSong;
   showUnperformed?: boolean;
+  /** テンポを別のUI(編集可能なバッジ)で出すとき */
+  hideTempo?: boolean;
 }) {
   return (
     <>
@@ -80,7 +83,7 @@ export function SongBadges({
       {song.ballad && (
         <span className={`${base} bg-surface-2 text-muted`}>バラード</span>
       )}
-      {song.tempo && (
+      {song.tempo && !hideTempo && (
         <span className={`${base} ${TEMPO_CLASS[song.tempo]}`}>
           {TEMPO_LABEL[song.tempo]}
         </span>

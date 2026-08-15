@@ -35,6 +35,9 @@ import {
   loadGithubConfig,
   saveMembersViaGithub,
   saveMembersViaLocal,
+  saveSongAttrsViaGithub,
+  saveSongAttrsViaLocal,
+  type SongAttrEdit,
 } from "@/lib/setlist-backend";
 import type { Draft, Member, PickerAlbum, PickerSong } from "./types";
 
@@ -72,7 +75,7 @@ interface Store {
 }
 
 export function SetlistPlanner({
-  songs,
+  songs: rawSongs,
   albums,
   members: savedMembers,
   nextLiveNumber,
@@ -106,7 +109,23 @@ export function SetlistPlanner({
   const [tool, setTool] = useState<"direction" | "suggest" | "members">(
     "direction",
   );
+  // テンポ/バラードの直し(保存するまでは画面上だけに反映する)
+  const [tempoEdits, setTempoEdits] = useState<Map<string, SongAttrEdit>>(
+    new Map(),
+  );
+  const [attrSaveState, setAttrSaveState] = useState<
+    "idle" | "saving" | "error"
+  >("idle");
   const [sort, setSort] = useState<SortKey>("gap");
+
+  /** 未保存の直しを反映した曲リスト */
+  const songs = useMemo(() => {
+    if (tempoEdits.size === 0) return rawSongs;
+    return rawSongs.map((s) => {
+      const edit = tempoEdits.get(s.id);
+      return edit ? { ...s, tempo: edit.tempo, ballad: edit.ballad } : s;
+    });
+  }, [rawSongs, tempoEdits]);
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
   const draft =
@@ -468,6 +487,43 @@ export function SetlistPlanner({
     updateDraft((d) => ({ ...d, members: defaultMembers(savedMembers) }));
   };
 
+  const editTempo = (
+    songId: string,
+    next: { tempo: SongAttrEdit["tempo"]; ballad: boolean },
+  ) => {
+    setTempoEdits((prev) => {
+      const nextMap = new Map(prev);
+      nextMap.set(songId, { songId, ...next });
+      return nextMap;
+    });
+  };
+
+  const saveTempoEdits = async () => {
+    if (tempoEdits.size === 0) return;
+    setAttrSaveState("saving");
+    const edits = [...tempoEdits.values()];
+    try {
+      const local = await checkLocalApi();
+      if (local) {
+        await saveSongAttrsViaLocal(edits);
+      } else {
+        const cfg = loadGithubConfig();
+        if (!cfg) {
+          throw new Error(
+            "保存先がありません。npm run dev で起動するか、書き出し画面でGitHubを設定してください。",
+          );
+        }
+        await saveSongAttrsViaGithub(cfg, edits, (id) => songById.get(id)?.title);
+      }
+      setTempoEdits(new Map());
+      setAttrSaveState("idle");
+    } catch (e) {
+      console.error(e);
+      setAttrSaveState("error");
+      setTimeout(() => setAttrSaveState("idle"), 3500);
+    }
+  };
+
   const generateSuggestions = () => {
     const lockedIds = draft.items.filter((i) => i.confirmed).map((i) => i.songId);
     // 提案の母集団は「いま絞り込んでいる曲」。ただし確定済みの曲は
@@ -527,12 +583,20 @@ export function SetlistPlanner({
     unmetWishes: unsatisfiedWishes,
     onToggle: toggleSong,
     onToggleWish: toggleWish,
+    onEditTempo: editTempo,
+    tempoEdits: new Set(tempoEdits.keys()),
   };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* 曲プール(PCのみインライン。モバイルはモーダル) */}
       <div id="song-pool" className="hidden min-w-0 lg:block">
+        <TempoEditBar
+          count={tempoEdits.size}
+          state={attrSaveState}
+          onSave={saveTempoEdits}
+          onReset={() => setTempoEdits(new Map())}
+        />
         <PoolPanel {...poolProps} sticky />
       </div>
 
@@ -948,6 +1012,12 @@ export function SetlistPlanner({
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+              <TempoEditBar
+                count={tempoEdits.size}
+                state={attrSaveState}
+                onSave={saveTempoEdits}
+                onReset={() => setTempoEdits(new Map())}
+              />
               <PoolPanel {...poolProps} autoFocus />
             </div>
           </div>
@@ -963,6 +1033,50 @@ export function SetlistPlanner({
           onClose={() => setExportOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+/** テンポを直したときに出る保存バー */
+function TempoEditBar({
+  count,
+  state,
+  onSave,
+  onReset,
+}: {
+  count: number;
+  state: "idle" | "saving" | "error";
+  onSave: () => void;
+  onReset: () => void;
+}) {
+  if (count === 0) return null;
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-accent-soft px-3 py-2 text-xs">
+      <span className="font-medium text-accent-strong">
+        テンポの直し {count}件が未保存です
+      </span>
+      {state === "error" && (
+        <span className="text-[#9b2b2b] dark:text-[#e59a9a]">
+          保存できませんでした
+        </span>
+      )}
+      <span className="ml-auto flex gap-2">
+        <button
+          type="button"
+          onClick={onReset}
+          className="rounded-lg px-2 py-1 text-muted hover:text-foreground"
+        >
+          取り消す
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={state === "saving"}
+          className="rounded-lg bg-accent px-3 py-1 font-semibold text-white hover:bg-accent-strong disabled:opacity-40"
+        >
+          {state === "saving" ? "保存中…" : "曲データに保存"}
+        </button>
+      </span>
     </div>
   );
 }
