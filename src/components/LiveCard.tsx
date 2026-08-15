@@ -9,9 +9,12 @@ import { formatDate } from "@/lib/format";
 export function LiveCard({
   live,
   highlightSongIds,
+  hideVenue = false,
 }: {
   live: LiveDetail;
   highlightSongIds?: Set<string>;
+  /** 会場ページなど、会場名が自明な文脈では非表示にする */
+  hideVenue?: boolean;
 }) {
   return (
     <Link
@@ -35,7 +38,7 @@ export function LiveCard({
       <h3 className="mt-1 font-semibold leading-snug group-hover:text-accent-strong">
         {live.eventName}
       </h3>
-      {live.venueName && (
+      {live.venueName && !hideVenue && (
         <p className="mt-0.5 text-sm text-muted">{live.venueName}</p>
       )}
       {live.setlist.length > 0 && (

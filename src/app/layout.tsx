@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   },
   description:
     "aikoコピーバンド「七輪」の20年を超えるライブ出演記録とセットリストのアーカイブ。曲名・会場・年からライブ履歴を検索できます。",
+  openGraph: {
+    siteName: "七輪ライブラリー",
+    locale: "ja_JP",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

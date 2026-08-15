@@ -45,7 +45,7 @@ export default async function VenuePage({
       </header>
       <div className="grid gap-3 sm:grid-cols-2">
         {lives.map((live) => (
-          <LiveCard key={live.id} live={live} />
+          <LiveCard key={live.id} live={live} hideVenue />
         ))}
       </div>
     </div>

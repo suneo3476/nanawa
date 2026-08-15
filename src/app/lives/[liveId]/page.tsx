@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getAllLives, getLive, venueSlug } from "@/lib/data";
 import { formatDate, formatDateShort } from "@/lib/format";
 import { SetlistView } from "@/components/SetlistView";
+import { CopySetlistButton } from "@/components/CopySetlistButton";
 
 export function generateStaticParams() {
   return getAllLives().map((live) => ({ liveId: live.id }));
@@ -74,13 +75,18 @@ export default async function LivePage({
       </header>
 
       <section className="mt-6">
-        <h2 className="mb-2 flex items-baseline gap-2 text-lg font-bold">
+        <h2 className="mb-2 flex flex-wrap items-center gap-2 text-lg font-bold">
           セットリスト
           <span className="text-xs font-normal text-muted">
             {live.setlist.length}曲
             {firstCount > 0 && ` ・ 初披露${firstCount}曲`}
             {live.youtubeCount > 0 && ` ・ 動画${live.youtubeCount}本`}
           </span>
+          {live.setlist.length > 0 && (
+            <span className="ml-auto">
+              <CopySetlistButton live={live} />
+            </span>
+          )}
         </h2>
         <SetlistView setlist={live.setlist} />
       </section>

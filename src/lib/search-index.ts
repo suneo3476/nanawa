@@ -13,8 +13,10 @@ export interface SearchEntry {
 
 /** ⌘K パレット用のコンパクトな全文インデックス(ビルド時生成) */
 export function buildSearchIndex(): SearchEntry[] {
+  // 演奏回数順に並べておくと、パレットの空クエリ時の候補がそのまま「定番順」になる
   const songs = getAllSongs()
     .filter((s) => s.playCount > 0)
+    .sort((a, b) => b.playCount - a.playCount)
     .map<SearchEntry>((s) => ({
       type: "song",
       title: s.title,
