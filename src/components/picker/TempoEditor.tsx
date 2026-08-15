@@ -36,6 +36,8 @@ export function TempoEditor({
   onChange: (next: { tempo: Tempo; ballad: boolean; bpm: number | null }) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // 下に余白が無いときは上向きに開く(一覧の最下段で見切れないように)
+  const [placement, setPlacement] = useState<"down" | "up">("down");
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -57,6 +59,13 @@ export function TempoEditor({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (!open) {
+            const rect = ref.current?.getBoundingClientRect();
+            const POPOVER_HEIGHT = 190;
+            const below = rect ? window.innerHeight - rect.bottom : 0;
+            const above = rect ? rect.top : 0;
+            setPlacement(below < POPOVER_HEIGHT && above > below ? "up" : "down");
+          }
           setOpen(!open);
         }}
         aria-expanded={open}
@@ -86,7 +95,11 @@ export function TempoEditor({
               setOpen(false);
             }}
           />
-          <span className="absolute top-5 left-0 z-50 block w-44 rounded-lg border border-border bg-surface p-2 shadow-xl">
+          <span
+            className={`absolute left-0 z-50 block w-44 rounded-lg border border-border bg-surface p-2 shadow-xl ${
+              placement === "up" ? "bottom-5" : "top-5"
+            }`}
+          >
             <span className="mb-1 block text-[10px] text-muted">
               聴いた感じで直してください
             </span>
