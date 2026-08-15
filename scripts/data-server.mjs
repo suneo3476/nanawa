@@ -104,6 +104,50 @@ function appendSetlist(payload) {
   return { liveId, eventId, count: items.length };
 }
 
+const MEMBERS = path.join(DATA_DIR, "members.yml");
+
+/** メンバーと希望曲を data/members.yml に書き出す(全置換) */
+function writeMembers(members) {
+  const songIds = collectIds(readText(path.join(DATA_DIR, "songs.yml")), "id");
+  const songTitles = new Map(
+    [...readText(path.join(DATA_DIR, "songs.yml")).matchAll(
+      /^- id: (song\d+)\n {2}title: (.*)$/gm,
+    )].map((m) => [m[1], m[2].replace(/^'|'$/g, "")]),
+  );
+  const errors = [];
+  if (!Array.isArray(members) || members.length === 0)
+    errors.push("メンバーがいません");
+  for (const m of members ?? []) {
+    if (!m.name) errors.push("名前が空のメンバーがいます");
+    for (const w of m.wishes ?? []) {
+      if (!songIds.has(w)) errors.push(`不明な songId: ${w}`);
+    }
+  }
+  if (errors.length) return { errors };
+
+  const body = members
+    .map((m) => {
+      const head = [`- id: ${m.id}`, `  name: ${yamlStr(m.name)}`];
+      if (!m.wishes?.length) return [...head, "  wishes: []"].join("\n");
+      return [
+        ...head,
+        "  wishes:",
+        ...m.wishes.map(
+          (w) => `    - ${w}${songTitles.has(w) ? ` # ${songTitles.get(w)}` : ""}`,
+        ),
+      ].join("\n");
+    })
+    .join("\n");
+
+  const header = [
+    "# バンドメンバーと、その人がやりたい曲(選曲ノートの希望曲)。",
+    "# 選曲ノートで「メンバーと希望曲を保存」を押すとこのファイルが更新されます。",
+    "# 手で編集しても構いません(songId は data/songs.yml のID)。",
+  ].join("\n");
+  fs.writeFileSync(MEMBERS, `${header}\n${body}\n`);
+  return { count: members.length };
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
 
@@ -111,6 +155,26 @@ const server = http.createServer((req, res) => {
 
   if (req.method === "GET" && url.pathname === "/api/health") {
     return send(res, 200, { ok: true, ...nextIds() });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/members") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1_000_000) req.destroy();
+    });
+    req.on("end", () => {
+      try {
+        const { members } = JSON.parse(body);
+        const result = writeMembers(members);
+        if (result.errors) return send(res, 400, { ok: false, errors: result.errors });
+        console.log(`✓ メンバー${result.count}人の希望曲を保存しました`);
+        return send(res, 200, { ok: true, count: result.count });
+      } catch (e) {
+        return send(res, 400, { ok: false, errors: [String(e)] });
+      }
+    });
+    return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/setlist") {
