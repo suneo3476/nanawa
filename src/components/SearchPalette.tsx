@@ -51,7 +51,13 @@ function PaletteBody({
 
   const results = useMemo(() => {
     const q = query.trim();
-    if (!q) return [];
+    if (!q) {
+      // 空クエリ時はおすすめ: 定番曲・最近のライブ・よく出る会場
+      // (インデックスは種別ごとに定番順/新しい順/回数順で並んでいる)
+      const pick = (type: SearchEntry["type"], n: number) =>
+        index.filter((e) => e.type === type).slice(0, n);
+      return [...pick("song", 5), ...pick("live", 3), ...pick("venue", 2)];
+    }
     return index
       .filter((e) => matchesQuery(e.norm, q))
       .sort((a, b) => TYPE_ORDER[a.type] - TYPE_ORDER[b.type])
@@ -119,9 +125,9 @@ function PaletteBody({
               「{query}」に一致する曲・ライブ・会場はありません
             </li>
           )}
-          {query.trim() === "" && (
-            <li className="px-3 py-6 text-center text-sm text-muted">
-              ひらがな・カタカナどちらでも検索できます
+          {query.trim() === "" && results.length > 0 && (
+            <li className="px-3 pt-2 pb-1 text-[11px] text-muted">
+              おすすめ — ひらがな・カタカナどちらでも検索できます
             </li>
           )}
           {results.map((r, i) => (
