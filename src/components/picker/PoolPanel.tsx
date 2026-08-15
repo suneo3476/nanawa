@@ -37,6 +37,8 @@ export interface PoolPanelProps {
   onSortChange: (next: SortKey) => void;
   pickedIds: Set<string>;
   fitDelta: ((s: PickerSong) => number) | null;
+  /** 「おすすめ順」の並べ替えに使うスコア(表示はしない) */
+  sortScore: ((s: PickerSong) => number) | null;
   hasDirection: boolean;
   /** 希望登録モードのメンバー(null なら通常モード) */
   wishMember: { id: string; name: string; wishes: string[] } | null;
@@ -57,6 +59,7 @@ export function PoolPanel({
   onSortChange,
   pickedIds,
   fitDelta,
+  sortScore,
   hasDirection,
   wishMember,
   wishesBySong,
@@ -99,7 +102,7 @@ export function PoolPanel({
       count: (a, b) => b.playCount - a.playCount,
       rare: (a, b) => a.playCount - b.playCount,
       title: (a, b) => a.title.localeCompare(b.title, "ja"),
-      fit: (a, b) => (fitDelta?.(b) ?? 0) - (fitDelta?.(a) ?? 0),
+      fit: (a, b) => (sortScore?.(b) ?? 0) - (sortScore?.(a) ?? 0),
     };
     return [...filtered].sort(
       (a, b) =>
@@ -107,7 +110,7 @@ export function PoolPanel({
         b.song.playCount - a.song.playCount ||
         a.song.title.localeCompare(b.song.title, "ja"),
     );
-  }, [filtered, sort, fitDelta]);
+  }, [filtered, sort, sortScore]);
 
   return (
     <div>
