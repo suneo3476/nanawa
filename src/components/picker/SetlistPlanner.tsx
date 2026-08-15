@@ -1115,9 +1115,9 @@ function SongBadgeRow({ song }: { song: PickerSong }) {
         </span>
       )}
       {song.ballad && <span className={`${chip} bg-surface text-muted`}>バラード</span>}
-      {song.tempo && (
-        <span className={`${chip} bg-surface text-muted`}>{TEMPO_LABEL[song.tempo]}</span>
-      )}
+      <span className={`${chip} bg-surface text-muted`}>
+        {song.tempo ? TEMPO_LABEL[song.tempo] : "テンポ不明"}
+      </span>
       {song.bpm != null && (
         <span className={`${chip} bg-surface font-mono tabular-nums text-muted`}>
           BPM={song.bpm}

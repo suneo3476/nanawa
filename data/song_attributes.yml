@@ -214,7 +214,7 @@
   tieup: テレビ朝日系ミニドラマ『家族レッスン』主題歌
   bpm: 97
 - songId: song051   # milk
-  tempo: slow
+  tempo: mid
   ballad: true
   tieup: ブリヂストンサイクル「アルベルト」CMソング
 - songId: song052   # ずっと

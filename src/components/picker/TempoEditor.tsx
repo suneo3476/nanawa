@@ -63,16 +63,16 @@ export function TempoEditor({
         aria-label={
           tempo
             ? `テンポ: ${TEMPO_LABEL[tempo]} (押すと直せます)`
-            : "テンポを設定する"
+            : "テンポ未設定 (押すと設定できます)"
         }
-        title="テンポを直す"
+        title={tempo ? "テンポを直す" : "テンポを設定する"}
         className={
           tempo
             ? `${base} ${TEMPO_CLASS[tempo]} ${edited ? "ring-1 ring-accent" : ""}`
-            : `${base} border border-dashed border-border text-muted hover:border-accent hover:text-accent-strong`
+            : `${base} text-muted/70 hover:text-accent-strong`
         }
       >
-        {tempo ? TEMPO_LABEL[tempo] : "テンポ?"}
+        {tempo ? TEMPO_LABEL[tempo] : "テンポ不明"}
         {edited && <span className="ml-0.5 text-accent">*</span>}
       </button>
 
