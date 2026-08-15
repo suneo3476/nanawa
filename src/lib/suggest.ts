@@ -1,5 +1,6 @@
 import {
   combinedFit,
+  directionAffinity,
   emptyComposition,
   wishFit,
   type Composition,
@@ -96,6 +97,11 @@ function greedyPick(
         const next = compositionOf([...currentSongs, song]);
         score +=
           weights.fit * ((combinedFit(next, tempoTarget, fameTarget) ?? 0) - baseFit);
+        // 目標に近づく量だけだと、構成が目標から大きく外れているときに
+        // どの方向性でも同じ曲が選ばれてしまうので、方向性そのものへの
+        // 近さ(例: 攻めならアップ、コア掘りならコア曲)も加える
+        const affinity = directionAffinity(song, tempoTarget, fameTarget);
+        if (affinity !== null) score += weights.fit * affinity * 0.1;
       }
       if (unmet.has(song.id)) score += weights.wish;
       score += weights.popularity * (song.playCount / maxPlayCount) * 10;
