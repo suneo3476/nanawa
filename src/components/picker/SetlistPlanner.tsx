@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Tempo } from "@/lib/types";
 import {
   combinedFit,
+  directionAffinity,
   emptyComposition,
   FAME_DIRS,
   fameFit,
@@ -313,12 +314,35 @@ export function SetlistPlanner({
     [songs, filter, wishesBySong, unsatisfiedWishes],
   );
 
-  /** この曲を足したら適合度がどう変わるか(希望未充足の曲にはボーナス) */
+  /** この曲を足したら適合度が何点変わるか(表示用・整数) */
   const fitDelta = useMemo(() => {
+    if (!hasDirection) return null;
+    const base = combinedFit(composition, tempoTarget, fameTarget) ?? 0;
+    return (song: PickerSong) => {
+      const next: Composition = {
+        counts: { ...composition.counts },
+        tempoUnknown: composition.tempoUnknown,
+        ballads: composition.ballads,
+        famous: composition.famous + (song.fameTier <= 2 ? 1 : 0),
+        total: composition.total + 1,
+      };
+      if (song.tempo) next.counts[song.tempo]++;
+      else next.tempoUnknown++;
+      return Math.round((combinedFit(next, tempoTarget, fameTarget) ?? 0) - base);
+    };
+  }, [composition, tempoTarget, fameTarget, hasDirection]);
+
+  /**
+   * 「おすすめ順」の並べ替えに使うスコア。
+   * 適合度の伸び(小数のまま)＋方向性そのものへの近さ＋未充足メンバーの希望。
+   * 整数に丸めると同点だらけになって、どのマスを選んでも同じ並びに見えるため
+   * ここでは丸めない。
+   */
+  const sortScore = useMemo(() => {
     if (!hasDirection && unsatisfiedWishes.size === 0) return null;
     const base = combinedFit(composition, tempoTarget, fameTarget) ?? 0;
     return (song: PickerSong) => {
-      let delta = 0;
+      let score = 0;
       if (hasDirection) {
         const next: Composition = {
           counts: { ...composition.counts },
@@ -329,11 +353,12 @@ export function SetlistPlanner({
         };
         if (song.tempo) next.counts[song.tempo]++;
         else next.tempoUnknown++;
-        delta = Math.round((combinedFit(next, tempoTarget, fameTarget) ?? 0) - base);
+        score += (combinedFit(next, tempoTarget, fameTarget) ?? 0) - base;
+        const affinity = directionAffinity(song, tempoTarget, fameTarget);
+        if (affinity !== null) score += affinity * 0.25;
       }
-      // 未充足メンバーの希望曲は優先的に上げる
-      if (unsatisfiedWishes.has(song.id) && !pickedIds.has(song.id)) delta += 20;
-      return delta;
+      if (unsatisfiedWishes.has(song.id) && !pickedIds.has(song.id)) score += 20;
+      return score;
     };
   }, [
     composition,
@@ -495,6 +520,7 @@ export function SetlistPlanner({
     onSortChange: setSort,
     pickedIds,
     fitDelta,
+    sortScore,
     hasDirection,
     wishMember,
     wishesBySong,
