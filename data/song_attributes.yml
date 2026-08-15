@@ -1,10 +1,13 @@
 # 曲の演奏特性(選曲ノートのスコアリング用)
 # tempo: up(アップ) | mid(ミドル) | slow(スロー) / ballad: バラードかどうか
-# ※ Claude による暫定値です。バンドの感覚でどんどん直してください。
-# 未記載の曲は「不明」として扱われます(スコアリングに影響しません)。
+# mediaUse: kouhaku(紅白で歌唱) | tieup(ドラマ/アニメ/CM等のタイアップ)
+#   → 知名度は シングル表題曲 or 紅白=有名 / タイアップ=準有名 / それ以外=コア と導出されます
+# ※ Claude による暫定値です(紅白の歌唱曲は特に要確認)。バンドの感覚でどんどん直してください。
+# 未記載の曲は tempo=不明 / メディア使用なし として扱われます。
 - songId: song001
   tempo: up
   ballad: false
+  mediaUse: kouhaku
 - songId: song002
   tempo: mid
   ballad: false
@@ -35,12 +38,14 @@
 - songId: song011
   tempo: up
   ballad: false
+  mediaUse: kouhaku
 - songId: song012
   tempo: slow
   ballad: true
 - songId: song013
   tempo: mid
   ballad: false
+  mediaUse: kouhaku
 - songId: song014
   tempo: mid
   ballad: true
@@ -83,6 +88,7 @@
 - songId: song027
   tempo: mid
   ballad: false
+  mediaUse: kouhaku
 - songId: song028
   tempo: mid
   ballad: false
@@ -98,6 +104,7 @@
 - songId: song032
   tempo: slow
   ballad: true
+  mediaUse: kouhaku
 - songId: song033
   tempo: mid
   ballad: true
@@ -128,6 +135,7 @@
 - songId: song042
   tempo: mid
   ballad: false
+  mediaUse: kouhaku
 - songId: song043
   tempo: up
   ballad: false
@@ -182,9 +190,11 @@
 - songId: song060
   tempo: up
   ballad: false
+  mediaUse: kouhaku
 - songId: song061
   tempo: up
   ballad: false
+  mediaUse: kouhaku
 - songId: song062
   tempo: mid
   ballad: false
@@ -200,6 +210,7 @@
 - songId: song066
   tempo: slow
   ballad: true
+  mediaUse: kouhaku
 - songId: song067
   tempo: mid
   ballad: false
@@ -224,6 +235,7 @@
 - songId: song074
   tempo: mid
   ballad: false
+  mediaUse: kouhaku
 - songId: song075
   tempo: mid
   ballad: false
