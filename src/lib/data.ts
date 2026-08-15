@@ -178,8 +178,11 @@ function loadDataset(): Dataset {
 
 // ---- 公開API ----
 
+// スラッグは会場名そのもの(静的出力のフォルダ名=URLデコード後のパスにするため
+// エンコードしない。リンク側のエンコードは Next が行う)。"/" だけはパス区切りに
+// なってしまうため全角に置き換える。
 export function venueSlug(name: string): string {
-  return encodeURIComponent(name);
+  return name.replaceAll("/", "／");
 }
 
 function buildSetlistEntries(liveId: string): SetlistEntry[] {

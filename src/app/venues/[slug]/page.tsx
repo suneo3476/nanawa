@@ -5,7 +5,15 @@ import { getAllLives, getAllVenues, getVenueBySlug } from "@/lib/data";
 import { LiveCard } from "@/components/LiveCard";
 
 export function generateStaticParams() {
-  return getAllVenues().map((v) => ({ slug: v.slug }));
+  // 生の会場名とエンコード済みの両方を登録する。
+  // 静的出力ではデコード済みフォルダ名(=素の静的ホスティングで解決できる形)が必要で、
+  // dev サーバーはエンコード済みパラメータで照合してくるため。
+  return getAllVenues().flatMap((v) => {
+    const encoded = encodeURIComponent(v.slug);
+    return encoded === v.slug
+      ? [{ slug: v.slug }]
+      : [{ slug: v.slug }, { slug: encoded }];
+  });
 }
 
 export async function generateMetadata({
