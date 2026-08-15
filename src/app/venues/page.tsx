@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllVenues } from "@/lib/data";
 import { formatDateShort, yearOf } from "@/lib/format";
+import { InfoTip } from "@/components/InfoTip";
 
 export const metadata: Metadata = {
   title: "会場",
@@ -12,13 +13,13 @@ export default function VenuesPage() {
   const venues = getAllVenues();
   return (
     <div className="pt-8">
-      <section className="pb-6">
+      <header className="flex items-center gap-2.5 pb-6">
         <h1 className="text-2xl font-bold sm:text-3xl">会場</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          これまでに出演した{venues.length}
-          ヶ所。「あの会場でやったのいつだっけ?」はここから辿れます。
-        </p>
-      </section>
+        <span className="text-sm text-muted">{venues.length}ヶ所</span>
+        <InfoTip>
+          出演回数順の会場一覧です。「あの会場でやったのいつだっけ?」はここから辿れます。
+        </InfoTip>
+      </header>
       <ul className="grid gap-3 sm:grid-cols-2">
         {venues.map((v) => (
           <li key={v.slug}>

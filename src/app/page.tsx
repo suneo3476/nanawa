@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllLives, getSummary } from "@/lib/data";
 import { LivesBrowser } from "@/components/LivesBrowser";
+import { InfoTip } from "@/components/InfoTip";
 
 export const metadata: Metadata = {
   description:
@@ -13,13 +14,15 @@ export default function HomePage() {
 
   return (
     <div className="pt-8">
-      <section className="pb-6">
+      <header className="flex items-center gap-2.5 pb-6">
         <h1 className="text-2xl font-bold sm:text-3xl">ライブ履歴</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          {summary.years[0]}年からの全{summary.liveCount}
-          回の出演記録とセットリスト。「この曲やった?いつ?どこで?」は、下の検索ボックスに曲名を入れると答えが出ます。
-        </p>
-      </section>
+        <span className="text-sm text-muted">
+          {summary.years[0]}年〜 全{summary.liveCount}回
+        </span>
+        <InfoTip>
+          「この曲やった?いつ?どこで?」は検索ボックスに曲名を入れると答えが出ます。イベント名・会場名・年でも絞り込めて、ひらがな・カタカナはどちらでも構いません。
+        </InfoTip>
+      </header>
       <LivesBrowser lives={lives} years={summary.years} />
     </div>
   );
