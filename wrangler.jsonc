@@ -12,7 +12,16 @@
     "run_worker_first": true,
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page"
-  }
+  },
+
+  // 選曲ノートの共有状態。1ルーム=1インスタンスで op を直列化する。
+  // 無料プランは SQLite バックエンドのみなので new_sqlite_classes で作る。
+  "durable_objects": {
+    "bindings": [{ "name": "PICKER_ROOM", "class_name": "PickerRoom" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PickerRoom"] }
+  ]
 
   // BASIC_AUTH_USER / BASIC_AUTH_PASS はここに書かない(このリポジトリは public)。
   // 本番: npx wrangler secret put BASIC_AUTH_USER
