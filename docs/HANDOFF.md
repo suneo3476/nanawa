@@ -8,7 +8,7 @@ aikoコピーバンド「七輪」のライブ記録アーカイブ v3。
 「この曲やった? いつ? どこで?」に最短で答えることと、次のライブの選曲を助けることが目的。
 
 - リポジトリ: `suneo3476/nanawa` / **作業ブランチは `develop`**
-- リリースPR: [#22](https://github.com/suneo3476/nanawa/pull/22)(develop→main、**未マージ。マージはユーザーが判断**)
+- リリースPR: [#22](https://github.com/suneo3476/nanawa/pull/22) は **2026-08-16 にマージ済み**
 - ローカル: `/Users/saku/skillup/nanawa-v3`(フォルダ名は仮。ユーザーは名前に納得していない)
 
 ## 起動と確認
@@ -47,8 +47,9 @@ npm run lint
 - **セトリ案の提案**: 3パターン(希望優先/方向性重視/定番中心)。確定曲は残し、
   **絞り込み中の曲から**選ぶ
 - **セトリ**: ライブ単位で複数管理。曲順・確定フラグあり
-- **曲の特徴をその場で修正**: テンポ/バラード/BPMのバッジを押すと直せる。
-  「曲データに保存」で `data/song_attributes.yml` に書き戻る
+- **曲の特徴をその場で修正**: テンポ/バラード/BPMのバッジを押すと直せる(BPMバッジからも開ける)。
+  直した内容は**その場で全メンバーに共有される**。「曲データに保存」で
+  `data/song_attributes.yml` に書き戻ると、全員ぶんの未保存の直しが消える
 
 ## データ
 
@@ -81,42 +82,55 @@ YAMLを書き換えれば**開発サーバーの再起動なしで**反映され
 - MusicBrainz + AcousticBrainz: **これだけ使える**。ただしAcousticBrainzは2022年に
   新規収集を終了しているのでカバレッジはこれ以上伸びない
 
-## セトリをライブ記録に反映する3つの経路
+## 状態の置き場所(重要)
 
-`src/lib/setlist-backend.ts` に集約。
+2段構えになっている。ここを取り違えると設計が壊れる。
 
-1. `local` … `npm run dev` で立つ `scripts/data-server.mjs` が `data/*.yml` を直接更新(開発時)
-2. `github` … ブラウザから GitHub Contents API でコミット。**デプロイ後の公開サイトでも動く**。
-   Fine-grained PAT(該当リポジトリのみ / Contents: Read and write)を利用者が設定。
-   **この経路は実際の書き込みを未検証**(トークンが必要なため)
+**作業中の状態 → Durable Object(共有・即時)**
+セトリ案、メンバーの希望曲(♥)、曲の特徴の直し。
+各自のスマホで触ると全員に即反映される。**GitHubもトークンも要らない**。
+→ `workers/picker-room.js` / `src/lib/picker-ops.ts` / `src/components/picker/usePickerSync.ts`
+
+**記録の本体 → `data/*.yml`(リポジトリ)**
+確定したライブ記録・曲データ。ここへの書き戻しだけが別経路になる。
+`src/lib/setlist-backend.ts` に集約:
+
+1. `local` … `npm run dev` で立つ `scripts/data-server.mjs` が直接更新(開発時)。動作確認済み
+2. `github` … ブラウザから GitHub Contents API でコミット。公開サイトでも動くが
+   利用者が Fine-grained PAT を設定する必要がある。**未検証**、かつ
+   **この方式は使わない方針**(下記「見送ると決めたこと」)
 3. `manual` … YAMLをコピー/ダウンロードして手で貼る
-
-同じ仕組みでメンバーの希望曲と曲の特徴も保存できる。
 
 ## デプロイ
 
-**Vercel(Hobby・無料)** を使う。手順と選定理由は [`docs/DEPLOY.md`](DEPLOY.md)。
+**Cloudflare Workers**。手順・選定理由・無料枠は [`docs/DEPLOY.md`](DEPLOY.md) を読むこと。
 
-Next.js 純正で設定ファイル不要。将来 `output: "export"` を外すだけで
-サーバーサイド(API Routes / Server Actions)に移行できるのが選定の決め手。
-書き込みAPIはローカル専用なので、公開先での保存経路は `github` のみ。
+- 公開URL: https://nanawa.zinc-echidna.workers.dev(Basic認証。ユーザー名・パスワードとも共有)
+- `out/` を静的アセットとして配信し、その手前に Worker で Basic 認証をかける
+- 選曲ノートの同期は同じ Worker 上の Durable Object
+- 認証情報は **secret**。リポジトリが public なので絶対にコミットしない
+- `npm run build && npx wrangler deploy` で出る
+
+**Vercel と AWS Amplify の Git 連携が残っていたが停止済み**。
+そちらに出ると Basic 認証も同期も効かない裸のコピーが公開されてしまうため。
+Vercel は `vercel.json` の `git.deploymentEnabled: false`、Amplify は
+GitHub の webhook 3つを無効化(削除ではないので戻せる)。
 
 ## 残っている宿題
 
 - [ ] `tempo` / `ballad` の精度(バンドの耳でレビューが必要。UIから直せる)
 - [ ] BPMの倍/半分ずれ(7曲検出済み: カブトムシ149・二人162・かばん178・ホーム143・
       ずっと163・ナキ・ムシ152・シャッター95)
-- [ ] GitHub保存経路の実地確認
-- [ ] Vercel に GitHub 連携で本デプロイ(ユーザーのログインが必要。`docs/DEPLOY.md`)
-- [ ] PR #22 のマージ
-
+- [ ] **YAMLへの書き戻しを利用者がGitHubを意識せずに行えるようにする**(最優先。下記)
 
 ## 見送ると決めたこと
 
 - **秋の季節タグ** … aiko公式Spotifyプレイリストが春夏冬しかなく、出典が無い。
   推測で付けるとテンポ/バラードと同じ「当てにならないデータ」が増えるだけなので付けない
 - **利用者ごとの GitHub PAT** … 選曲に来たメンバーにトークンを作らせるのは筋が悪い。
-  **利用者が GitHub を意識せずに使える形**にする(下記)
+  代わりに **Worker が secret として持つトークン1本で代理コミットする**形にしたい。
+  利用者は「保存」を押すだけで、GitHub の存在を知らなくてよい。
+  トークンを作るのは管理者(ユーザー)が最初の1回だけ。未実装
 
 ## 作業の進め方(ユーザーの希望)
 
