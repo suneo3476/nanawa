@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nanawa",
+  "main": "workers/index.js",
+  "compatibility_date": "2026-08-16",
+
+  // next build の静的出力をそのまま配信する。
+  // run_worker_first で「アセットより先に Worker を通す」= Basic認証を全パスに効かせる。
+  "assets": {
+    "directory": "./out",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+
+  // BASIC_AUTH_USER / BASIC_AUTH_PASS はここに書かない(このリポジトリは public)。
+  // 本番: npx wrangler secret put BASIC_AUTH_USER
+  // お試し: npx wrangler deploy --temporary --var BASIC_AUTH_USER:xxx --var BASIC_AUTH_PASS:xxx
+}
