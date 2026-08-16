@@ -34,13 +34,34 @@ export interface Draft {
   fameDir: string;
 }
 
+/**
+ * 曲の特徴の直し(テンポ/バラード/BPM)。
+ *
+ * セトリではなく曲そのものの属性なので Store 直下に置く。
+ * バンド全員の耳で合わせるものなので、各自の端末に閉じ込めず共有する。
+ * `data/song_attributes.yml` に書き戻すまでの「未確定の直し」を保持する。
+ */
+export interface SongAttr {
+  songId: string;
+  tempo: "up" | "mid" | "slow" | null;
+  ballad: boolean;
+  bpm: number | null;
+}
+
 export interface Store {
   drafts: Draft[];
   currentId: string;
   seq: number;
+  /** songId → 直し。YAMLに反映したら空にする */
+  songAttrs?: Record<string, SongAttr>;
 }
 
-export const EMPTY_STORE: Store = { drafts: [], currentId: "", seq: 0 };
+export const EMPTY_STORE: Store = {
+  drafts: [],
+  currentId: "",
+  seq: 0,
+  songAttrs: {},
+};
 
 export type PickerOp =
   | { type: "draft.create"; members?: Member[] }
@@ -58,6 +79,9 @@ export type PickerOp =
   | { type: "members.replace"; draftId: string; members: Member[] }
   | { type: "wish.add"; draftId: string; memberId: string; songId: string }
   | { type: "wish.remove"; draftId: string; memberId: string; songId: string }
+  | { type: "attr.set"; attr: SongAttr }
+  | { type: "attr.clear"; songId: string }
+  | { type: "attr.clearAll" }
   | { type: "store.seed"; store: Store };
 
 /**
@@ -273,6 +297,34 @@ export function applyOp(store: Store, op: PickerOp): Store {
         }),
       );
 
+    // ---- 曲の特徴の直し ----
+    case "attr.set": {
+      const prev = store.songAttrs?.[op.attr.songId];
+      if (
+        prev &&
+        prev.tempo === op.attr.tempo &&
+        prev.ballad === op.attr.ballad &&
+        prev.bpm === op.attr.bpm
+      ) {
+        return store;
+      }
+      return {
+        ...store,
+        songAttrs: { ...(store.songAttrs ?? {}), [op.attr.songId]: op.attr },
+      };
+    }
+    case "attr.clear": {
+      if (!store.songAttrs?.[op.songId]) return store;
+      const songAttrs = { ...store.songAttrs };
+      delete songAttrs[op.songId];
+      return { ...store, songAttrs };
+    }
+    case "attr.clearAll":
+      if (!store.songAttrs || Object.keys(store.songAttrs).length === 0) {
+        return store;
+      }
+      return { ...store, songAttrs: {} };
+
     // ---- localStorage からの初回移行 ----
     case "store.seed":
       // サーバがまだ空のときだけ受け付ける。既にデータがあれば無視する
@@ -283,6 +335,7 @@ export function applyOp(store: Store, op: PickerOp): Store {
         drafts: op.store.drafts,
         currentId: op.store.currentId ?? "",
         seq: op.store.seq ?? 0,
+        songAttrs: op.store.songAttrs ?? {},
       };
 
     default:
