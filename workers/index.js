@@ -92,7 +92,7 @@ function checkBasic(request, user, pass) {
   );
 }
 
-export default {
+const handler = {
   async fetch(request, env) {
     const user = env.BASIC_AUTH_USER;
     const pass = env.BASIC_AUTH_PASS;
@@ -149,3 +149,5 @@ export default {
     return response;
   },
 };
+
+export default handler;
