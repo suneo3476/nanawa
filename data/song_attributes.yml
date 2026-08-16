@@ -412,7 +412,7 @@
 - songId: song147   # 冷たい嘘
   bpm: 89
 - songId: song148   # 4月の雨
-  tempo: up
+  tempo: mid
   ballad: false
   tieup: シード「シード ワンデーピュアうるおいプラス」CMソング
   bpm: 148
