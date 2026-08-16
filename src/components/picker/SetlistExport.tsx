@@ -33,18 +33,21 @@ export function SetlistExport({
   songById,
   nextLiveNumber,
   nextEventId,
+  initialBackend,
   onClose,
 }: {
   draft: Draft;
   songById: Map<string, PickerSong>;
   nextLiveNumber: number;
   nextEventId: number;
+  /** 最初に開くタブ。GitHub設定を促してここへ来た場合に指定する */
+  initialBackend?: BackendKind;
   onClose: () => void;
 }) {
   const [confirmedOnly, setConfirmedOnly] = useState(
     draft.items.some((i) => i.confirmed),
   );
-  const [backend, setBackend] = useState<BackendKind>("manual");
+  const [backend, setBackend] = useState<BackendKind>(initialBackend ?? "manual");
   const [localReady, setLocalReady] = useState<{
     liveId: string;
     eventId: number;
