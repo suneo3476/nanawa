@@ -83,6 +83,11 @@ npx wrangler secret put BASIC_AUTH_PASS
 npm run build && npx wrangler deploy
 ```
 
+**注意**: `deploy --var` で先に平文の環境変数を入れていると、同じ名前の secret を作れない
+(`Binding name 'X' already in use` になる)。先に `--var` なしで一度 deploy して
+平文 var を消してから `secret put` すること。その間は認証情報が未設定になるが、
+Worker は 500 で止まる作りなので開放されることはない。
+
 ### アカウントなしでお試し
 
 ```bash
@@ -103,3 +108,45 @@ npx wrangler deploy --temporary --var BASIC_AUTH_USER:xxx --var BASIC_AUTH_PASS:
 - 得: 無料で Basic 認証、商用利用も可、D1/R2/KV が無料枠で付く
 - 損: Next.js のサーバー機能(SSR / API Routes)を使うには
   [OpenNext](https://opennext.js.org/cloudflare) アダプタ経由になる
+
+---
+
+## 選曲ノートのリアルタイム同期(Durable Object)
+
+メンバーが各自のスマホから同時に選曲できるよう、状態を Durable Object で共有している。
+
+- `workers/picker-room.js` … 共有状態を持つ DO
+- エンドポイント … `wss://<host>/api/picker/ws`(WebSocket) / `GET /api/picker`(現在の状態)
+
+### 設計
+
+**クライアントは操作(op)だけを送り、状態を丸ごと送らない。**
+DO が唯一の書き手として op を順に適用し、確定した状態を全員に配る。
+DO はシングルスレッドなので op が自然に直列化され、
+「7人が同時に触ると誰かの変更が消える」が原理的に起きない。
+
+ポーリング + D1 だと、この直列化を自前で設計する必要があり、
+実装行数は減っても状態管理の難易度は上がる。リアルタイムにした方がむしろ素直。
+
+### hibernation
+
+`ctx.acceptWebSocket()` で受けているので、誰も操作していない間は
+接続を保ったまま DO がメモリから落ち、課金が止まる。
+7人が2時間つなぎっぱなしでも、課金対象は実際に操作した瞬間だけ。
+
+### WebSocket の認証
+
+ブラウザの `new WebSocket()` は独自ヘッダを付けられないため、
+ハンドシェイクに Basic の Authorization が乗る保証がない。
+そこで **Authorization ヘッダと セッションCookie の両方**を受け付けている。
+
+- HTTP で認証が通った時に `nanawa_session` Cookie(HttpOnly / SameSite=Strict / Secure)を発行
+- WebSocket はヘッダでも Cookie でも通る
+
+実測では Chromium 系はハンドシェイクに Authorization を送っていた。
+**iOS Safari は未確認**なので、スマホでの動作は実機で確かめること(Cookie 経路があるので通る想定)。
+
+### 動作確認済みのこと(本番)
+
+3クライアントで同時に op を送っても全部残る / 全員切断後の再接続で状態が復元される /
+重複追加など無変化の op では broadcast しない。
