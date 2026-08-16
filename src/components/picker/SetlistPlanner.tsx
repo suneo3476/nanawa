@@ -115,10 +115,16 @@ export function SetlistPlanner({
   const [tool, setTool] = useState<"direction" | "suggest" | "members">(
     "direction",
   );
-  // テンポ/バラードの直し(保存するまでは画面上だけに反映する)
-  const [tempoEdits, setTempoEdits] = useState<Map<string, SongAttrEdit>>(
-    new Map(),
-  );
+  // テンポ/バラードの直し。バンド全員の耳で合わせるものなので端末に閉じ込めず、
+  // 共有ストア(Durable Object)に置いて他のメンバーにも即座に反映する。
+  // data/song_attributes.yml に書き戻すまでの未確定分をここが保持する。
+  const tempoEdits = useMemo(() => {
+    const m = new Map<string, SongAttrEdit>();
+    for (const a of Object.values(store.songAttrs ?? {})) {
+      m.set(a.songId, { songId: a.songId, tempo: a.tempo, ballad: a.ballad, bpm: a.bpm });
+    }
+    return m;
+  }, [store.songAttrs]);
   const [attrSaveState, setAttrSaveState] = useState<
     "idle" | "saving" | "error"
   >("idle");
@@ -469,18 +475,20 @@ export function SetlistPlanner({
       (original.ballad ?? false) === next.ballad &&
       (original.bpm ?? null) === next.bpm;
 
-    setTempoEdits((prev) => {
-      if (unchanged) {
-        if (!prev.has(songId)) return prev;
-        // 直した後に元の値へ戻した場合。直しそのものを取り下げる
-        const nextMap = new Map(prev);
-        nextMap.delete(songId);
-        return nextMap;
-      }
-      const nextMap = new Map(prev);
-      nextMap.set(songId, { songId, ...next });
-      return nextMap;
-    });
+    if (unchanged) {
+      // 直した後に元の値へ戻した場合。直しそのものを取り下げる
+      op({ type: "attr.clear", songId });
+    } else {
+      op({
+        type: "attr.set",
+        attr: {
+          songId,
+          tempo: next.tempo,
+          ballad: next.ballad,
+          bpm: next.bpm ?? null,
+        },
+      });
+    }
   };
 
   const saveTempoEdits = async () => {
@@ -501,7 +509,8 @@ export function SetlistPlanner({
         }
         await saveSongAttrsViaGithub(cfg, edits, (id) => songById.get(id)?.title);
       }
-      setTempoEdits(new Map());
+      // YAML に入ったので未確定の直しは全員ぶん消す
+      op({ type: "attr.clearAll" });
       setAttrSaveState("idle");
     } catch (e) {
       console.error(e);
@@ -587,7 +596,7 @@ export function SetlistPlanner({
           }}
           state={attrSaveState}
           onSave={saveTempoEdits}
-          onReset={() => setTempoEdits(new Map())}
+          onReset={() => op({ type: "attr.clearAll" })}
         />
         <PoolPanel {...poolProps} sticky />
       </div>
@@ -990,7 +999,7 @@ export function SetlistPlanner({
                 }}
                 state={attrSaveState}
                 onSave={saveTempoEdits}
-                onReset={() => setTempoEdits(new Map())}
+                onReset={() => op({ type: "attr.clearAll" })}
               />
               <PoolPanel {...poolProps} autoFocus />
             </div>
