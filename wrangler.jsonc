@@ -21,7 +21,14 @@
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["PickerRoom"] }
-  ]
+  ],
+
+  // 代理コミット先。秘密ではないのでここに書いてよい。
+  // トークンだけは secret(npx wrangler secret put GITHUB_TOKEN)。
+  "vars": {
+    "GITHUB_REPO": "suneo3476/nanawa",
+    "GITHUB_BRANCH": "main"
+  }
 
   // BASIC_AUTH_USER / BASIC_AUTH_PASS はここに書かない(このリポジトリは public)。
   // 本番: npx wrangler secret put BASIC_AUTH_USER
