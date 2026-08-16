@@ -33,6 +33,7 @@ import { SuggestPanel } from "./SuggestPanel";
 import { suggestSetlists, type Suggestion } from "@/lib/suggest";
 import {
   checkLocalApi,
+  checkServerGithub,
   loadGithubConfig,
   saveMembersViaGithub,
   saveMembersViaLocal,
@@ -47,6 +48,23 @@ import { usePickerSync, type SyncStatus } from "./usePickerSync";
 const STORAGE_KEY = "nanawa-picker-v2";
 const LEGACY_KEY = "nanawa-picker-v1";
 const DEFAULT_MEMBER_COUNT = 7;
+
+/**
+ * 書き戻し先を決める。
+ *
+ * 1. ローカル開発の書き込みAPI
+ * 2. **Worker の代理コミット**(利用者は GitHub を意識しない。本命)
+ * 3. 利用者自身の GitHub トークン(旧方式。設定済みの人だけ)
+ */
+async function resolveBackend() {
+  const local = await checkLocalApi();
+  if (local) return { kind: "local" as const };
+  const server = await checkServerGithub();
+  if (server) return { kind: "github" as const, cfg: server };
+  const own = loadGithubConfig();
+  if (own) return { kind: "github" as const, cfg: own };
+  return null;
+}
 
 /**
  * 保存先が無いときの文言。
@@ -439,13 +457,16 @@ export function SetlistPlanner({
       wishes: m.wishes,
     }));
     try {
-      const local = await checkLocalApi();
-      if (local) {
+      const backend = await resolveBackend();
+      if (!backend) throw new Error(noBackendMessage());
+      if (backend.kind === "local") {
         await saveMembersViaLocal(payload);
       } else {
-        const cfg = loadGithubConfig();
-        if (!cfg) throw new Error(noBackendMessage());
-        await saveMembersViaGithub(cfg, payload, (id) => songById.get(id)?.title);
+        await saveMembersViaGithub(
+          backend.cfg,
+          payload,
+          (id) => songById.get(id)?.title,
+        );
       }
       setMemberSaveState("saved");
       setTimeout(() => setMemberSaveState("idle"), 2500);
@@ -498,16 +519,19 @@ export function SetlistPlanner({
     setAttrSaveState("saving");
     const edits = [...tempoEdits.values()];
     try {
-      const local = await checkLocalApi();
-      if (local) {
+      const backend = await resolveBackend();
+      if (!backend) {
+        setAttrNeedsGithub(true);
+        throw new Error(noBackendMessage());
+      }
+      if (backend.kind === "local") {
         await saveSongAttrsViaLocal(edits);
       } else {
-        const cfg = loadGithubConfig();
-        if (!cfg) {
-          setAttrNeedsGithub(true);
-          throw new Error(noBackendMessage());
-        }
-        await saveSongAttrsViaGithub(cfg, edits, (id) => songById.get(id)?.title);
+        await saveSongAttrsViaGithub(
+          backend.cfg,
+          edits,
+          (id) => songById.get(id)?.title,
+        );
       }
       // YAML に入ったので未確定の直しは全員ぶん消す
       op({ type: "attr.clearAll" });

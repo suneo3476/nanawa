@@ -226,6 +226,39 @@ export interface GithubConfig {
   repo: string;
   branch: string;
   token: string;
+  /**
+   * true なら **トークンを使わず Worker 経由**でコミットする。
+   * 利用者に GitHub を意識させないための本命の経路。
+   * トークンはサーバの secret にあり、ブラウザには渡らない。
+   */
+  viaServer?: boolean;
+}
+
+/** Worker が代理コミットできるか。できるならその設定を返す */
+export async function checkServerGithub(): Promise<GithubConfig | null> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch("/api/gh/status", { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const j = (await res.json()) as {
+      available: boolean;
+      owner?: string;
+      repo?: string;
+      branch?: string;
+    };
+    if (!j.available) return null;
+    return {
+      owner: j.owner ?? "",
+      repo: j.repo ?? "",
+      branch: j.branch ?? "main",
+      token: "",
+      viaServer: true,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export const GITHUB_CONFIG_KEY = "nanawa-github-config-v1";
@@ -256,6 +289,23 @@ async function ghFetch(
   path: string,
   init?: RequestInit,
 ): Promise<Response> {
+  if (cfg.viaServer) {
+    // Worker が代理でコミットする。ブラウザはトークンを持たない。
+    // /repos/{owner}/{repo}/contents/X → /api/gh/contents/X に読み替える
+    // (owner/repo/branch はサーバ側で固定されるので、ここでは捨てる)
+    const m = path.match(/^\/repos\/[^/]+\/[^/]+\/contents\/([^?]+)/);
+    if (!m) {
+      // contents 以外(リポジトリ情報の取得など)は代理させない
+      return new Response(JSON.stringify({ permissions: { push: true } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return fetch(`/api/gh/contents/${m[1]}`, {
+      ...init,
+      headers: { ...(init?.headers ?? {}) },
+    });
+  }
   return fetch(`${GH_API}${path}`, {
     ...init,
     headers: {
