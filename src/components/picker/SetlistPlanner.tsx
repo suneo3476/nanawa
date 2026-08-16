@@ -105,6 +105,8 @@ export function SetlistPlanner({
   const [attrSaveState, setAttrSaveState] = useState<
     "idle" | "saving" | "error"
   >("idle");
+  /** 保存に失敗した理由(画面に出す。console だけに残すと利用者に伝わらない) */
+  const [attrSaveError, setAttrSaveError] = useState("");
   const [sort, setSort] = useState<SortKey>("gap");
 
   /** 未保存の直しを反映した曲リスト */
@@ -443,7 +445,23 @@ export function SetlistPlanner({
     songId: string,
     next: { tempo: SongAttrEdit["tempo"]; ballad: boolean; bpm: number | null },
   ) => {
+    // 既に選ばれているテンポをもう一度押しただけ、のような「変化なし」を
+    // 未保存の直しとして数えない(触って回っただけで件数が増えてしまう)
+    const original = rawSongs.find((s) => s.id === songId);
+    const unchanged =
+      original != null &&
+      original.tempo === next.tempo &&
+      (original.ballad ?? false) === next.ballad &&
+      (original.bpm ?? null) === next.bpm;
+
     setTempoEdits((prev) => {
+      if (unchanged) {
+        if (!prev.has(songId)) return prev;
+        // 直した後に元の値へ戻した場合。直しそのものを取り下げる
+        const nextMap = new Map(prev);
+        nextMap.delete(songId);
+        return nextMap;
+      }
       const nextMap = new Map(prev);
       nextMap.set(songId, { songId, ...next });
       return nextMap;
@@ -452,6 +470,7 @@ export function SetlistPlanner({
 
   const saveTempoEdits = async () => {
     if (tempoEdits.size === 0) return;
+    setAttrSaveError("");
     setAttrSaveState("saving");
     const edits = [...tempoEdits.values()];
     try {
@@ -471,8 +490,9 @@ export function SetlistPlanner({
       setAttrSaveState("idle");
     } catch (e) {
       console.error(e);
+      setAttrSaveError(e instanceof Error ? e.message : "保存できませんでした");
       setAttrSaveState("error");
-      setTimeout(() => setAttrSaveState("idle"), 3500);
+      // 理由が長いので自動で消さない。次の保存を試すまで出したままにする
     }
   };
 
@@ -544,6 +564,7 @@ export function SetlistPlanner({
       <div id="song-pool" className="hidden min-w-0 lg:block">
         <TempoEditBar
           count={tempoEdits.size}
+          error={attrSaveError}
           state={attrSaveState}
           onSave={saveTempoEdits}
           onReset={() => setTempoEdits(new Map())}
@@ -940,6 +961,7 @@ export function SetlistPlanner({
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
               <TempoEditBar
                 count={tempoEdits.size}
+                error={attrSaveError}
                 state={attrSaveState}
                 onSave={saveTempoEdits}
                 onReset={() => setTempoEdits(new Map())}
@@ -967,11 +989,14 @@ export function SetlistPlanner({
 function TempoEditBar({
   count,
   state,
+  error,
   onSave,
   onReset,
 }: {
   count: number;
   state: "idle" | "saving" | "error";
+  /** 保存に失敗した理由。空なら出さない */
+  error?: string;
   onSave: () => void;
   onReset: () => void;
 }) {
@@ -982,8 +1007,8 @@ function TempoEditBar({
         テンポの直し {count}件が未保存です
       </span>
       {state === "error" && (
-        <span className="text-[#9b2b2b] dark:text-[#e59a9a]">
-          保存できませんでした
+        <span className="w-full text-[#9b2b2b] dark:text-[#e59a9a]">
+          {error || "保存できませんでした"}
         </span>
       )}
       <span className="ml-auto flex gap-2">
