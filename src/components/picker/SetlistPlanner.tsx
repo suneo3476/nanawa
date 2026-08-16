@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Tempo } from "@/lib/types";
 import {
   combinedFit,
@@ -40,7 +40,9 @@ import {
   saveSongAttrsViaLocal,
   type SongAttrEdit,
 } from "@/lib/setlist-backend";
-import type { Draft, Member, PickerAlbum, PickerSong } from "./types";
+import type { Member, PickerAlbum, PickerSong } from "./types";
+import { newDraft, type PickerOp, type PickerOpInput } from "@/lib/picker-ops";
+import { usePickerSync, type SyncStatus } from "./usePickerSync";
 
 const STORAGE_KEY = "nanawa-picker-v2";
 const LEGACY_KEY = "nanawa-picker-v1";
@@ -53,26 +55,6 @@ function defaultMembers(saved: Member[]): Member[] {
     name: `メンバー${i + 1}`,
     wishes: [],
   }));
-}
-
-function newDraft(seq: number, saved: Member[] = []): Draft {
-  return {
-    id: `draft-${seq}`,
-    eventName: "",
-    date: "",
-    venueName: "",
-    memo: "",
-    items: [],
-    members: defaultMembers(saved),
-    tempoDir: "none",
-    fameDir: "none",
-  };
-}
-
-interface Store {
-  drafts: Draft[];
-  currentId: string;
-  seq: number;
 }
 
 export function SetlistPlanner({
@@ -89,15 +71,21 @@ export function SetlistPlanner({
   nextLiveNumber: number;
   nextEventId: number;
 }) {
-  const [store, setStore] = useState<Store>(() => ({
+  // メンバー間で共有される状態。op を送るとサーバ(Durable Object)が確定させて全員に配る。
+  // サーバに繋がらない時は localStorage だけで動く(単独では今まで通り使える)。
+  const { store, status: syncStatus, sendOp } = usePickerSync({
     drafts: [newDraft(1, savedMembers)],
     currentId: "draft-1",
     seq: 1,
-  }));
+  });
+  // 最新の store を effect / コールバックから参照するため
+  const storeRef = useRef(store);
+  useEffect(() => {
+    storeRef.current = store;
+  }, [store]);
   const [memberSaveState, setMemberSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
-  const [loaded, setLoaded] = useState(false);
   const [urlList, setUrlList] = useState<string[] | null>(null);
   const [copied, setCopied] = useState<"" | "link" | "text">("");
   const [poolModalOpen, setPoolModalOpen] = useState(false);
@@ -131,32 +119,29 @@ export function SetlistPlanner({
   }, [rawSongs, tempoEdits]);
 
   const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
+  // サーバが空を返す瞬間(初回同期の途中など)があるので、必ず何か1件は返す
   const draft =
-    store.drafts.find((d) => d.id === store.currentId) ?? store.drafts[0];
+    store.drafts.find((d) => d.id === store.currentId) ??
+    store.drafts[0] ??
+    newDraft(1, savedMembers);
 
-  // ---- 保存/復元 ----
+  // ---- 復元 ----
+  // 通常の保存/復元と端末間の同期は usePickerSync が持つ。
+  // ここでは v1 からの移行と、共有リンク(?list=)の取り込みだけを見る。
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Store;
-        if (parsed?.drafts?.length) {
-          // eslint-disable-next-line react-hooks/set-state-in-effect -- 外部ストア(localStorage)からの初期化
-          setStore(parsed);
-        }
-      } else {
-        // v1(単なる songId 配列)からの移行
-        const legacy = localStorage.getItem(LEGACY_KEY);
-        if (legacy) {
-          const ids = (JSON.parse(legacy) as string[]).filter((id) =>
-            songById.has(id),
-          );
-          if (ids.length) {
-            const d = newDraft(1, savedMembers);
-            d.items = ids.map((songId) => ({ songId, confirmed: false }));
-             
-            setStore({ drafts: [d], currentId: d.id, seq: 1 });
-          }
+      const hasV2 = localStorage.getItem(STORAGE_KEY);
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (!hasV2 && legacy) {
+        const ids = (JSON.parse(legacy) as string[]).filter((id) =>
+          songById.has(id),
+        );
+        if (ids.length) {
+          sendOp({
+            type: "item.replaceAll",
+            draftId: storeRef.current.currentId,
+            items: ids.map((songId) => ({ songId, confirmed: false })),
+          });
         }
       }
     } catch {
@@ -165,39 +150,11 @@ export function SetlistPlanner({
     const param = new URLSearchParams(window.location.search).get("list");
     if (param) {
       const ids = param.split(",").filter((id) => songById.has(id));
-       
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 外部(URL)からの初期化
       if (ids.length > 0) setUrlList(ids);
     }
-     
-    setLoaded(true);
-    // savedMembers は初回の下書き作成にしか使わないので、依存に入れて
-    // 読み直しが走らないようにする(入れると保存のたびに復元されてしまう)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songById]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    } catch {
-      // 保存できなくても致命的ではない
-    }
-  }, [store, loaded]);
-
-  // 別のタブで更新されたら取り込む(古いタブが新しい内容を上書きするのを防ぐ)
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY || !e.newValue) return;
-      try {
-        const parsed = JSON.parse(e.newValue) as Store;
-        if (parsed?.drafts?.length) setStore(parsed);
-      } catch {
-        // 壊れた値は無視
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
 
   useEffect(() => {
     if (!poolModalOpen) return;
@@ -212,15 +169,13 @@ export function SetlistPlanner({
     };
   }, [poolModalOpen]);
 
-  // ---- draft 更新ヘルパ ----
-  const updateDraft = useCallback(
-    (fn: (d: Draft) => Draft) => {
-      setStore((s) => ({
-        ...s,
-        drafts: s.drafts.map((d) => (d.id === s.currentId ? fn(d) : d)),
-      }));
+  // ---- op 送信ヘルパ ----
+  // 「今表示しているセトリ」に対する op を送る。draftId を毎回書かずに済ませる。
+  const op = useCallback(
+    (o: PickerOpInput) => {
+      sendOp({ ...o, draftId: o.draftId ?? storeRef.current.currentId } as PickerOp);
     },
-    [],
+    [sendOp],
   );
 
   const pickedIds = useMemo(
@@ -230,49 +185,40 @@ export function SetlistPlanner({
 
   const toggleSong = useCallback(
     (songId: string) =>
-      updateDraft((d) =>
-        d.items.some((i) => i.songId === songId)
-          ? { ...d, items: d.items.filter((i) => i.songId !== songId) }
-          : { ...d, items: [...d.items, { songId, confirmed: false }] },
-      ),
-    [updateDraft],
+      op({
+        type: draft.items.some((i) => i.songId === songId)
+          ? "item.remove"
+          : "item.add",
+        songId,
+      }),
+    [op, draft],
   );
 
   const toggleConfirmed = (songId: string) =>
-    updateDraft((d) => ({
-      ...d,
-      items: d.items.map((i) =>
-        i.songId === songId ? { ...i, confirmed: !i.confirmed } : i,
-      ),
-    }));
-
-  const move = (index: number, dir: -1 | 1) =>
-    updateDraft((d) => {
-      const items = [...d.items];
-      const j = index + dir;
-      if (j < 0 || j >= items.length) return d;
-      [items[index], items[j]] = [items[j], items[index]];
-      return { ...d, items };
+    op({
+      type: "item.confirm",
+      songId,
+      confirmed: !draft.items.find((i) => i.songId === songId)?.confirmed,
     });
+
+  const move = (index: number, dir: -1 | 1) => {
+    const items = draft.items;
+    const j = index + dir;
+    if (j < 0 || j >= items.length) return;
+    op({ type: "item.move", songId: items[index].songId, to: j });
+  };
 
   const toggleWish = useCallback(
     (songId: string) => {
       if (!wishMemberId) return;
-      updateDraft((d) => ({
-        ...d,
-        members: d.members.map((m) =>
-          m.id === wishMemberId
-            ? {
-                ...m,
-                wishes: m.wishes.includes(songId)
-                  ? m.wishes.filter((w) => w !== songId)
-                  : [...m.wishes, songId],
-              }
-            : m,
-        ),
-      }));
+      const member = draft.members.find((m) => m.id === wishMemberId);
+      op({
+        type: member?.wishes.includes(songId) ? "wish.remove" : "wish.add",
+        memberId: wishMemberId,
+        songId,
+      });
     },
-    [wishMemberId, updateDraft],
+    [wishMemberId, op, draft],
   );
 
   // ---- 構成とスコア ----
@@ -490,7 +436,7 @@ export function SetlistPlanner({
   /** data/members.yml の内容を今のセトリに読み直す */
   const reloadMembers = () => {
     if (savedMembers.length === 0) return;
-    updateDraft((d) => ({ ...d, members: defaultMembers(savedMembers) }));
+    op({ type: "members.replace", members: defaultMembers(savedMembers) });
   };
 
   const editTempo = (
@@ -560,15 +506,13 @@ export function SetlistPlanner({
   };
 
   const applySuggestion = (songIds: string[]) => {
-    updateDraft((d) => {
-      const confirmedMap = new Map(d.items.map((i) => [i.songId, i.confirmed]));
-      return {
-        ...d,
-        items: songIds.map((songId) => ({
-          songId,
-          confirmed: confirmedMap.get(songId) ?? false,
-        })),
-      };
+    const confirmedMap = new Map(draft.items.map((i) => [i.songId, i.confirmed]));
+    op({
+      type: "item.replaceAll",
+      items: songIds.map((songId) => ({
+        songId,
+        confirmed: confirmedMap.get(songId) ?? false,
+      })),
     });
     setSuggestions(null);
   };
@@ -618,10 +562,10 @@ export function SetlistPlanner({
               <button
                 type="button"
                 onClick={() => {
-                  updateDraft((d) => ({
-                    ...d,
+                  op({
+                    type: "item.replaceAll",
                     items: urlList.map((songId) => ({ songId, confirmed: false })),
-                  }));
+                  });
                   setUrlList(null);
                 }}
                 className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-strong"
@@ -639,13 +583,16 @@ export function SetlistPlanner({
           </div>
         )}
 
+        {/* 同期の状態。メンバー間で共有されているかが一目で分かるようにする */}
+        <SyncBadge status={syncStatus} />
+
         {/* セトリ切り替え */}
         <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {store.drafts.map((d) => (
             <Chip
               key={d.id}
               active={d.id === store.currentId}
-              onClick={() => setStore((s) => ({ ...s, currentId: d.id }))}
+              onClick={() => op({ type: "draft.select", draftId: d.id })}
             >
               {d.eventName || "無題のセトリ"}
               <span className="ml-1 opacity-60">{d.items.length}</span>
@@ -654,11 +601,7 @@ export function SetlistPlanner({
           <button
             type="button"
             onClick={() =>
-              setStore((s) => {
-                const seq = s.seq + 1;
-                const d = newDraft(seq, savedMembers);
-                return { drafts: [...s.drafts, d], currentId: d.id, seq };
-              })
+              op({ type: "draft.create", members: defaultMembers(savedMembers) })
             }
             className="shrink-0 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-muted hover:border-accent hover:text-accent-strong"
           >
@@ -670,7 +613,7 @@ export function SetlistPlanner({
         <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-surface lg:flex-[1_1_auto]">
           <LiveInfoCard
             draft={draft}
-            onChange={(patch) => updateDraft((d) => ({ ...d, ...patch }))}
+            onChange={(patch) => op({ type: "draft.meta", patch })}
           />
 
           <div className="px-4 pt-2.5">
@@ -864,7 +807,7 @@ export function SetlistPlanner({
                   tempoDir={tempoDir}
                   fameDir={fameDir}
                   onSelect={(t, f) =>
-                    updateDraft((d) => ({ ...d, tempoDir: t, fameDir: f }))
+                    op({ type: "draft.meta", patch: { tempoDir: t, fameDir: f } })
                   }
                 />
               </div>
@@ -914,45 +857,24 @@ export function SetlistPlanner({
                   }
                 }}
                 onRename={(id, name) =>
-                  updateDraft((d) => ({
-                    ...d,
-                    members: d.members.map((m) =>
-                      m.id === id ? { ...m, name } : m,
-                    ),
-                  }))
+                  op({ type: "member.rename", memberId: id, name })
                 }
                 onAdd={() =>
-                  updateDraft((d) => ({
-                    ...d,
-                    members: [
-                      ...d.members,
-                      {
-                        id: `m${Date.now()}`,
-                        name: `メンバー${d.members.length + 1}`,
-                        wishes: [],
-                      },
-                    ],
-                  }))
+                  op({
+                    type: "member.add",
+                    memberId: `m${Date.now()}`,
+                    name: `メンバー${draft.members.length + 1}`,
+                  })
                 }
                 onRemove={(id) => {
                   if (wishMemberId === id) setWishMemberId(null);
-                  updateDraft((d) => ({
-                    ...d,
-                    members: d.members.filter((m) => m.id !== id),
-                  }));
+                  op({ type: "member.remove", memberId: id });
                 }}
                 onSave={saveMembers}
                 onReload={reloadMembers}
                 saveState={memberSaveState}
                 onRemoveWish={(memberId, songId) =>
-                  updateDraft((d) => ({
-                    ...d,
-                    members: d.members.map((m) =>
-                      m.id === memberId
-                        ? { ...m, wishes: m.wishes.filter((w) => w !== songId) }
-                        : m,
-                    ),
-                  }))
+                  op({ type: "wish.remove", memberId, songId })
                 }
               />
             )}
@@ -964,10 +886,7 @@ export function SetlistPlanner({
             type="button"
             onClick={() => {
               if (!confirm("このセトリを削除しますか?")) return;
-              setStore((s) => {
-                const drafts = s.drafts.filter((d) => d.id !== s.currentId);
-                return { ...s, drafts, currentId: drafts[0].id };
-              });
+              op({ type: "draft.delete", draftId: store.currentId });
             }}
             className="shrink-0 rounded-lg px-3 py-1.5 text-xs text-muted hover:text-foreground"
           >
@@ -1273,5 +1192,44 @@ function IconButton({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * 同期の状態表示。
+ *
+ * 「今この画面が他のメンバーと繋がっているか」を一目で分かるようにする。
+ * offline でもアプリ自体は使える(この端末の中だけで完結する)ことを明示する。
+ */
+function SyncBadge({ status }: { status: SyncStatus }) {
+  const view = {
+    online: {
+      dot: "bg-emerald-500",
+      text: "同期中",
+      hint: "この画面の変更はメンバー全員に届きます",
+      cls: "text-emerald-700 dark:text-emerald-400",
+    },
+    connecting: {
+      dot: "bg-slate-400 animate-pulse",
+      text: "接続中…",
+      hint: "共有状態を確認しています",
+      cls: "text-muted",
+    },
+    offline: {
+      dot: "bg-amber-500",
+      text: "この端末のみ",
+      hint: "サーバに繋がらないため共有されません。編集はこの端末に保存されます",
+      cls: "text-amber-700 dark:text-amber-500",
+    },
+  }[status];
+
+  return (
+    <div
+      className={`flex items-center gap-1.5 text-[11px] ${view.cls}`}
+      title={view.hint}
+    >
+      <span className={`inline-block size-1.5 rounded-full ${view.dot}`} />
+      <span className="font-medium">{view.text}</span>
+    </div>
   );
 }
