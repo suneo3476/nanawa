@@ -49,9 +49,8 @@ npx vercel deploy --temporary
 
 ## 公開後の注意
 
-- サイトは**認証なしで誰でも見られる**。リポジトリが既に public なので新たな露出はないが、
-  限定公開にしたいなら Vercel の Password Protection は Pro 限定。
-  無料でやるなら Cloudflare Workers 側で Basic 認証を挟む
+- Vercel のサイトは**認証なしで誰でも見られる**。リポジトリが既に public なので新たな露出はないが、
+  鍵をかけたいなら Vercel の Password Protection は Pro 限定。無料で済ませるなら下記の Cloudflare 経路
 - **書き込みAPI(`scripts/data-server.mjs`)は公開先では動かない**。
   デプロイ後にセトリを保存する経路は `github`(GitHub Contents API)のみ。
   利用者が Fine-grained PAT(`suneo3476/nanawa` のみ / Contents: Read and write)を
@@ -63,3 +62,44 @@ npx vercel deploy --temporary
 `next.config.ts` の `output: "export"` と `trailingSlash: true` を外す。
 これだけで API Routes / Server Actions / SSR が使えるようになり、
 `data-server.mjs` がやっていた書き込みも本番で動かせる(認証は別途必要)。
+
+---
+
+## もうひとつの経路: Cloudflare Workers(Basic認証つき)
+
+「身内だけに見せたい」を無料でやるならこちら。
+`out/` を Workers の静的アセットとして配信し、その手前に Worker で Basic 認証を挟む。
+`output: "export"` のままでよいので Vercel 側の構成と共存できる。
+
+- `wrangler.jsonc` … `assets.run_worker_first: true` で全パスを Worker に通す
+- `workers/index.js` … Basic 認証。未設定なら素通しせず 500 で止める
+
+### 初回セットアップ
+
+```bash
+npx wrangler login
+npx wrangler secret put BASIC_AUTH_USER
+npx wrangler secret put BASIC_AUTH_PASS
+npm run build && npx wrangler deploy
+```
+
+### アカウントなしでお試し
+
+```bash
+npm run build
+npx wrangler deploy --temporary --var BASIC_AUTH_USER:xxx --var BASIC_AUTH_PASS:xxx
+```
+
+出力の **Claim URL は 60 分で失効**する。claim すればそのアカウントごと自分のものになる。
+`--var` は平文の環境変数なので、本番では上記の `wrangler secret put` を使うこと。
+
+### 認証情報をコミットしない理由
+
+このリポジトリは public。`wrangler.jsonc` に書くとパスワードがそのまま公開され、
+鍵をかけた意味がなくなる。必ず secret か `--var` で外から渡す。
+
+### Vercel と比べたときの損得
+
+- 得: 無料で Basic 認証、商用利用も可、D1/R2/KV が無料枠で付く
+- 損: Next.js のサーバー機能(SSR / API Routes)を使うには
+  [OpenNext](https://opennext.js.org/cloudflare) アダプタ経由になる
