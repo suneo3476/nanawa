@@ -214,6 +214,21 @@ export function SetlistPlanner({
     };
   }, [poolModalOpen]);
 
+  // 配信中のデータが直しに追いついたら、その直しを引退させる。
+  // 「曲データに保存」でコミットしても、サイトが再ビルドされるまでは
+  // 古いデータが配られる。だから保存時ではなく **一致した時** に消す。
+  useEffect(() => {
+    for (const a of Object.values(store.songAttrs ?? {})) {
+      const built = rawSongs.find((s) => s.id === a.songId);
+      if (!built) continue;
+      const same =
+        built.tempo === a.tempo &&
+        (built.ballad ?? false) === a.ballad &&
+        (built.bpm ?? null) === a.bpm;
+      if (same) sendOp({ type: "attr.clear", songId: a.songId });
+    }
+  }, [store.songAttrs, rawSongs, sendOp]);
+
   // ---- op 送信ヘルパ ----
   // 「今表示しているセトリ」に対する op を送る。draftId を毎回書かずに済ませる。
   const op = useCallback(
@@ -533,8 +548,10 @@ export function SetlistPlanner({
           (id) => songById.get(id)?.title,
         );
       }
-      // YAML に入ったので未確定の直しは全員ぶん消す
-      op({ type: "attr.clearAll" });
+      // ここで消してはいけない。
+      // コミットは載るが、サイトは再ビルドされるまで古いデータを配信している。
+      // 消すと「保存したのに直しが画面から消えた」ように見える。
+      // 直しは、ビルドが追いついて元データと一致した時点で自動的に引退する(下の効果)。
       setAttrSaveState("idle");
     } catch (e) {
       console.error(e);
