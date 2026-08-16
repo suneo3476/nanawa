@@ -48,6 +48,21 @@ const STORAGE_KEY = "nanawa-picker-v2";
 const LEGACY_KEY = "nanawa-picker-v1";
 const DEFAULT_MEMBER_COUNT = 7;
 
+/**
+ * 保存先が無いときの文言。
+ *
+ * 公開サイトで「npm run dev で起動しろ」と言っても利用者には何もできないので、
+ * 開発中(localhost)のときだけその選択肢を案内する。
+ */
+function noBackendMessage(): string {
+  const isDev =
+    typeof location !== "undefined" &&
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1");
+  return isDev
+    ? "保存先がありません。npm run dev で起動するか、GitHubを設定してください。"
+    : "曲データに書き戻すにはGitHubの設定が必要です。";
+}
+
 function defaultMembers(saved: Member[]): Member[] {
   if (saved.length > 0) return saved.map((m) => ({ ...m, wishes: [...m.wishes] }));
   return Array.from({ length: DEFAULT_MEMBER_COUNT }, (_, i) => ({
@@ -90,6 +105,8 @@ export function SetlistPlanner({
   const [copied, setCopied] = useState<"" | "link" | "text">("");
   const [poolModalOpen, setPoolModalOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  /** 書き出し画面をどのタブで開くか(GitHub設定を促して開くときは "github") */
+  const [exportTab, setExportTab] = useState<"github" | undefined>(undefined);
   const [wishMemberId, setWishMemberId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
   const [suggestSize, setSuggestSize] = useState(6);
@@ -107,6 +124,8 @@ export function SetlistPlanner({
   >("idle");
   /** 保存に失敗した理由(画面に出す。console だけに残すと利用者に伝わらない) */
   const [attrSaveError, setAttrSaveError] = useState("");
+  /** 失敗の原因が「GitHub未設定」なら、その場で設定へ行けるようにする */
+  const [attrNeedsGithub, setAttrNeedsGithub] = useState(false);
   const [sort, setSort] = useState<SortKey>("gap");
 
   /** 未保存の直しを反映した曲リスト */
@@ -419,11 +438,7 @@ export function SetlistPlanner({
         await saveMembersViaLocal(payload);
       } else {
         const cfg = loadGithubConfig();
-        if (!cfg) {
-          throw new Error(
-            "保存先がありません。npm run dev で起動するか、書き出し画面でGitHubを設定してください。",
-          );
-        }
+        if (!cfg) throw new Error(noBackendMessage());
         await saveMembersViaGithub(cfg, payload, (id) => songById.get(id)?.title);
       }
       setMemberSaveState("saved");
@@ -471,6 +486,7 @@ export function SetlistPlanner({
   const saveTempoEdits = async () => {
     if (tempoEdits.size === 0) return;
     setAttrSaveError("");
+    setAttrNeedsGithub(false);
     setAttrSaveState("saving");
     const edits = [...tempoEdits.values()];
     try {
@@ -480,9 +496,8 @@ export function SetlistPlanner({
       } else {
         const cfg = loadGithubConfig();
         if (!cfg) {
-          throw new Error(
-            "保存先がありません。npm run dev で起動するか、書き出し画面でGitHubを設定してください。",
-          );
+          setAttrNeedsGithub(true);
+          throw new Error(noBackendMessage());
         }
         await saveSongAttrsViaGithub(cfg, edits, (id) => songById.get(id)?.title);
       }
@@ -565,6 +580,11 @@ export function SetlistPlanner({
         <TempoEditBar
           count={tempoEdits.size}
           error={attrSaveError}
+          needsGithub={attrNeedsGithub}
+          onConfigureGithub={() => {
+            setExportTab("github");
+            setExportOpen(true);
+          }}
           state={attrSaveState}
           onSave={saveTempoEdits}
           onReset={() => setTempoEdits(new Map())}
@@ -962,6 +982,12 @@ export function SetlistPlanner({
               <TempoEditBar
                 count={tempoEdits.size}
                 error={attrSaveError}
+                needsGithub={attrNeedsGithub}
+                onConfigureGithub={() => {
+                  setPoolModalOpen(false);
+                  setExportTab("github");
+                  setExportOpen(true);
+                }}
                 state={attrSaveState}
                 onSave={saveTempoEdits}
                 onReset={() => setTempoEdits(new Map())}
@@ -978,7 +1004,11 @@ export function SetlistPlanner({
           songById={songById}
           nextLiveNumber={nextLiveNumber}
           nextEventId={nextEventId}
-          onClose={() => setExportOpen(false)}
+          initialBackend={exportTab}
+          onClose={() => {
+            setExportOpen(false);
+            setExportTab(undefined);
+          }}
         />
       )}
     </div>
@@ -990,6 +1020,8 @@ function TempoEditBar({
   count,
   state,
   error,
+  needsGithub,
+  onConfigureGithub,
   onSave,
   onReset,
 }: {
@@ -997,6 +1029,9 @@ function TempoEditBar({
   state: "idle" | "saving" | "error";
   /** 保存に失敗した理由。空なら出さない */
   error?: string;
+  /** 原因が GitHub 未設定のとき、その場で設定へ行けるようにする */
+  needsGithub?: boolean;
+  onConfigureGithub?: () => void;
   onSave: () => void;
   onReset: () => void;
 }) {
@@ -1007,8 +1042,17 @@ function TempoEditBar({
         テンポの直し {count}件が未保存です
       </span>
       {state === "error" && (
-        <span className="w-full text-[#9b2b2b] dark:text-[#e59a9a]">
+        <span className="flex w-full flex-wrap items-center gap-2 text-[#9b2b2b] dark:text-[#e59a9a]">
           {error || "保存できませんでした"}
+          {needsGithub && onConfigureGithub && (
+            <button
+              type="button"
+              onClick={onConfigureGithub}
+              className="rounded-lg border border-accent/50 px-2 py-0.5 font-semibold text-accent-strong hover:bg-accent-soft"
+            >
+              GitHubを設定する
+            </button>
+          )}
         </span>
       )}
       <span className="ml-auto flex gap-2">
