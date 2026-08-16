@@ -36,7 +36,7 @@ export function TempoEditor({
   bpm: number | null;
   /** 未保存の変更があるか */
   edited: boolean;
-  variant?: "tempo" | "ballad";
+  variant?: "tempo" | "ballad" | "bpm";
   onChange: (next: {
     tempo: Tempo | null;
     ballad: boolean;
@@ -80,30 +80,46 @@ export function TempoEditor({
         aria-label={
           variant === "ballad"
             ? "バラード (押すと外せます)"
-            : tempo
-              ? `テンポ: ${TEMPO_LABEL[tempo]} (押すと直せます)`
-              : "テンポ未設定 (押すと設定できます)"
+            : variant === "bpm"
+              ? bpm != null
+                ? `BPM ${bpm} (押すと直せます)`
+                : "BPM未設定 (押すと入力できます)"
+              : tempo
+                ? `テンポ: ${TEMPO_LABEL[tempo]} (押すと直せます)`
+                : "テンポ未設定 (押すと設定できます)"
         }
         title={
           variant === "ballad"
             ? "曲の特徴を直す"
-            : tempo
-              ? "テンポを直す"
-              : "テンポを設定する"
+            : variant === "bpm"
+              ? "BPMを直す"
+              : tempo
+                ? "テンポを直す"
+                : "テンポを設定する"
         }
         className={
           variant === "ballad"
             ? `${base} bg-surface-2 text-muted hover:text-accent-strong ${edited ? "ring-1 ring-accent" : ""}`
-            : tempo
-              ? `${base} ${TEMPO_CLASS[tempo]} ${edited ? "ring-1 ring-accent" : ""}`
-              : `${base} text-muted/70 hover:text-accent-strong`
+            : variant === "bpm"
+              ? `${base} font-mono tabular-nums hover:text-accent-strong ${
+                  bpmLooksOff(tempo, bpm)
+                    ? "bg-[#f6e2e2] text-[#9b2b2b] dark:bg-[#3a1c1c] dark:text-[#e59a9a]"
+                    : "bg-surface-2 text-muted"
+                } ${edited ? "ring-1 ring-accent" : ""}`
+              : tempo
+                ? `${base} ${TEMPO_CLASS[tempo]} ${edited ? "ring-1 ring-accent" : ""}`
+                : `${base} text-muted/70 hover:text-accent-strong`
         }
       >
         {variant === "ballad"
           ? "バラード"
-          : tempo
-            ? TEMPO_LABEL[tempo]
-            : "テンポ不明"}
+          : variant === "bpm"
+            ? bpm != null
+              ? `BPM=${bpm}`
+              : "BPM?"
+            : tempo
+              ? TEMPO_LABEL[tempo]
+              : "テンポ不明"}
         {edited && <span className="ml-0.5 text-accent">*</span>}
       </button>
 

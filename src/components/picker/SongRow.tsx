@@ -236,6 +236,7 @@ export function SongRow({
             showUnperformed
             hideTempo={!!onEditTempo}
             hideBallad={!!onEditTempo}
+            hideBpm={!!onEditTempo}
           />
           {onEditTempo && song.ballad && (
             <TempoEditor
@@ -253,6 +254,18 @@ export function SongRow({
               ballad={song.ballad}
               bpm={song.bpm}
               edited={!!tempoEdited}
+              onChange={onEditTempo}
+            />
+          )}
+          {/* BPMバッジからも直せるようにする。
+              倍/半分ずれを直すときはテンポではなくBPMを押したくなるため */}
+          {onEditTempo && song.bpm != null && (
+            <TempoEditor
+              tempo={song.tempo}
+              ballad={song.ballad}
+              bpm={song.bpm}
+              edited={!!tempoEdited}
+              variant="bpm"
               onChange={onEditTempo}
             />
           )}
