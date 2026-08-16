@@ -56,6 +56,7 @@ export function SongBadges({
   showUnperformed = false,
   hideTempo = false,
   hideBallad = false,
+  hideBpm = false,
 }: {
   song: BadgeSong;
   showUnperformed?: boolean;
@@ -63,6 +64,8 @@ export function SongBadges({
   hideTempo?: boolean;
   /** バラードを別のUI(編集可能なバッジ)で出すとき */
   hideBallad?: boolean;
+  /** BPMを別のUI(編集可能なバッジ)で出すとき */
+  hideBpm?: boolean;
 }) {
   return (
     <>
@@ -91,7 +94,7 @@ export function SongBadges({
           {TEMPO_LABEL[song.tempo]}
         </span>
       )}
-      {song.bpm != null && (
+      {song.bpm != null && !hideBpm && (
         <span
           className={`${base} font-mono tabular-nums ${
             // テンポ区分と食い違う値は倍/半分で検出された可能性が高い
