@@ -13,6 +13,8 @@
 
 export { PickerRoom } from "./picker-room.js";
 
+import { handleGithubProxy } from "./github-proxy.js";
+
 const REALM = "nanawa";
 const SESSION_COOKIE = "nanawa_session";
 
@@ -122,6 +124,12 @@ const handler = {
     }
 
     if (!viaBasic && !viaCookie) return unauthorized();
+
+    // ---- GitHub への書き戻しを代理で行う ----
+    // Basic認証を通った人だけがここへ来る。利用者はトークンを持たなくてよい
+    if (url.pathname.startsWith("/api/gh")) {
+      return handleGithubProxy(request, env, url.pathname.slice("/api/gh".length));
+    }
 
     // ---- 選曲ノートのリアルタイム同期 ----
     if (url.pathname === "/api/picker/ws" || url.pathname === "/api/picker") {

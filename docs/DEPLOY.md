@@ -83,6 +83,11 @@ npx wrangler secret put BASIC_AUTH_PASS
 npm run build && npx wrangler deploy
 ```
 
+**`secret put` に続けて書くのは「名前」であって値ではない。**
+値はコマンドを実行したあとに出る `Enter a secret value:` に貼る。
+引数に値を書くと secret の**名前**になってしまい、ダッシュボードにもシェル履歴にも
+そのまま残る。トークンでこれをやったら、その場で失効させて作り直すこと。
+
 **注意**: `deploy --var` で先に平文の環境変数を入れていると、同じ名前の secret を作れない
 (`Binding name 'X' already in use` になる)。先に `--var` なしで一度 deploy して
 平文 var を消してから `secret put` すること。その間は認証情報が未設定になるが、
@@ -102,6 +107,23 @@ npx wrangler deploy --temporary --var BASIC_AUTH_USER:xxx --var BASIC_AUTH_PASS:
 
 このリポジトリは public。`wrangler.jsonc` に書くとパスワードがそのまま公開され、
 鍵をかけた意味がなくなる。必ず secret か `--var` で外から渡す。
+
+### GitHub への書き戻し(代理コミット)
+
+利用者ごとに Fine-grained PAT を作らせるのはやめ、Worker が secret として持つ
+トークン1本で代理コミットする。メンバーは GitHub の存在を知らなくてよい。
+
+```bash
+npx wrangler secret put GITHUB_TOKEN   # 値はプロンプトに貼る
+```
+
+- トークンは Fine-grained / `suneo3476/nanawa` のみ / **Contents: Read and write だけ**
+- 対象リポジトリとブランチは `wrangler.jsonc` の `vars`(秘密ではない)
+- 未設定なら `/api/gh/status` が `available: false` を返し、画面は従来の動作に落ちる
+
+**触れるのは `data/*.yml` だけ**に制限してある(`workers/github-proxy.js`)。
+コードやワークフローは書き換えられず、メソッドも GET / PUT のみ。
+owner/repo/branch はサーバ側で固定し、クライアントには決めさせない。
 
 ### Vercel と比べたときの損得
 
