@@ -1,5 +1,4 @@
 # 曲の演奏特性(選曲ノートのスコアリング・バッジ表示用)
-# [代理コミットの検証] この行はすぐ削除します
 # tempo: up(アップ) | mid(ミドル) | slow(スロー)   ※Claudeによる暫定値。要レビュー
 # ballad: バラードかどうか                        ※同上
 # bpm: 数字(表示は BPM=xxx)  ※MusicBrainz+AcousticBrainzの解析値を自動取得したもの。
