@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "//": [
+    "このリポジトリは Cloudflare Workers で公開している(docs/DEPLOY.md)。",
+    "Vercel にも Git 連携が残っているが、そちらでは",
+    "  - Basic 認証がかからない(Worker の機能なので静的ホスティングには載らない)",
+    "  - 選曲ノートのリアルタイム同期が効かない(Durable Object が無い)",
+    "ため、認証なし・同期なしのコピーが公開されてしまう。",
+    "それを避けるために Vercel の自動デプロイを止めている。",
+    "Vercel を正式な公開先にするなら deploymentEnabled を true に戻すこと。"
+  ],
+
+  "git": {
+    "deploymentEnabled": false
+  }
+}

@@ -1,38 +1,83 @@
-<!-- README.md -->
+# 七輪ライブラリー v3
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+aikoコピーバンド「七輪」のライブ出演記録とセットリストのアーカイブサイト。
+「この曲やった? いつ? どこで?」に最短で答えることを最大の価値に据えた第3版です。
 
-## Getting Started
+## 主な機能
 
-First, run the development server:
+- **ライブ履歴ブラウザ** (`/`) — 曲名・イベント名・会場名・年でのインクリメンタル検索。年別グルーピング、動画ありフィルタ
+- **ライブ詳細** (`/lives/[id]`) — セットリスト、初披露バッジ、曲ごとのYouTube演奏動画(タイムスタンプ対応)、前後ライブへのナビ
+- **楽曲** (`/songs`, `/songs/[id]`) — 演奏回数・最近やった順・ごぶさた順の並べ替え、年別スパークライン、全演奏履歴、よく一緒に演奏された曲
+- **会場** (`/venues`) — 出演会場の一覧と会場ごとの出演履歴
+- **統計** (`/stats`) — 年別ライブ回数、演奏回数Top10、曲×年ヒートマップ
+- **選曲ノート / セトリビルダー** (`/picker`) — 選曲会議のたたき台。詳細は下記
+- **⌘K 検索パレット** — 全ページから曲・ライブ・会場を横断検索(ひらがな/カタカナ正規化対応)
+
+## 選曲ノート (`/picker`) でできること
+
+次のライブのセトリを組み、決まったらこのアプリのライブ記録に取り込むまでを1ページで完結させます。
+
+- **曲を探す** — 未演奏曲を含む全ディスコグラフィ(294曲)から。曲名・収録CD名で検索、または「ディスコグラフィから探す」でアルバム/シングル/EPを辿る
+- **絞り込み** — シングル / カップリング / 紅白 / タイアップ / バラード / 演奏済み・未演奏 / 四季(春夏冬)を個別に選択
+- **曲の属性** — 各曲にバッジで表示(テンポ、BPM、シングル、カップリング、紅白、タイアップ(ⓘで内容)、バラード、季節)
+- **セトリの方向性** — テンポ(バランス/フェス攻め/しっとり)×知名度(一般ウケ/半々/コア掘り)の全16通りの適合度を表で見比べて選ぶ。選ぶと「おすすめ順 ✨」で適合度が上がる曲が上位に来る
+- **メンバーの希望曲** — 人数可変(初期7人)。♥ で希望を登録すると、全員の希望が1曲以上入っているかが分かり、まだ満たせていないメンバーの希望曲がおすすめ順で優先される
+- **セトリ** — ライブ単位で複数管理(イベント名・日付・会場)。曲順の入れ替えと「確定/仮候補」の区別ができる
+- **提案** — 「みんなの希望優先 / 方向性重視 / 定番中心」の3パターンを自動生成。確定済みの曲は残したまま指定曲数まで埋め、各案の適合度と希望充足率を見比べて採用できる
+- **ライブ記録への反映** — できたセトリを `data/lives.yml` / `data/setlists.yml` に追加する(下記の3通り)
+- **共有** — LINE用テキスト / URL。内容はこの端末に自動保存
+- **試聴** — iTunesの30秒プレビュー(曲名完全一致のみ・30日キャッシュ)、Spotify / YouTube Music で開くリンク
+
+### セトリをライブ記録に反映する3つの方法
+
+このサイトは完全静的なので、環境によって使える保存先が違います。書き出し画面で選べます。
+
+| 保存先 | 使える場所 | 何が起きるか |
+| --- | --- | --- |
+| この端末のファイル | ローカル開発時のみ | `npm run dev` で一緒に立つ書き込みAPI(`scripts/data-server.mjs`)が `data/*.yml` を直接更新。すぐ画面に反映される |
+| GitHub にコミット | **デプロイ後の公開サイトでも可** | ブラウザから GitHub Contents API でリポジトリに直接コミット。ホスティング側の自動ビルドが走ればサイトに反映される |
+| YAMLを手で貼る | どこでも | 生成されたYAMLをコピー/ダウンロードして自分で貼る |
+
+GitHub保存を使うには、Fine-grained personal access token を **このリポジトリのみ / Contents: Read and write** で作り、書き出し画面で設定します。トークンはその端末の localStorage にだけ保存され、GitHub 以外には送信しません(共用端末では使わないでください)。
+
+## デプロイ
+
+`output: "export"` の静的サイトなので、`npm run build` で出た `out/` をそのまま置けます。
+
+- **Cloudflare Pages / Netlify / GitHub Pages / Vercel** いずれも無料枠で動きます
+- ビルドコマンド `npm run build` / 出力ディレクトリ `out`
+- リポジトリと連携しておけば、上記「GitHub にコミット」でセトリを追加 → 自動で再ビルド → 公開サイトが最新になります
+- 書き込みAPI(`scripts/data-server.mjs`)は**ローカル専用**です。デプロイ先では動かないので、公開サイトでは GitHub 保存か手貼りを使ってください
+
+## 技術構成
+
+- Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- `output: "export"` による完全静的出力 — `out/` をそのまま静的ホスティングへ
+- データは `data/*.yml` をビルド時に読み込み・検証(参照整合性エラーはビルド失敗になる)
+
+## 開発
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev    # 開発サーバー http://localhost:3000
+npm run build  # 静的ビルド (out/ に出力)
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## データの更新(ライブを追加する)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. `data/lives.yml` にライブを追加(`id` は `liveXXX` 連番、`date` は `YYYY-MM-DD`)
+2. `data/setlists.yml` に演奏曲を追加(`liveId` / `songId` / `order` / `type: individual|medley` / `youtubeUrl`)
+3. 新曲は `data/songs.yml` に追加(aikoの全ディスコグラフィは取り込み済み。原盤データは `data/raw/`、再取り込みは `node scripts/import-catalog.mjs`)
+4. 曲の属性は `data/song_attributes.yml` で編集
+   - `tempo`(up/mid/slow)・`ballad`・`bpm` は **未検証の暫定値**(BPMは出典が無いため未記入)。バンドの感覚で直してください
+   - `kouhaku`・`tieup` は Wikipedia の出演履歴/タイアップ一覧で確認済み(紅白15曲・タイアップ67曲)
+   - シングル/カップリングのバッジと知名度は `album_tracks` から自動導出(シングル表題 or 紅白=有名、タイアップ=準有名、他=コア)
+5. 季節タグは `data/song_seasons.yml`(aiko公式Spotifyプレイリスト由来)
+6. 新譜チェックは `node scripts/check-itunes-catalog.mjs`(iTunes Search APIと突き合わせて取りこぼしを報告)
+7. `npm run build` — データ不整合(存在しないID参照など)はここでエラーとして検出されます
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 経緯
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- v1 (`study/nanawa`) → v2 (`study/nanawa-plus`, [LTスライド](https://speakerdeck.com/suneo3476/qi-lun-raiburari-claude-ai-dezuo-ru-next-dot-js-apuri)) → v3 (本リポジトリ)
+- v2からの主な改善: ライブ一覧ページの新設(v2には存在しなかった)、検索フィルタの完全実装(v2ではキーワード/会場/年が未実装)、楽曲ページの演奏履歴リスト実装、選曲ノートの追加

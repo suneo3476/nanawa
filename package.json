@@ -1,37 +1,30 @@
 {
-  "name": "nanawa",
+  "name": "nanawa-v3",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "export": "next build",
-    "verify-ssg": "node bin/verify-ssg.js",
-    "yaml-to-tsv": "./script/yaml-tsv.sh to-tsv",
-    "tsv-to-yaml": "./script/yaml-tsv.sh to-yaml"
+    "lint": "eslint",
+    "dev:next": "next dev",
+    "api": "node scripts/data-server.mjs"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
-    "lucide-react": "^0.476.0",
-    "next": "15.1.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "recharts": "^2.15.1"
+    "js-yaml": "^5.3.0",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.20",
     "eslint": "^9",
-    "eslint-config-next": "15.1.7",
-    "jest": "^29.7.0",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.17",
+    "eslint-config-next": "16.3.1",
+    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

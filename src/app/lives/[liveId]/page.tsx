@@ -1,169 +1,126 @@
-// src/app/lives/[liveId]/page.tsx
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getAllLives, getLive, venueSlug } from "@/lib/data";
+import { formatDate, formatDateShort } from "@/lib/format";
+import { SetlistView } from "@/components/SetlistView";
+import { CopySetlistButton } from "@/components/CopySetlistButton";
 
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { Calendar, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
-import { SetlistView } from '@/components/SetlistView';
-import { 
-  getLiveById, 
-  getLiveWithSetlist, 
-  getAllLiveIds, 
-  loadAlbumsData,
-  loadAlbumTracksData,
-  getSongById
-} from '@/utils/static-data-loader';
+export function generateStaticParams() {
+  return getAllLives().map((live) => ({ liveId: live.id }));
+}
 
-// 動的メタデータの生成
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: { liveId: string } 
-}): Promise<Metadata> {
-  const live = getLiveById(params.liveId);
-  
-  if (!live) {
-    return {
-      title: 'ライブが見つかりません | 七輪アーカイブ',
-    };
-  }
-  
+export async function generateMetadata({
+  params,
+}: PageProps<"/lives/[liveId]">): Promise<Metadata> {
+  const { liveId } = await params;
+  const live = getLive(liveId);
+  if (!live) return {};
   return {
-    title: `${live.eventName} | 七輪アーカイブ`,
-    description: `${live.date}に${live.venueName}で開催された七輪ライブの詳細・セットリスト情報`,
+    title: `${live.eventName} (${formatDateShort(live.date)})`,
+    description: `${formatDateShort(live.date)} ${live.venueName} でのセットリスト全${live.setlist.length}曲。`,
   };
 }
 
-// 静的生成のためのパラメータを取得
-export async function generateStaticParams() {
-  const liveIds = getAllLiveIds();
-  return liveIds;
-}
+export default async function LivePage({
+  params,
+}: PageProps<"/lives/[liveId]">) {
+  const { liveId } = await params;
+  const live = getLive(liveId);
+  if (!live) notFound();
 
-// ライブヘッダーコンポーネント
-const LiveHeader = ({ live }: { live: any }) => {
+  const prev = live.prevLiveId ? getLive(live.prevLiveId) : null;
+  const next = live.nextLiveId ? getLive(live.nextLiveId) : null;
+  const firstCount = live.setlist.filter((s) => s.isFirstPerformance).length;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">{live.eventName}</h1>
-      
-      <div className="mt-4 space-y-2 text-gray-600">
-        <div className="flex items-center gap-2">
-          <Calendar aria-hidden="true" size={18} className="text-purple-500" />
-          <time dateTime={live.date}>{live.date}</time>
+    <div className="pt-8">
+      <nav className="text-xs text-muted" aria-label="パンくず">
+        <Link href="/" className="hover:text-accent-strong hover:underline">
+          ライブ履歴
+        </Link>
+        <span className="mx-1.5">/</span>
+        <span>{formatDateShort(live.date)}</span>
+      </nav>
+
+      <header className="mt-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+          <time className="font-mono tabular-nums">{formatDate(live.date)}</time>
+          <span className="rounded bg-surface-2 px-1.5 py-0.5 text-xs">
+            第{live.eventId}回出演
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <MapPin aria-hidden="true" size={18} className="text-purple-500" />
-          <span>{live.venueName}</span>
-        </div>
+        <h1 className="mt-1.5 text-2xl font-bold leading-snug sm:text-3xl">
+          {live.eventName}
+        </h1>
+        {live.venueName && (
+          <p className="mt-1.5">
+            <Link
+              href={`/venues/${venueSlug(live.venueName)}`}
+              className="inline-flex items-center gap-1 text-sm text-muted underline-offset-4 hover:text-accent-strong hover:underline"
+            >
+              <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 21s-7-5.1-7-11a7 7 0 1 1 14 0c0 5.9-7 11-7 11z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>
+              {live.venueName}
+            </Link>
+          </p>
+        )}
         {live.memo && (
-          <div className="mt-2 p-3 bg-gray-50 rounded-lg text-gray-700">
+          <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
             {live.memo}
-          </div>
+          </p>
         )}
-      </div>
-    </div>
-  );
-};
+      </header>
 
-// 前後のライブへのナビゲーションコンポーネント
-const LiveNavigation = ({ prevLive, nextLive }: { prevLive: any; nextLive: any }) => {
-  return (
-    <div className="flex justify-between mt-8">
-      <div>
-        {prevLive && (
-          <Link 
-            href={`/lives/${prevLive.id}`}
-            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800"
+      <section className="mt-6">
+        <h2 className="mb-2 flex flex-wrap items-center gap-2 text-lg font-bold">
+          セットリスト
+          <span className="text-xs font-normal text-muted">
+            {live.setlist.length}曲
+            {firstCount > 0 && ` ・ 初披露${firstCount}曲`}
+            {live.youtubeCount > 0 && ` ・ 動画${live.youtubeCount}本`}
+          </span>
+          {live.setlist.length > 0 && (
+            <span className="ml-auto">
+              <CopySetlistButton live={live} />
+            </span>
+          )}
+        </h2>
+        <SetlistView setlist={live.setlist} />
+      </section>
+
+      <nav className="mt-8 grid grid-cols-2 gap-3" aria-label="前後のライブ">
+        {prev ? (
+          <Link
+            href={`/lives/${prev.id}`}
+            className="group rounded-xl border border-border bg-surface p-3 transition-colors hover:border-accent"
           >
-            <ChevronLeft size={16} />
-            <div>
-              <div className="text-xs text-gray-500">{prevLive.date}</div>
-              <div>{prevLive.eventName}</div>
-            </div>
+            <span className="text-xs text-muted">← 前のライブ</span>
+            <span className="mt-0.5 block truncate text-sm font-medium group-hover:text-accent-strong">
+              {prev.eventName}
+            </span>
+            <span className="text-xs text-muted">{formatDateShort(prev.date)}</span>
           </Link>
+        ) : (
+          <span />
         )}
-      </div>
-      <div>
-        {nextLive && (
-          <Link 
-            href={`/lives/${nextLive.id}`}
-            className="inline-flex items-center gap-2 text-right text-purple-600 hover:text-purple-800"
+        {next ? (
+          <Link
+            href={`/lives/${next.id}`}
+            className="group rounded-xl border border-border bg-surface p-3 text-right transition-colors hover:border-accent"
           >
-            <div>
-              <div className="text-xs text-gray-500">{nextLive.date}</div>
-              <div>{nextLive.eventName}</div>
-            </div>
-            <ChevronRight size={16} />
+            <span className="text-xs text-muted">次のライブ →</span>
+            <span className="mt-0.5 block truncate text-sm font-medium group-hover:text-accent-strong">
+              {next.eventName}
+            </span>
+            <span className="text-xs text-muted">{formatDateShort(next.date)}</span>
           </Link>
+        ) : (
+          <span />
         )}
-      </div>
-    </div>
-  );
-};
-
-// メインのライブ詳細ページコンポーネント
-export default function LivePage({ params }: { params: { liveId: string } }) {
-  const liveId = params.liveId;
-  
-  // ライブデータの取得
-  const live = getLiveWithSetlist(liveId);
-  
-  if (!live) {
-    notFound();
-  }
-  
-  // 前後のライブを取得（日付順）
-  const allLives = getAllLiveIds().map(({ liveId }) => getLiveById(liveId));
-  const sortedLives = allLives
-    .filter(Boolean) // Add this to filter out null values
-    .sort((a, b) => new Date(a?.date || '').getTime() - new Date(b?.date || '').getTime());
-  
-  const currentIndex = sortedLives.findIndex(l => l?.id === liveId);    
-  const prevLive = currentIndex > 0 ? sortedLives[currentIndex - 1] : null;
-  const nextLive = currentIndex < sortedLives.length - 1 ? sortedLives[currentIndex + 1] : null;
-  
-  // アルバム情報を取得
-  const albums = loadAlbumsData();
-  const albumTracks = loadAlbumTracksData();
-
-  // 曲ごとに収録アルバム情報を作成
-  const setlistWithAlbums = live.setlist.map(item => {
-    console.table(item);
-    const song = getSongById(item.songId);
-    
-    // この曲が収録されているアルバム情報を収集
-    const songAlbumTracks = albumTracks.filter(track => track.songId === item.songId);
-    const albumIds = songAlbumTracks.map(track => track.albumId);
-    const songAlbums = albums
-      .filter(album => albumIds.includes(album.id))
-      .map(album => album.title);
-    
-    return {
-      order: item.order,
-      songId: item.songId,
-      songTitle: item.title,  // title を songTitle にマッピング
-      albums: songAlbums, 
-      isSingle: song?.isSingle,
-      memo: item.memo,
-      youtubeUrl: item.youtubeUrl  // YouTubeリンクを追加
-    };
-  });
-  
-  console.log("デバッグ - セットリスト情報:", JSON.stringify(setlistWithAlbums, null, 2));
-  
-  return (
-    <div className="space-y-8">
-      {/* ライブ情報表示部分 */}
-      <LiveHeader live={live} />
-      
-      {/* セットリスト表示部分 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">セットリスト</h2>
-        <SetlistView setlist={setlistWithAlbums} date={live.date} />
-      </div>
-      
-      {/* 前後のライブへのナビゲーション部分 */}
-      <LiveNavigation prevLive={prevLive} nextLive={nextLive} />
+      </nav>
     </div>
   );
 }
